@@ -1,0 +1,4 @@
+node_modules
+lib-cov
+coverage.html
+config.json
