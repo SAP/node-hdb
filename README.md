@@ -11,13 +11,13 @@ Install
 Currently this module has to be installed from the [GitHub repository](https://github.com/sap/node-hdb):
 
 ```
-$ npm install git://github.com/sap/node-hdb.git
+$ npm install git://github.com/SAP/node-hdb.git
 ```
 
 or 
 
 ```
-$ npm install https://github.com/sap/node-hdb/tarball/master
+$ npm install https://github.com/SAP/node-hdb/tarball/master
 ```
 
 Introduction
