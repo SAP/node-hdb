@@ -8,16 +8,18 @@ A JavaScript client for Node implementing the
 Install
 -------
 
-Currently this module has to be installed from the [GitHub repository](https://github.com/sap/node-hdb):
+Install from [npm](https://npmjs.org/):
 
 ```
-$ npm install git://github.com/SAP/node-hdb.git
+$ npm install hdb
 ```
 
-or 
+or clone from the [GitHub repository](https://github.com/SAP/node-hdb) to run tests and examples locally:
 
 ```
-$ npm install https://github.com/SAP/node-hdb/tarball/master
+$ git clone https://github.com/SAP/node-hdb.git
+$ cd node-hdb
+$ npm install
 ```
 
 Introduction
@@ -207,6 +209,7 @@ statement.drop(function(err){
   if (err) {
     return console.error('Drop error:', err);
   }  
+  console.lob('Statement droped');
 });
 ```
 
