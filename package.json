@@ -8,7 +8,7 @@
   "version": "0.0.5",
   "repository": {
     "type": "git",
-    "url": "git://github.com/sap/node-hdb"
+    "url": "git://github.com/SAP/node-hdb.git"
   },
   "licenses": [{
     "type": "Apache 2.0",
@@ -22,7 +22,7 @@
   ],
   "main": "./index.js",
   "scripts": {
-    "test": "make test"
+    "test": "make test-unit"
   },
   "engines": {
     "node": ">= 0.10.x"
@@ -31,7 +31,7 @@
   "devDependencies": {
     "should": "~1.2.2",
     "mocha": "~1.9.0",
-    "async": "~0.2.6",
+    "async": "~0.2.9",
     "generic-pool": "~2.0.3"
   },
   "optionalDependencies": {}

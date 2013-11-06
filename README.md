@@ -4,22 +4,23 @@ SAP HANA Database Client for Node
 A JavaScript client for Node implementing the 
 [SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_Database_SQL_command_network_protocol_en.pdf).
 
+[![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)
 
 Install
 -------
 
 Install from [npm](https://npmjs.org/):
 
-```
-$ npm install hdb
+```bash
+npm install hdb
 ```
 
 or clone from the [GitHub repository](https://github.com/SAP/node-hdb) to run tests and examples locally:
 
-```
-$ git clone https://github.com/SAP/node-hdb.git
-$ cd node-hdb
-$ npm install
+```bash
+git clone https://github.com/SAP/node-hdb.git
+cd node-hdb
+npm install
 ```
 
 Introduction
@@ -209,7 +210,7 @@ statement.drop(function(err){
   if (err) {
     return console.error('Drop error:', err);
   }  
-  console.lob('Statement droped');
+  console.log('Statement droped');
 });
 ```
 
@@ -219,13 +220,13 @@ Running tests
 To run the unit tests for _hdb_ simply run:
 
 ```bash
-$ make test-unit
+make test-unit
 ```
 
 To run the unit tests as well as acceptance tests for _hdb_ you have to run:
 
 ```bash
-$ make test
+make test
 ```
 
 For the acceptance tests a database connection has to be established. Therefore you 
@@ -241,7 +242,7 @@ Also, for the [examples](./examples) you need a valid a ```config.json``` in the
 The example for call procedure:
 
 ```bash
-$ node examples/call1
+node examples/call1
 ```
 
 Todo
