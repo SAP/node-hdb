@@ -22,7 +22,18 @@ util.extend(exports, lib);
 
 var NUMBERS = exports.NUMBERS = require('../fixtures/numbers');
 
-var options = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
+var options;
+try {
+  options = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
+} catch (err) {
+  options = {
+    host: 'localhost',
+    port: 30015,
+    user: 'USER',
+    password: 'PASSWORD'
+  };
+}
+
 
 exports.createDatabase = function createDatabase() {
   return new Database();
