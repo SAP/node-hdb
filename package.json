@@ -34,5 +34,8 @@
     "async": "~0.2.9",
     "generic-pool": "~2.0.3"
   },
-  "optionalDependencies": {}
+  "optionalDependencies": {
+    "debuglog": "~0.0.2",
+    "readable-stream": "~1.1.9"
+  }
 }

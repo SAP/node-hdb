@@ -20,12 +20,12 @@ var sql =
   'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
 client.exec(sql, false, function onexec(err, rs) {
   var rows = [];
-  rs.createReadStream()
+  rs.createObjectStream()
     .once('error', function onerror(err) {
       done(err);
     })
     .on('readable', function onreadable() {
-      rows = rows.concat(this.read());
+      rows.push(this.read());
     })
     .once('end', function onend() {
       if (!rs.closed) {

@@ -37,27 +37,27 @@ http.createServer(function (req, res) {
       return badRequest(res, err);
     }
 
+    function releaseClient(err) {
+      if (err) {
+        console.error('ObjectStream error', err);
+      }
+      pool.release(client);
+    }
+
     var data = parseRequest(req);
     res.writeHead(200, data.headers);
-
     console.log(data.sql);
-
     client.exec(data.sql, false, function onexec(err, rs) {
       if (err) {
         return badRequest(res, err);
       }
-      var transform = createStringifier();
-      rs.createReadStream()
-        .once('end', function onend() {
-          pool.release(client);
-        })
-        .once('error', function (err) {
-          pool.release(client);
-        })
-        .pipe(transform)
+      rs.setFetchSize(2048)
+        .createArrayStream()
+        .once('end', releaseClient)
+        .once('error', releaseClient)
+        .pipe(createStringifier())
         .pipe(res);
     });
-
   });
 }).listen(port);
 console.log('Server running on at http://%s:%d/', hostname, port);
@@ -79,8 +79,9 @@ function badRequest(res, err) {
 }
 
 function escapeQualifiedName(name) {
-  return '"' + name.toUpperCase().replace(/"/g, '""').replace(/\./g, '"."') +
-    '"';
+  return '"' + name.toUpperCase()
+    .replace(/"/g, '""')
+    .replace(/\./g, '"."') + '"';
 }
 
 function parseRequest(req) {
@@ -102,12 +103,12 @@ function parseRequest(req) {
     'Content-Type': 'application/json'
   };
   if (top > 10000) {
-    headers['Content-Disposition'] = 'attachment; filename=' + tablename +
-      '.json;';
+    headers['Content-Disposition'] =
+      'attachment; filename=' + tablename + '.json;';
   }
   return {
-    sql: util.format('select * from %s limit %d', escapeQualifiedName(tablename),
-      top),
+    sql: util.format('select * from %s limit %d',
+      escapeQualifiedName(tablename), top),
     headers: headers
   };
 }

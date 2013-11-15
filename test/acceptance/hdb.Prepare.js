@@ -102,6 +102,7 @@ describe('Database', function () {
               if (err) {
                 return callback(err);
               }
+              console.log(parameters)
               Object.keys(parameters).should.have.length(0);
               arguments.should.have.length(3);
               rows.should.have.length(3)

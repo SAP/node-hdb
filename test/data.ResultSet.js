@@ -23,22 +23,18 @@ describe('Data', function () {
 
   describe('#ResultSet', function () {
 
+
     var count = data.part.argumentCount;
     var first = 0;
     var last = count - 1;
 
     it('deserialize from part buffer', function (done) {
-      var rows = [];
       var parser = new Parser(metadata.columns);
-      parser.parse(data.part.buffer, rows, function (err) {
-        if (err) {
-          throw err;
-        }
-        rows.should.have.length(count);
-        rows[first].should.eql(data.rows[first]);
-        rows[last].should.eql(data.rows[last]);
-        done();
-      });
+      var rows = parser.parse(data.part.buffer);
+      rows.should.have.length(count);
+      rows[first].should.eql(data.rows[first]);
+      rows[last].should.eql(data.rows[last]);
+      done();
     });
 
   });

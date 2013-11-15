@@ -20,7 +20,7 @@ var hdb = require('../index');
 var sql =
   'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
 client.exec(sql, false, function onexec(err, rs) {
-  rs.createReadStream()
+  rs.createArrayStream(256)
     .once('error', function onerror(err) {
       done(err);
     })

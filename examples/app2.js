@@ -18,7 +18,9 @@ var client = require('./client');
 
 var sql =
   'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
-client.exec(sql, false, function onexec(err, rs) {
+client.exec(sql, {
+  resultSetMode: true
+}, function onexec(err, rs) {
   rs.fetch(function onfetch(err, rows) {
     if (err) {
       return done(err);
