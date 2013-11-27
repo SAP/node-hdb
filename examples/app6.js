@@ -20,15 +20,20 @@ var util = require('util');
 var os = require('os');
 var path = require('path');
 var async = require('async');
+var EventEmitter = require('events').EventEmitter;
 var client = require('./client');
-var stream = require('./stream');
 var fstream = require('fstream');
+var concatStream = require('concat-stream');
 
 var packageId = process.argv[2] || 'sap.hana.xs.ui.images';
 var dirname = path.join(os.tmpdir(), '_SYS_REPO', packageId.replace(/\./g, '/'));
 var schema = client.get('user');
 
-async.waterfall([setSchema, init, prepare, copyDir], done);
+async.waterfall([connect, setSchema, init, prepare, copyDir], done);
+
+function connect(cb) {
+  client.connect(cb);
+}
 
 function setSchema(cb) {
   var sql = util.format('set schema %s', schema);
@@ -67,16 +72,6 @@ function prepare(cb) {
 function copyDir(statement, cb) {
   console.time('time');
 
-  function done(err) {
-    this.removeListener('error', done);
-    this.removeListener('close', done);
-    cb(err);
-  }
-
-  function getParams(props, data) {
-    return [packageId, props.basename, data];
-  }
-
   function isChildFile() {
     /* jshint validthis:true */
     return this.parent === r && this.type === 'File' || this === r;
@@ -84,10 +79,22 @@ function copyDir(statement, cb) {
   var r = fstream.Reader({
     path: dirname,
     filter: isChildFile
-  })
-  r.pipe(stream.Writer(statement, getParams))
-    .once('error', done)
-    .once('close', done);
+  });
+
+  function getParams(props, data) {
+    return [packageId, props.basename, data];
+  }
+  var adapter = new FstreamAdapter(statement, getParams);
+
+  function finish(err) {
+    adapter.removeListener('error', finish);
+    adapter.removeListener('close', finish);
+    cb(err);
+  }
+  adapter.once('error', finish);
+  adapter.once('close', finish);
+
+  r.pipe(adapter);
 }
 
 function done(err) {
@@ -99,3 +106,53 @@ function done(err) {
   }
   client.end();
 }
+
+util.inherits(FstreamAdapter, EventEmitter);
+
+function FstreamAdapter(statement, createParams) {
+  EventEmitter.call(this);
+  this._end = false;
+  this._busy = false;
+  this._statement = statement;
+  this._createParams = createParams;
+}
+
+FstreamAdapter.prototype.execStatement = function execStatement(entry, data) {
+  var self = this;
+  var params = this._createParams(entry.props, data);
+
+  function handleResult(err) {
+    self._busy = false;
+    if (err) {
+      return self.emit('error', err);
+    }
+    if (self._end) {
+      return self.emit('close');
+    }
+    entry.resume();
+  }
+  this._statement.exec(params, handleResult);
+};
+
+FstreamAdapter.prototype.add = function add(entry) {
+  var self = this;
+  if (this._end) {
+    return;
+  }
+
+  function handleData(data) {
+    entry.pause();
+    self._busy = true;
+    self.execStatement(entry, data);
+  }
+  entry.pipe(concatStream(handleData));
+  return true;
+};
+
+FstreamAdapter.prototype.end = function end() {
+  this._end = true;
+  this.emit('end');
+  if (!this._busy) {
+    this.emit('close');
+  }
+};

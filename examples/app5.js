@@ -16,13 +16,14 @@
 
 'use strict';
 
-var util = require('util');
+var util = require('../lib/util');
 var os = require('os');
 var path = require('path');
 var async = require('async');
-var client = require('./client');
-var stream = require('./stream');
+var Stream = require('stream').Stream;
+var Writable = util.stream.Writable;
 var fstream = require('fstream');
+var client = require('./client');
 
 var fields = [
   'PACKAGE_ID as PATH',
@@ -44,7 +45,11 @@ if (packageId.indexOf('*') === -1) {
 var sql = util.format(tpl, fields.join(','), operator);
 var dirname = path.join(os.tmpdir(), '_SYS_REPO');
 
-async.waterfall([prepare, execute, copyRepo], done);
+async.waterfall([connect, prepare, execute, copyRepo], done);
+
+function connect(cb) {
+  client.connect(cb);
+}
 
 function prepare(cb) {
   client.prepare(sql, cb);
@@ -52,17 +57,10 @@ function prepare(cb) {
 
 function execute(statement, cb) {
   console.time('time');
-  statement.exec([packageId], false, cb);
+  statement.execute([packageId], cb);
 }
 
 function copyRepo(rs, cb) {
-
-  function done(err) {
-    /* jshint validthis:true */
-    this.removeListener('error', done);
-    this.removeListener('end', done);
-    cb(err);
-  }
 
   function createEntry(row) {
     var entry = (row.BDATA || row.CDATA).createReadStream();
@@ -79,14 +77,23 @@ function copyRepo(rs, cb) {
     entry.type = props.type;
     return entry;
   }
-  rs.createObjectStream()
-    .pipe(new stream.Reader(createEntry))
-    .pipe(new fstream.Writer({
-      path: dirname,
-      type: 'Directory'
-    }))
-    .once('error', done)
-    .once('end', done);
+  var adapter = new FstreamAdapter(createEntry);
+
+  var w = new fstream.Writer({
+    path: dirname,
+    type: 'Directory'
+  });
+
+  function finish(err) {
+    /* jshint validthis:true */
+    w.removeListener('error', finish);
+    w.removeListener('end', finish);
+    cb(err);
+  }
+  w.once('error', finish);
+  w.once('end', finish);
+
+  rs.createObjectStream().pipe(adapter).pipe(w);
 }
 
 function done(err) {
@@ -98,3 +105,51 @@ function done(err) {
   }
   client.end();
 }
+
+util.inherits(FstreamAdapter, Writable);
+
+function FstreamAdapter(createEntry) {
+  Writable.call(this, {
+    objectMode: true,
+    highWaterMark: 128
+  });
+  this._done = undefined;
+  this._destination = undefined;
+  this._createEntry = createEntry;
+}
+
+Object.defineProperty(FstreamAdapter.prototype, 'readable', {
+  get: function getReadable() {
+    return !!this._done;
+  }
+});
+
+FstreamAdapter.prototype._write = function _write(row, encoding, done) {
+  var entry = this._createEntry(row);
+  var notBusy = this._destination.add(entry);
+  if (notBusy !== false) {
+    return done();
+  }
+  if (this._done) {
+    throw new Error('Do not call _write before previous _write has been done');
+  }
+  this._done = done;
+};
+
+FstreamAdapter.prototype.pause = function pause() {};
+
+FstreamAdapter.prototype.resume = function resume() {
+  if (this._done) {
+    var done = this._done;
+    this._done = undefined;
+    done();
+  }
+};
+
+FstreamAdapter.prototype.pipe = function pipe(dest) {
+  this._destination = dest;
+  this.once('finish', function onfinish() {
+    dest.end();
+  });
+  return Stream.prototype.pipe.call(this, dest);
+};

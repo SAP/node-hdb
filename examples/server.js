@@ -47,7 +47,7 @@ http.createServer(function (req, res) {
     var data = parseRequest(req);
     res.writeHead(200, data.headers);
     console.log(data.sql);
-    client.exec(data.sql, false, function onexec(err, rs) {
+    client.execute(data.sql, function onexec(err, rs) {
       if (err) {
         return badRequest(res, err);
       }

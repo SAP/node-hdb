@@ -13,28 +13,52 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
+var util = require('util');
+var async = require('async');
 var client = require('./client');
 var hdb = require('../index');
 
-var sql =
-  'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
-client.exec(sql, false, function onexec(err, rs) {
-  rs.createArrayStream()
-    .once('error', function onerror(err) {
-      done(err);
-    })
-    .once('end', function onend() {
-      if (!rs.closed) {
-        rs.close();
-      }
-      done(null);
-    })
-    .pipe(hdb.createJSONStringifier()).pipe(process.stdout);
-});
+var fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE'];
+var sql = util.format('select top 50 %s from TABLES', fields.join(','));
+
+async.waterfall([connect, execute, pipeRows], done);
+
+function connect(cb) {
+  client.connect(cb);
+}
+
+function execute(cb) {
+  client.execute(sql, cb);
+}
+
+function pipeRows(rs, cb) {
+  var stream = rs.createArrayStream();
+  var stringifier = hdb.createJSONStringifier();
+
+  function finish(err) {
+    stream.removeListener('error', finish);
+    stream.removeListener('end', onend);
+    stringifier.removeListener('finish', finish)
+    cb(err);
+  }
+  stream.on('error', finish);
+  stringifier.on('finish', finish);
+
+  function onend() {
+    if (!rs.closed) {
+      rs.close();
+    }
+  }
+  stream.on('end', onend);
+
+  stream.pipe(stringifier).pipe(process.stdout);
+}
 
 function done(err) {
   client.end();
   if (err) {
     return console.error(err);
   }
+  console.log();
+  console.log('Piped rows as JSON-Stream to STDOUT');
 }

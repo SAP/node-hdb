@@ -21,6 +21,7 @@ var os = require('os');
 var util = require('util');
 var path = require('path');
 var url = require('url');
+var async = require('async');
 var hdb = require('../index');
 
 var defaults = getDefaultParams();
@@ -43,13 +44,12 @@ var schema = segments[0].toUpperCase();
 var tablename = segments[1].toUpperCase();
 var filename = tablename.replace(/^\/[^\/]+\//, '').toLowerCase() + '.csv';
 filename = path.join(os.tmpdir(), filename);
-var writeStream = fs.createWriteStream(filename);
-var sql = util.format('select top %d * from "%s"."%s"',
-  query.top, schema, tablename);
 
 var client = hdb.createClient({
   host: hostname,
-  port: port
+  port: port,
+  user: user,
+  password: password
 });
 
 function onerror(err) {
@@ -57,30 +57,34 @@ function onerror(err) {
 }
 client.on('error', onerror);
 
-function connected(err) {
-  if (err) {
-    return console.error('Connect error', err);
-  }
+async.waterfall([connect, execute, pipeRows], done);
+
+function connect(cb) {
+  client.connect(cb);
+}
+
+function execute(cb) {
   console.time('time');
+  var sql = util.format('select top %d * from "%s"."%s"',
+    query.top, schema, tablename);
+  client.execute(sql, cb);
 }
-client.connect({
-  user: user,
-  password: password
-}, connected);
 
-function onresult(err, rs) {
-  if (err) {
-    return done(err);
-  }
+function pipeRows(rs, cb) {
   rs.setFetchSize(2048);
-  rs.createArrayStream()
-    .on('error', done)
-    .pipe(createCsvStringifier(rs.metadata))
-    .pipe(writeStream)
-    .once('finish', done);
-}
-client.exec(sql, false, onresult);
+  var readStream = rs.createArrayStream();
+  var writeStream = fs.createWriteStream(filename);
 
+  function finish(err) {
+    readStream.removeListener('error', finish);
+    writeStream.removeListener('finish', finish);
+    cb(err);
+  }
+  readStream.on('error', finish);
+  writeStream.on('finish', finish);
+
+  readStream.pipe(createCsvStringifier(rs.metadata)).pipe(writeStream);
+}
 
 function done(err) {
   console.timeEnd('time');

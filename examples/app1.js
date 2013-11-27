@@ -14,12 +14,21 @@
 'use strict';
 
 var util = require('util');
+var async = require('async');
 var client = require('./client');
 
-var sql =
-  'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
+var fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE'];
+var sql = util.format('select top 50 %s from TABLES', fields.join(','));
 
-client.exec(sql, done);
+async.waterfall([connect, executeAndfetchRows], done);
+
+function connect(cb) {
+  client.connect(cb);
+}
+
+function executeAndfetchRows(cb) {
+  client.exec(sql, cb);
+}
 
 function done(err, rows) {
   client.end();
