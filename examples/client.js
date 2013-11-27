@@ -22,11 +22,12 @@ var options = JSON.parse(fs.readFileSync(filename));
 var client = hdb.createClient({
   host: options.host,
   port: options.port,
-  user: options.user
+  user: options.user,
+  password: options.password
 });
 
 function onerror(err) {
-  console.log('Network connection error', err);
+  console.error('Network connection error', err);
 }
 client.on('error', onerror);
 
@@ -44,10 +45,5 @@ function ondisconnect() {
   console.log('Client disconnected');
 }
 client.on('disconnect', ondisconnect);
-
-client.connect({
-  user: options.user,
-  password: options.password
-});
 
 module.exports = client;

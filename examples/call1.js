@@ -17,7 +17,11 @@ var util = require('util');
 var async = require('async');
 var client = require('./client');
 
-async.series([setSchema, createProcDummy, callProcDummy], done);
+async.waterfall([connect, setSchema, init, prepare, callProc], done);
+
+function connect(cb) {
+  client.connect(cb);
+}
 
 function setSchema(cb) {
   var schema = client.get('user');
@@ -25,7 +29,7 @@ function setSchema(cb) {
   client.exec(sql, cb);
 }
 
-function createProcDummy(cb) {
+function init(cb) {
   var sql = 'drop procedure PROC_DUMMY';
   client.exec(sql, function onexec() {
     // ignore error
@@ -42,34 +46,32 @@ function createProcDummy(cb) {
   });
 }
 
-function callProcDummy(cb) {
+function prepare(cb) {
   var sql = 'call PROC_DUMMY (?, ?, ?, ?)';
-  client.prepare(sql, function onprepare(err, statement) {
-    if (err) {
-      return cb(err);
-    }
-    statement.exec({
-      A: 3,
-      B: 4
-    }, function onexec(err, parameters, rows) {
-      statement.drop();
-      if (err) {
-        return cb(err);
-      }
-      cb(null, {
-        C: parameters.C,
-        rows: rows
-      });
-    });
+  client.prepare(sql, cb);
+}
+
+function callProc(statement, cb) {
+  var values = {
+    A: 3,
+    B: 4
+  };
+  statement.exec(values, function onexec(err, parameters, rows) {
+    statement.drop();
+    cb(err, parameters, rows);
   });
 }
 
-function done(err, results) {
+function done(err, parameters, rows) {
   client.end();
   if (err) {
     return console.error('error', err);
   }
-  console.log(util.inspect(results[2], {
+  console.log('Parameters:', util.inspect(parameters, {
+    depth: 4,
+    colors: true
+  }));
+  console.log('Rows:', util.inspect(rows, {
     depth: 4,
     colors: true
   }));

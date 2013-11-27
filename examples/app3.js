@@ -14,26 +14,47 @@
 'use strict';
 
 var util = require('util');
+var async = require('async');
 var client = require('./client');
 
-var sql =
-  'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
-client.exec(sql, false, function onexec(err, rs) {
+var fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE'];
+var sql = util.format('select top 50 %s from TABLES', fields.join(','));
+
+async.waterfall([connect, execute, fetchRows], done);
+
+function connect(cb) {
+  client.connect(cb);
+}
+
+function execute(cb) {
+  client.execute(sql, cb);
+}
+
+function fetchRows(rs, cb) {
+  var stream = rs.createObjectStream();
   var rows = [];
-  rs.createObjectStream()
-    .once('error', function onerror(err) {
-      done(err);
-    })
-    .on('readable', function onreadable() {
-      rows.push(this.read());
-    })
-    .once('end', function onend() {
-      if (!rs.closed) {
-        rs.close();
-      }
-      done(null, rows);
-    });
-});
+
+  function finish(err) {
+    stream.removeListener('error', finish);
+    stream.removeListener('end', onend);
+    stream.removeListener('readable', onreadable);
+    cb(err, rows)
+  }
+  stream.on('error', finish);
+
+  function onend() {
+    if (!rs.closed) {
+      rs.close();
+    }
+    finish(null);
+  }
+  stream.on('end', onend);
+
+  function onreadable() {
+    rows.push(this.read());
+  }
+  stream.on('readable', onreadable);
+}
 
 function done(err, rows) {
   client.end();
