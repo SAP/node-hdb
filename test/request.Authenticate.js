@@ -40,26 +40,17 @@ describe('Request', function () {
     0xc8, 0xff, 0x00, 0x00
   ]);
 
-  var filler = new Buffer([
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
+  var partBuffer = new Buffer([
+    0x03, 0x00,
+    0x06, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4d,
+    0x0b, 0x53, 0x43, 0x52, 0x41, 0x4d, 0x53, 0x48, 0x41, 0x32, 0x35,
+    0x36,
+    0x04, 0x01, 0x02, 0x03, 0x04,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // filler
   ]);
 
-  var part = {
-    kind: lib.common.PartKind.AUTHENTICATION,
-    attributes: 0,
-    argumentCount: 1,
-    buffer: new Buffer([
-      0x03, 0x00,
-      0x06, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4d,
-      0x0b, 0x53, 0x43, 0x52, 0x41, 0x4d, 0x53, 0x48, 0x41, 0x32, 0x35,
-      0x36,
-      0x04, 0x01, 0x02, 0x03, 0x04
-    ])
-  };
-
-  var buffer = Buffer.concat([segmentHeader, partHeader,
-    part.buffer, filler
-  ]);
+  var buffer = Buffer.concat([segmentHeader, partHeader, partBuffer]);
 
   var reqOptions = {
     user: 'SYSTEM',
@@ -73,7 +64,8 @@ describe('Request', function () {
       function () {
         var req = request.authenticate(scramsha256, reqOptions);
         req.parts.should.have.length(1);
-        req.parts[0].should.eql(part);
+        req.parts[0].kind.should.equal(lib.common.PartKind.AUTHENTICATION);
+        req.parts[0].args.should.eql(reqOptions);
         req.toBuffer().should.eql(buffer);
       });
 

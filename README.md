@@ -6,6 +6,9 @@ A JavaScript client for Node implementing the
 
 [![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)
 
+- [Authentication](#authentication-methods "Authentication")
+
+
 Install
 -------
 
@@ -210,7 +213,7 @@ statement.drop(function(err){
   if (err) {
     return console.error('Drop error:', err);
   }  
-  console.log('Statement droped');
+  console.log('Statement dropped');
 });
 ```
 

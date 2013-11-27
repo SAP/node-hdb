@@ -26,7 +26,6 @@ var client = hdb.createClient({
 });
 
 function onerror(err) {
-  throw err;
   console.log('Network connection error', err);
 }
 client.on('error', onerror);

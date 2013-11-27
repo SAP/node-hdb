@@ -23,7 +23,7 @@ var options = JSON.parse(fs.readFileSync(filename));
 var pool = gp.Pool({
   name: 'hdb',
   create: function (callback) {
-    var client = hdb.createClient(options)
+    var client = hdb.createClient(options);
     client.on('error', function onerror(err) {
       console.error('Client error:', err);
     });

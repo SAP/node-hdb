@@ -39,6 +39,13 @@ function writeUInt64(value) {
 function readDec128(hex) {
   return bignum.readDec128(new Buffer(hex, 'hex'), 0);
 }
+
+function writeDec128(value) {
+  var buffer = new Buffer(16);
+  bignum.writeDec128(buffer, value, 0);
+  return buffer.toString('hex');
+}
+
 describe('BigNum', function () {
 
   describe('#Int64', function () {
@@ -89,19 +96,23 @@ describe('BigNum', function () {
   describe('#Unsigned Int64', function () {
 
     it('read numbers', function () {
-      readUInt64('7708530509f40102').should.equal('144664982633777271');
       readUInt64('0000000000000000').should.equal(0);
       readUInt64('0000000000002000').should.equal(Math.pow(2, 53));
       readUInt64('ffffffff00000000').should.equal(Math.pow(2, 32) - 1);
+      readUInt64('feffffffffffffff').should.equal('18446744073709551614');
       readUInt64('ffffffffffffffff').should.equal('18446744073709551615');
+      readUInt64('bd34a75e47780300').should.equal(976672856159421);
+      readUInt64('7708530509f40102').should.equal('144664982633777271');
     });
 
     it('write numbers', function () {
-      '7708530509f40102'.should.equal(writeUInt64('144664982633777271'));
+      '0000000000000000'.should.equal(writeUInt64(0));
       '0000000000002000'.should.equal(writeUInt64(Math.pow(2, 53)));
-      'bd34a75e47780300'.should.equal(writeUInt64(976672856159421));
+      'ffffffff00000000'.should.equal(writeUInt64(Math.pow(2, 32) - 1));
       'feffffffffffffff'.should.equal(writeUInt64('18446744073709551614'));
       'ffffffffffffffff'.should.equal(writeUInt64('18446744073709551615'));
+      'bd34a75e47780300'.should.equal(writeUInt64(976672856159421));
+      '7708530509f40102'.should.equal(writeUInt64('144664982633777271'));
     });
 
   });
@@ -143,6 +154,11 @@ describe('BigNum', function () {
         s: 1,
         m: 99,
         e: 1
+      });
+      readDec128('301b0f00000000000000000000003630').should.eql({
+        s: 1,
+        m: 990000,
+        e: -5
       });
       readDec128('ae080000000000000000000000004430').should.eql({
         s: 1,
@@ -190,6 +206,34 @@ describe('BigNum', function () {
         '9007199254740993');
       readDec128('ffffffffffffffffffffffffffffffef').m.should.equal(
         '10384593717069655257060992658440191');
+    });
+
+    it('write positive numbers', function () {
+      writeDec128({
+        s: 1,
+        m: 99,
+        e: -1
+      }).should.eql('63000000000000000000000000003e30');
+      writeDec128({
+        s: 1,
+        m: 2222,
+        e: -2
+      }).should.eql('ae080000000000000000000000003c30');
+      writeDec128({
+        s: 1,
+        m: '10141919503094329964824243895208055',
+        e: 0
+      }).should.eql('7708530509f401027708530509f44130');
+      writeDec128({
+        s: 1,
+        m: '10384593717069655257060992658440191',
+        e: 8159
+      }).should.eql('ffffffffffffffffffffffffffffff6f');
+      writeDec128({
+        s: 1,
+        m: 990000,
+        e: -5
+      }).should.eql('301b0f00000000000000000000003630');
     });
 
   });

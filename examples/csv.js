@@ -23,15 +23,16 @@ var path = require('path');
 var url = require('url');
 var hdb = require('../index');
 
+var defaults = getDefaultParams();
 var params;
 if (process.argv.length < 3) {
-  params = getDefaultParams();
+  params = defaults;
 } else {
   params = url.parse(process.argv[2], true, true);
 }
-var hostname = params.hostname;
-var port = params.port;
-var auth = params.auth.split(':');
+var hostname = params.hostname || defaults.hostname;
+var port = params.port || defaults.port;
+var auth = (params.auth || defaults.auth).split(':');
 var user = auth[0];
 var password = auth[1];
 var query = util._extend({
@@ -92,6 +93,7 @@ function done(err) {
 }
 
 function createCsvStringifier(metadata) {
+  /* jshint evil:true */
   var header = metadata.map(function getName(column) {
     return column.columnDisplayName;
   }).join(';') + '\n';

@@ -17,7 +17,7 @@ var util = require('util');
 var client = require('./client');
 
 var sql =
-  'select top 32 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
+  'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
 
 client.exec(sql, done);
 

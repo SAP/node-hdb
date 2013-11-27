@@ -13,14 +13,13 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('util');
 var client = require('./client');
 var hdb = require('../index');
 
 var sql =
   'select top 50 SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE from TABLES';
 client.exec(sql, false, function onexec(err, rs) {
-  rs.createArrayStream(256)
+  rs.createArrayStream()
     .once('error', function onerror(err) {
       done(err);
     })
@@ -33,7 +32,7 @@ client.exec(sql, false, function onexec(err, rs) {
     .pipe(hdb.createJSONStringifier()).pipe(process.stdout);
 });
 
-function done(err, rows) {
+function done(err) {
   client.end();
   if (err) {
     return console.error(err);
