@@ -163,7 +163,6 @@ client.execute('select A, B from TEST.NUMBERS oder by A', function(err, rs) {
 });
 ```
 
-
 Prepared Statement Execution
 ----------------------------
 
@@ -264,7 +263,7 @@ To run the unit tests as well as acceptance tests for _hdb_ you have to run:
 make test
 ```
 
-For the acceptance tests a database connection has to be established. Therefore you need to copy the configuration template [config.tpl.json](https://github.com/SAP/node-hdb/blob/master/test/lib/config.tpl.json) in the ```test/lib``` folder to ```config.json``` and change the connection data to yours.
+For the acceptance tests a database connection has to be established. Therefore you need to copy the configuration template [config.tpl.json](https://github.com/SAP/node-hdb/blob/master/test/lib/config.tpl.json) in the ```test/lib``` folder to ```config.json``` and change the connection data to yours. If the ```config.json``` file does not exist a local mock server is started.
 
 
 Running examples

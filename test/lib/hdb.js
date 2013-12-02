@@ -13,9 +13,11 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
-var util = lib.util;
-var db = require('./db');
-
-util.extend(exports, lib);
-util.extend(exports, db);
+var lib = require(process.env.HDB_COV ? '../../lib-cov' : '../../lib');
+exports.lib = lib;
+exports.Client = lib.Client;
+exports.Stringifier = lib.Stringifier;
+exports.createJSONStringifier = lib.createJSONStringifier;
+exports.createClient = function createClient(options) {
+  return new lib.Client(options);
+};

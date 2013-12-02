@@ -16,17 +16,15 @@
 
 var db = require('../lib').createDatabase();
 
-describe('Database', function () {
-  before(db.connect.bind(db));
-  after(db.disconnect.bind(db));
-  var client = db.client;
+describe('db', function () {
+  before(db.init.bind(db));
+  after(db.end.bind(db));
+  describe('DUMMY  ', function () {
+    describe('direct execute of Query', function () {
 
-  describe('Table DUMMY', function () {
-    describe('#Query', function () {
-
-      it('should return a single dummy row', function (done) {
+      it('should return a single row', function (done) {
         var sql = 'select * from DUMMY';
-        client.exec(sql, function (err, rows) {
+        db.client.exec(sql, function (err, rows) {
           if (err) {
             return done(err);
           }
@@ -40,5 +38,4 @@ describe('Database', function () {
 
     });
   });
-
 });

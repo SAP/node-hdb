@@ -19,19 +19,19 @@ var Writable = require('stream').Writable;
 var ResultSet = require('../lib').ResultSet;
 var db = require('../lib').createDatabase();
 
-describe('Database', function () {
-  before(db.connect.bind(db));
-  after(db.disconnect.bind(db));
+describe('db', function () {
+  before(db.init.bind(db));
+  after(db.end.bind(db));
   var client = db.client;
 
-  describe('Table NUMBERS', function () {
-    before(db.createNumbers.bind(db, [0, 100]));
+  describe('NUMBERS', function () {
+    before(db.createNumbers.bind(db));
     after(db.dropNumbers.bind(db));
 
-    describe('#Execute', function () {
+    describe('direct execute of Query', function () {
 
       it('should return all numbers via callback', function (done) {
-        var sql = 'select * from NUMBERS order by A';
+        var sql = 'select * from numbers order by A';
         client.exec(sql, function (err, rows) {
           if (err) {
             return done(err);
@@ -44,7 +44,7 @@ describe('Database', function () {
       });
 
       it('should return all numbers via fetch', function (done) {
-        var sql = 'select * from NUMBERS order by A';
+        var sql = 'select * from numbers order by A';
         client.exec(sql, false, function (err, rs) {
           if (err) {
             return done(err);
@@ -61,7 +61,7 @@ describe('Database', function () {
       });
 
       it('should return all numbers via createReadStream', function (done) {
-        var sql = 'select * from NUMBERS order by A';
+        var sql = 'select * from numbers order by A';
         client.exec(sql, false, function onexec(err, rs) {
           if (err) {
             return done(err);
@@ -84,7 +84,7 @@ describe('Database', function () {
       });
 
       it('should return all numbers via pipe', function (done) {
-        var sql = 'select * from NUMBERS order by A';
+        var sql = 'select * from numbers order by A';
         client.exec(sql, false, function onexec(err, rs) {
           if (err) {
             return done(err);
@@ -105,7 +105,7 @@ describe('Database', function () {
               .have.length(db.numbers.length)
               .and.eql(db.numbers);
             done();
-          })
+          });
           readable.once('error', function onreadable() {
             done(err);
           }).pipe(writable);
@@ -113,26 +113,27 @@ describe('Database', function () {
       });
     });
 
-    describe('#ProcedureWithResult', function () {
-      before(db.createReadNumbersBetween.bind(db));
-      after(db.dropReadNumbersBetween.bind(db));
+    describe('direct execute of ProcView with parameters',
+      function () {
+        before(db.createReadNumbersProc.bind(db));
+        after(db.dropReadNumbersProc.bind(db));
 
-      it('should read the numbers between 3 and 5', function (done) {
-        var sql =
-          'select * from READ_NUMBERS_BETWEEN_VIEW with parameters (' +
-          '\'placeholder\' = (\'$$a$$\', \'3\'),' +
-          '\'placeholder\' = (\'$$b$$\', \'5\'))';
-        client.exec(sql, function (err, rows) {
-          if (err) {
-            return done(err);
-          }
-          rows.should
-            .have.length(3)
-            .and.eql(db.numbers.slice(3, 6));
-          done();
+        it('should return the numbers between 3 and 5', function (done) {
+          var sql =
+            'select * from READ_NUMBERS_BETWEEN_VIEW with parameters (' +
+            '\'placeholder\' = (\'$$a$$\', \'3\'),' +
+            '\'placeholder\' = (\'$$b$$\', \'5\'))';
+          client.exec(sql, function (err, rows) {
+            if (err) {
+              return done(err);
+            }
+            rows.should
+              .have.length(3)
+              .and.eql(db.numbers.slice(3, 6));
+            done();
+          });
         });
       });
-    });
 
   });
 });
