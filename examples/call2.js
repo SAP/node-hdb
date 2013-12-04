@@ -24,37 +24,39 @@ function connect(cb) {
 }
 
 function init(cb) {
-  var sql = 'drop procedure PROC_ECHO';
+  var sql = 'drop procedure PROC_READ_OBJECT';
   client.exec(sql, function onexec() {
     // ignore error
     var sql = [
-      'create procedure PROC_ECHO (in input nclob, out output nclob)',
-      'language sqlscript',
-      'reads sql data as',
-      'begin',
-      '  output := :input;',
-      'end;'
+      'CREATE PROCEDURE PROC_READ_OBJECT (',
+      '  in package_id nvarchar(255),',
+      '  in object_name nvarchar(255),',
+      '  in object_suffix nvarchar(255),',
+      '  out cdata nclob, out bdata blob)',
+      'LANGUAGE SQLSCRIPT AS',
+      'CURSOR c_cursor (a nvarchar(255), b nvarchar(255), c nvarchar(255)) FOR',
+      '   SELECT CDATA, BDATA FROM _SYS_REPO.ACTIVE_OBJECT',
+      '   WHERE package_id = :a and object_name = :b and object_suffix = :c;',
+      'BEGIN',
+      '  OPEN c_cursor(:package_id, :object_name, :object_suffix);',
+      '  FETCH c_cursor INTO cdata, bdata;',
+      '  CLOSE c_cursor;',
+      'END;'
     ].join('\n');
     client.exec(sql, cb);
   });
 }
 
 function prepare(cb) {
-  var sql = 'call PROC_ECHO (?, ?)';
+  var sql = 'call PROC_READ_OBJECT(?, ?, ?, ?, ?)';
   client.prepare(sql, cb);
 }
 
 function callProc(statement, cb) {
-  var input = {
-    foo: 'foo',
-    bar: 'bar'
-  };
-  console.log('INPUT:', util.inspect(input, {
-    depth: 4,
-    colors: true
-  }));
   var values = {
-    INPUT: new Buffer(JSON.stringify(input), 'ascii')
+    PACKAGE_ID: 'sap.ui5.1.resources',
+    OBJECT_NAME: 'jquery-1.7.1',
+    OBJECT_SUFFIX: 'js'
   };
   statement.exec(values, function onexec(err, parameters) {
     statement.drop();
@@ -67,9 +69,5 @@ function done(err, parameters) {
   if (err) {
     return console.error('error', err);
   }
-  var output = JSON.parse(parameters.OUTPUT.toString('ascii'));
-  console.log('OUTPUT:', util.inspect(output, {
-    depth: 4,
-    colors: true
-  }));
+  console.log(parameters.CDATA.toString('utf8'));
 }
