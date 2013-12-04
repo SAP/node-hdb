@@ -25,7 +25,7 @@ var NUMBERS = require('../fixtures/numbers');
 
 var options;
 try {
-  options = JSON.parse(fs.readFileSync(path.join(__dirname, '_config.json')));
+  options = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
 } catch (err) {
   options = null;
 }
