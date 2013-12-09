@@ -13,10 +13,17 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var common = require('../lib/hdb').lib.common;
+
+var lib = require('../lib/hdb').lib;
+var bignum = lib.util.bignum;
+var common = lib.common;
 var SegmentKind = common.SegmentKind;
 var FunctionCode = common.FunctionCode;
 var PartKind = common.PartKind;
+var LobSourceType = common.LobSourceType;
+var LobOptions = common.LobOptions;
+
+var IMAGES = require('./images');
 
 exports['select * from dummy'] = {
   kind: SegmentKind.REPLY,
@@ -117,3 +124,54 @@ exports['select * from read_numbers_between_view with parameters (' +
     )
   }]
 };
+
+exports['select * from images order by name'] = {
+  kind: SegmentKind.REPLY,
+  functionCode: FunctionCode.SELECT,
+  parts: [{
+    kind: PartKind.RESULT_SET_METADATA,
+    argumentCount: 2,
+    attributes: 0,
+    buffer: new Buffer(
+      '020900001000000000000000ffffffff0700000007000000021b0000ffff0000' +
+      '0c000000ffffffff130000001300000006494d41474553044e414d4506494d41' +
+      '474553054244415441', 'hex')
+  }, {
+    kind: PartKind.RESULT_SET_ID,
+    argumentCount: 1,
+    attributes: 0,
+    buffer: new Buffer(
+      '0400000000000000', 'hex')
+  }, {
+    kind: PartKind.RESULT_SET,
+    argumentCount: IMAGES.length,
+    attributes: 1,
+    buffer: Buffer.concat(IMAGES.map(function imgToBuffer(img, index) {
+      return getImageBuffer(index, 1024);
+    }))
+  }]
+};
+
+
+function getImageBuffer(i, length) {
+  /* jshint bitwise:false */
+  length = length || 1024;
+  var name = new Buffer(' ' + IMAGES[i].NAME, 'ascii');
+  name[0] = name.length - 1;
+  var bdata = IMAGES[i].BDATA;
+  var chunkLength = Math.min(length, bdata.length);
+  var chunk = bdata.slice(0, chunkLength);
+  var buffer = new Buffer(32);
+  buffer[0] = LobSourceType.BLOB;
+  if (chunk.length === bdata.length) {
+    buffer[1] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
+  } else {
+    buffer[1] = LobOptions.DATA_INCLUDED;
+  }
+  buffer.fill(0, 2, 4);
+  bignum.writeUInt64LE(buffer, bdata.length, 4);
+  bignum.writeUInt64LE(buffer, bdata.length, 12);
+  bignum.writeUInt64LE(buffer, i, 20);
+  buffer.writeUInt32LE(chunkLength, 28);
+  return Buffer.concat([name, buffer, chunk], name.length + 32 + chunkLength);
+}

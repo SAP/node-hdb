@@ -22,6 +22,7 @@ var Client = lib.Client;
 var util = lib.util;
 
 var NUMBERS = require('../fixtures/numbers');
+var IMAGES = require('../fixtures/images');
 
 var options;
 try {
@@ -70,18 +71,28 @@ AbstractDB.prototype.dropNumbers = function dropNumbers(cb) {
   doNothing(cb);
 };
 
-AbstractDB.prototype.createReadNumbersProc = function createReadNumbersProc(
-  cb) {
+AbstractDB.prototype.createImages = function createImages(cb) {
+  this.images = IMAGES.slice(0);
   doNothing(cb);
 };
 
-AbstractDB.prototype.dropReadNumbersProc = function dropReadNumbersProc(
-  cb) {
+AbstractDB.prototype.dropImages = function dropImages(cb) {
+  this.images = undefined;
+  doNothing(cb);
+};
+
+
+AbstractDB.prototype.createReadNumbersProc = function createReadNumbersProc(cb) {
+  doNothing(cb);
+};
+
+AbstractDB.prototype.dropReadNumbersProc = function dropReadNumbersProc(cb) {
   doNothing(cb);
 };
 
 exports.createDatabase = createDatabase;
 exports.NUMBERS = NUMBERS;
+exports.IMAGES = IMAGES;
 
 util.inherits(Database, AbstractDB);
 
@@ -89,26 +100,59 @@ function Database(options) {
   AbstractDB.call(this, options);
 }
 
-Database.prototype.createNumbers = function createNumbers(cb) {
-  var self = this;
-  this.numbers = NUMBERS.slice(0);
+Database.prototype.createImages = function createImages(cb) {
+  this.images = IMAGES.slice(0);
+  var values = this.images.map(function toParameters(img) {
+    return [img.NAME, img.BDATA];
+  });
+  this.createTable('IMAGES', ['NAME varchar(16)', 'BDATA blob'], values, cb);
+};
 
-  function createTable(callback) {
-    var sql = 'drop table NUMBERS cascade';
+Database.prototype.dropImages = function dropImages(cb) {
+  this.images = undefined;
+  this.dropTable('IMAGES', cb);
+};
+
+Database.prototype.createNumbers = function createNumbers(cb) {
+  this.numbers = NUMBERS.slice(0);
+  var values = this.numbers.map(function toParameters(num) {
+    return [num.A, num.B];
+  });
+  this.createTable('NUMBERS', ['a int', 'b varchar(16)'], values, cb);
+};
+
+Database.prototype.dropNumbers = function dropNumbers(cb) {
+  this.numbers = undefined;
+  this.dropTable('NUMBERS', cb);
+};
+
+Database.prototype.createTable = function createTable(tablename, columns,
+  values, cb) {
+  var self = this;
+  tablename = tablename.toUpperCase();
+  var createCols = columns.join(',');
+  var insertCols = '';
+  for (var i = 0; i < columns.length; i++) {
+    insertCols += ',?';
+  }
+  insertCols = insertCols.substring(1);
+
+  function dropAndCreateTable(callback) {
+    var sql = util.format('drop table %s cascade', tablename);
 
     function ondroptable() {
       // ignore err
-      var sql = 'create table NUMBERS (a int, b varchar(16))';
+      var sql = util.format('create table %s (%s)', tablename, createCols);
       self.client.exec(sql, callback);
     }
     self.client.exec(sql, ondroptable);
   }
 
-  function insertNumbers(statement) {
-    function createNumberInsertTask(n) {
-      return statement.exec.bind(statement, [n.A, n.B]);
+  function insertInto(statement) {
+    function createInsertTask(params) {
+      return statement.exec.bind(statement, params);
     }
-    var tasks = self.numbers.map(createNumberInsertTask);
+    var tasks = values.map(createInsertTask);
 
     function onresult(err) {
       statement.drop();
@@ -121,22 +165,22 @@ Database.prototype.createNumbers = function createNumbers(cb) {
     if (err) {
       return cb(err);
     }
-    insertNumbers(statement);
+    insertInto(statement);
   }
 
   function ontable(err) {
     if (err) {
       return cb(err);
     }
-    var sql = 'insert into NUMBERS values (?, ?)';
+    var sql = util.format('insert into %s values (%s)', tablename, insertCols);
     self.client.prepare(sql, onprepare);
   }
-  createTable(ontable);
+  dropAndCreateTable(ontable);
 };
 
-Database.prototype.dropNumbers = function dropNumbers(cb) {
-  this.numbers = undefined;
-  var sql = 'drop table NUMBERS cascade';
+Database.prototype.dropTable = function dropTable(tablename, cb) {
+  tablename = tablename.toUpperCase();
+  var sql = util.format('drop table %s cascade', tablename);
   this.client.exec(sql, cb);
 };
 

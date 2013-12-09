@@ -13,7 +13,6 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('util');
 var async = require('async');
 var client = require('./client');
 
