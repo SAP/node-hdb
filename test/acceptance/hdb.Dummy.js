@@ -14,7 +14,8 @@
 'use strict';
 /* jshint undef:false */
 
-var db = require('../lib').createDatabase();
+var lib = require('../lib');
+var db = lib.createDatabase();
 
 describe('db', function () {
   before(db.init.bind(db));

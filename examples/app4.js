@@ -38,7 +38,7 @@ function pipeRows(rs, cb) {
   function finish(err) {
     stream.removeListener('error', finish);
     stream.removeListener('end', onend);
-    stringifier.removeListener('finish', finish)
+    stringifier.removeListener('finish', finish);
     cb(err);
   }
   stream.on('error', finish);

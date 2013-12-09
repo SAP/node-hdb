@@ -38,7 +38,7 @@ function fetchRows(rs, cb) {
     stream.removeListener('error', finish);
     stream.removeListener('end', onend);
     stream.removeListener('readable', onreadable);
-    cb(err, rows)
+    cb(err, rows);
   }
   stream.on('error', finish);
 
@@ -51,7 +51,11 @@ function fetchRows(rs, cb) {
   stream.on('end', onend);
 
   function onreadable() {
-    rows.push(this.read());
+    /* jshint validthis:true */
+    var chunk = this.read();
+    if (chunk) {
+      rows.push(chunk);
+    }
   }
   stream.on('readable', onreadable);
 }

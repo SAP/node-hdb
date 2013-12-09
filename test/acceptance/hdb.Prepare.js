@@ -15,8 +15,9 @@
 /* jshint undef:false, expr:true */
 
 var async = require('async');
-var Statement = require('../lib').Statement;
-var db = require('../lib').createDatabase();
+var lib = require('../lib');
+var Statement = lib.Statement;
+var db = lib.createDatabase();
 
 describe('db', function () {
   before(db.init.bind(db));

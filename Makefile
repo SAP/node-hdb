@@ -6,8 +6,8 @@ check: test
 test: 
 	@NODE_ENV=test ./node_modules/.bin/mocha \
 		--reporter $(REPORTER) \
-		--recursive \
-		--bail
+		--bail \
+		--recursive 
 
 test-unit:
 	@NODE_ENV=test ./node_modules/.bin/mocha \

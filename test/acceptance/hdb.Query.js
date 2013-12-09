@@ -14,10 +14,12 @@
 'use strict';
 /* jshint undef:false, expr:true */
 
-var Readable = require('stream').Readable;
-var Writable = require('stream').Writable;
-var ResultSet = require('../lib').ResultSet;
-var db = require('../lib').createDatabase();
+var lib = require('../lib');
+var stream = lib.util.stream;
+var Readable = stream.Readable;
+var Writable = stream.Writable;
+var ResultSet = lib.ResultSet;
+var db = lib.createDatabase();
 
 describe('db', function () {
   before(db.init.bind(db));
@@ -67,13 +69,16 @@ describe('db', function () {
             return done(err);
           }
           rs.should.be.an.instanceof(ResultSet);
-          var readable = rs.createReadStream();
+          var readable = rs.createArrayStream();
           readable.should.be.an.instanceof(Readable);
           var rows = [];
           readable.once('error', function onerror() {
             done(err);
           }).on('readable', function onreadable() {
-            rows = rows.concat(this.read());
+            var chunk = this.read();
+            if (chunk) {
+              rows = rows.concat(chunk);
+            }
           }).once('end', function onend() {
             rows.should
               .have.length(db.numbers.length)
@@ -90,14 +95,14 @@ describe('db', function () {
             return done(err);
           }
           rs.should.be.an.instanceof(ResultSet);
-          var readable = rs.createReadStream();
+          var readable = rs.createObjectStream();
           readable.should.be.an.instanceof(Readable);
           var rows = [];
           var writable = new Writable({
             objectMode: true
           });
           writable._write = function (chunk, encoding, callback) {
-            rows = rows.concat(chunk);
+            rows.push(chunk);
             callback();
           };
           writable.once('finish', function onfinish() {
