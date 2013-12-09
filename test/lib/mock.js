@@ -33,6 +33,7 @@ DATA.executeDirect = require('../fixtures/mock.executeDirect');
 DATA.fetch = require('../fixtures/mock.fetch');
 DATA.prepare = require('../fixtures/mock.prepare');
 DATA.execute = require('../fixtures/mock.execute');
+DATA.lob = require('../fixtures/mock.readLob');
 
 exports.createServer = function createServer() {
   var server = module.exports = net.createServer();
@@ -101,8 +102,14 @@ function handleMessage(msg, context) {
   case MessageType.EXECUTE:
     segment = handleExecute(msg, context);
     break;
+  case MessageType.READ_LOB:
+    segment = handleReadLob(msg, context);
+    break;
   case MessageType.DROP_STATEMENT_ID:
-    segment = handleDropStatementID(msg, context);
+    segment = handleDropStatementID(msg);
+    break;
+  case MessageType.CLOSE_RESULT_SET:
+    segment = handleCloseResultSet(msg);
     break;
   default:
     throw new Error('Message type ' + msg.type + ' not supported');
@@ -231,6 +238,24 @@ function handleExecute(msg) {
 function handleDropStatementID(msg) {
   /* jshint unused:false */
   var segment = new Segment(SegmentKind.REPLY, FunctionCode.NIL);
+  return segment;
+}
+
+function handleCloseResultSet(msg) {
+  /* jshint unused:false */
+  var segment = new Segment(SegmentKind.REPLY, FunctionCode.NIL);
+  return segment;
+}
+
+function handleReadLob(msg, context) {
+  /* jshint unused:false */
+  var msgPart = msg.parts.filter(isKind.bind(PartKind.READ_LOB_REQUEST))[0];
+  var req = lib.data[PartKind.READ_LOB_REQUEST].read(msgPart);
+  var sd = DATA.lob.read(req);
+  var segment = new Segment(sd.kind, sd.functionCode);
+  sd.parts.forEach(function addPart(p) {
+    segment.push(new Part(p.kind, p.attributes, p.argumentCount, p.buffer));
+  });
   return segment;
 }
 

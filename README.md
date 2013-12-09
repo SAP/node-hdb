@@ -11,7 +11,7 @@ Install
 
 Install from npm:
 
-[![NPM](https://nodei.co/npm/hdb.png?compact=true)](https://npmjs.org/)
+[![NPM](https://nodei.co/npm/hdb.png?compact=true)](https://npmjs.org/package/hdb)
 
 or clone from the [GitHub repository](https://github.com/SAP/node-hdb) to run tests and examples locally:
 

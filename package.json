@@ -32,10 +32,11 @@
     "should": "~2.1.0",
     "mocha": "~1.14.0",
     "async": "~0.2.9",
+    "debuglog": "~0.0.2",
+    "readable-stream": "~1.1.9",
     "generic-pool": "~2.0.4",
     "fstream": "~0.1.24",
-    "concat-stream": "~1.2.0",
-    "debuglog": "~0.0.2"
+    "concat-stream": "~1.2.0"
   },
   "optionalDependencies": {}
 }

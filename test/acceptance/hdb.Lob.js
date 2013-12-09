@@ -12,7 +12,7 @@
 // either express or implied. See the License for the specific 
 // language governing permissions and limitations under the License.
 'use strict';
-/* jshint undef:false */
+/* jshint undef:false, expr:true */
 
 var lib = require('../lib');
 var db = lib.createDatabase();
@@ -20,19 +20,23 @@ var db = lib.createDatabase();
 describe('db', function () {
   before(db.init.bind(db));
   after(db.end.bind(db));
-  describe('DUMMY  ', function () {
+  var client = db.client;
+
+  describe('IMAGES', function () {
+    before(db.createImages.bind(db));
+    after(db.dropImages.bind(db));
+
     describe('direct execute of Query', function () {
 
-      it('should return a single row', function (done) {
-        var sql = 'select * from DUMMY';
-        db.client.exec(sql, function (err, rows) {
+      it('should return all images via callback', function (done) {
+        var sql = 'select * from images order by NAME';
+        client.exec(sql, function (err, rows) {
           if (err) {
             return done(err);
           }
-          rows.should.have.length(1);
-          rows[0].should.eql({
-            DUMMY: 'X'
-          });
+          rows.should
+            .have.length(db.images.length)
+            .and.eql(db.images);
           done();
         });
       });

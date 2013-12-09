@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('../lib');
+var lib = require('./lib');
 var PartKind = lib.common.PartKind;
 var Options = lib.data[PartKind.CONNECT_OPTIONS];
 

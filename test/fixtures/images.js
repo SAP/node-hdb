@@ -13,26 +13,13 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./lib');
-var PartKind = lib.common.PartKind;
-var Parameters = lib.data[PartKind.PARAMETERS];
+var fs = require('fs');
+var path = require('path');
 
-var data = require('./fixtures/parametersData');
-
-describe('Data', function () {
-
-  describe('#Parameters', function () {
-
-    it('should write default parameters', function () {
-      var params = Parameters.write({}, data.DEFAULT.values);
-      params.should.eql(data.DEFAULT.part);
-    });
-
-    it('should write all types', function () {
-      var params = Parameters.write({}, data.ALL_TYPES.values);
-      params.should.eql(data.ALL_TYPES.part);
-    });
-
-  });
-
-});
+module.exports = [{
+  NAME: 'locked.png',
+  BDATA: fs.readFileSync(path.join(__dirname, 'locked.png'))
+}, {
+  NAME: 'logo.png',
+  BDATA: fs.readFileSync(path.join(__dirname, 'logo.png'))
+}];
