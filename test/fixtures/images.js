@@ -18,8 +18,8 @@ var path = require('path');
 
 module.exports = [{
   NAME: 'locked.png',
-  BDATA: fs.readFileSync(path.join(__dirname, 'locked.png'))
+  BDATA: fs.readFileSync(path.join(__dirname, 'img', 'locked.png'))
 }, {
   NAME: 'logo.png',
-  BDATA: fs.readFileSync(path.join(__dirname, 'logo.png'))
+  BDATA: fs.readFileSync(path.join(__dirname, 'img', 'logo.png'))
 }];
