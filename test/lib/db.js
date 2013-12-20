@@ -32,7 +32,7 @@ try {
 }
 
 function createDatabase() {
-  if (!options) {
+  if (!options || process.env.HDB_MOCK) {
     return new MockDatabase();
   }
   return new Database(options);

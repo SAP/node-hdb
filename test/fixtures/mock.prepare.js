@@ -62,3 +62,22 @@ exports['call read_numbers_between (?, ?, ?)'] = {
       '01410142', 'hex')
   }]
 };
+
+exports['insert into images values (?, ?)'] = {
+  kind: SegmentKind.REPLY,
+  functionCode: FunctionCode.INSERT,
+  parts: [{
+    kind: PartKind.STATEMENT_ID,
+    argumentCount: 1,
+    attributes: 0,
+    buffer: new Buffer(
+      '0300000000000000', 'hex')
+  }, {
+    kind: PartKind.PARAMETER_METADATA,
+    argumentCount: 2,
+    attributes: 0,
+    buffer: new Buffer(
+      '02090100ffffffff1000000018000000021b0100ffffffff1000000008000000',
+      'hex')
+  }]
+}

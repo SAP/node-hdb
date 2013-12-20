@@ -22,4 +22,7 @@ module.exports = [{
 }, {
   NAME: 'logo.png',
   BDATA: fs.readFileSync(path.join(__dirname, 'img', 'logo.png'))
+}, {
+  NAME: 'sap.jpg',
+  BDATA: fs.readFileSync(path.join(__dirname, 'img', 'sap.jpg'))
 }];

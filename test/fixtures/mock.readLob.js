@@ -25,7 +25,7 @@ var LobOptions = common.LobOptions;
 var IMAGES = require('./images');
 
 exports.read = function read(req) {
-  var i = bignum.readUInt64LE(req.locatorId, 0);
+  var id = bignum.readUInt64LE(req.locatorId, 0);
   return {
     kind: SegmentKind.REPLY,
     functionCode: FunctionCode.READ_LOB,
@@ -33,22 +33,27 @@ exports.read = function read(req) {
       kind: PartKind.READ_LOB_REPLY,
       argumentCount: 1,
       attributes: 0,
-      buffer: getImageBuffer(i, req.offset, req.length)
+      buffer: getBuffer(id, req.offset, req.length)
     }]
   };
 };
 
-function getImageBuffer(i, offset, length) {
+function getBuffer(id, offset, length) {
   /* jshint bitwise:false, unused:false */
   offset = offset || 1025;
-  offset -= 1;
-  var bdata = IMAGES[i].BDATA;
-  var chunk = bdata.slice(offset);
-  var chunkLength = chunk.length;
+  var bdata = IMAGES[id].BDATA;
   var buffer = new Buffer(16);
-  bignum.writeUInt64LE(buffer, i, 0);
-  buffer[8] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
-  buffer.writeUInt32LE(chunkLength, 9);
-  buffer.fill(0, 13, 16);
-  return Buffer.concat([buffer, chunk], chunkLength + 16);
+  bignum.writeUInt64LE(buffer, id, 0);
+  var start = offset - 1;
+  var end = start + length;
+  if (end < bdata.length) {
+    buffer[8] = LobOptions.DATA_INCLUDED;
+  } else {
+    buffer[8] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
+    end = bdata.length;
+  }
+  var chunk = bdata.slice(start, end);
+  buffer.writeUInt32LE(chunk.length, 9);
+  buffer.fill(0x00, 13);
+  return Buffer.concat([buffer, chunk], buffer.length + chunk.length);
 }

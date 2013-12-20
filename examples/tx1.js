@@ -75,6 +75,21 @@ function insert(statement, cb) {
   async.series(tasks, done);
 }
 
+function transaction(cb) {
+  client.setAutoCommit(false);
+  async.series([
+    client.exec.bind(client, "insert into NUMBERS values (1, 'one')"),
+    client.exec.bind(client, "insert into NUMBERS values (2, 'two')")
+  ], function (err) {
+    if (err) {
+      client.rollback(cb);
+    } else {
+      client.commit(cb);
+    }
+    client.setAutoCommit(true);
+  });
+}
+
 function select(cb) {
   var sql = 'select * from PERSONS';
   client.exec(sql, cb);
@@ -82,6 +97,7 @@ function select(cb) {
 
 function update(cb) {
   function done(err) {
+    /* jshint unused:false */
     // force rollback
     client.rollback(cb);
   }

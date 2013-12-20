@@ -19,6 +19,9 @@ test-acceptance:
 		--bail \
 		test/acceptance/*.js
 
+test-mock: 
+	@HDB_MOCK=1 $(MAKE) -s test
+
 test-cov: lib-cov
 	@HDB_COV=1 $(MAKE) -s test REPORTER=html-cov > coverage.html 
 

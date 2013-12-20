@@ -118,3 +118,46 @@ exports['0200000000000000'] = {
     }]
   }
 };
+
+exports['0300000000000000'] = {
+  'logo.1.png': {
+    kind: SegmentKind.REPLY,
+    functionCode: FunctionCode.INSERT,
+    parts: [{
+      kind: PartKind.ROWS_AFFECTED,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        '01000000', 'hex')
+    }, {
+      kind: PartKind.TRANSACTION_FLAGS,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        '011c01', 'hex')
+    }]
+  },
+  'sap.2.jpg': {
+    kind: SegmentKind.REPLY,
+    functionCode: FunctionCode.INSERT,
+    parts: [{
+      kind: PartKind.ROWS_AFFECTED,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        '01000000', 'hex')
+    }, {
+      kind: PartKind.WRITE_LOB_REPLY,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        '0300000000000000', 'hex')
+    }, {
+      kind: PartKind.TRANSACTION_FLAGS,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        '041c01', 'hex')
+    }]
+  }
+}

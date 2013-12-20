@@ -128,11 +128,7 @@ client.exec('insert into TEST.NUMBERS values (1, \'one\')', function (err, affec
 
 ### Query
 
-The client has two functions for query execution.  
-
-#### `exec`
-
-The `exec` function is the short form. In this case all selected `rows` are fetched and returned in the callback. The `resultSet` is automatically closed and all `Lobs` are completely read and returned as Buffer objects.
+The `exec` function is a convinient way to completely retrieve the result of a query. In this case all selected `rows` are fetched and returned in the callback. The `resultSet` is automatically closed and all `Lobs` are completely read and returned as Buffer objects. If streaming of the results is required you will have to use the `execute` function. This is described in section [Streaming results](#streaming-results).
 
 ```js
 client.exec('select A, B from TEST.NUMBERS oder by A', function(err, rows) {
@@ -140,26 +136,6 @@ client.exec('select A, B from TEST.NUMBERS oder by A', function(err, rows) {
     return console.error('Error:', err);
   } 
   console.log('Rows:', rows);  
-});
-```
-
-#### `execute`
-
-The `execute` function is the long form. In this case the `resultSet` object is returned in the callback. The `resultSet` object allows you to create an object based `row` stream or an array based `rows` stream which can be piped to an writer object. Don't forget to close the resultset in this case. Take a look at the example `app4` for further details. 
- 
-```js
-client.execute('select A, B from TEST.NUMBERS oder by A', function(err, rs) {
-  if (err) {
-    return console.error('Error:', err);
-  } 	
-  rs.setFetchSize(2048);
-  rs.createObjectStream()
-    .pipe(new MyWriteStream())
-    .on('finish', function (){
-      if (!rs.closed) {
-       rs.close();
-      }
-    });
 });
 ```
 
@@ -247,6 +223,88 @@ statement.drop(function(err){
 ```
 The callback is optional in this case.
 
+Streaming results
+---------------
+
+If you use the `execute` function of client or statement instead of the `exec` function, a `resultSet` object is returned in the callback instead of an array of all rows. The `resultSet` object allows you to create an object based `row` stream or an array based stream of `rows` which can be piped to an writer object. Don't forget to close the `resultSet` if you use the `execute` function. 
+ 
+```js
+client.execute('select A, B from TEST.NUMBERS oder by A', function(err, rs) {
+  if (err) {
+    return console.error('Error:', err);
+  } 	
+  rs.setFetchSize(2048);
+  rs.createObjectStream()
+    .pipe(new MyWriteStream())
+    .on('finish', function (){
+      if (!rs.closed) {
+       rs.close();
+      }
+    });
+});
+```
+Take a look at the example [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js) for further details. 
+
+Transaction handling
+---------------
+
+The default behavior is that each statement is automatically commited. If you want to manually control `commit ` and `rollback` of a transaction, you can do this by calling `setAutoCommit(false)` on the client object.
+
+```js
+function execTransaction(cb) {
+  client.setAutoCommit(false);
+  async.series([
+    client.exec.bind(client, "insert into NUMBERS values (1, 'one')"),
+    client.exec.bind(client, "insert into NUMBERS values (2, 'two')")
+  ], function (err) {
+    if (err) {
+      client.rollback(function(err){
+        if (err) {
+          err.code = 'EROLLBACK';
+          return cb(err);
+        }
+        cb(null, false);
+      });
+    } else {
+      client.commit(function(commitError){
+        if (err) {
+          err.code = 'ECOMMIT';
+          return cb(err);
+        }
+        cb(null, true);
+      });
+    }
+    client.setAutoCommit(true);
+  });
+}
+
+execTransaction(function(err, ok){
+  if (err) {
+    return console.error('Commit or Rollback error', err);
+  }
+  if (ok) {
+    console.log('Commited'); 
+  } else {
+    console.log('Rolled back'); 
+  }
+})
+
+```
+
+Take a look at the example [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js) for further details. 
+
+Streaming Large Objects (LOBs)
+-------------
+
+### Read Streams
+
+Reading large object as stream can be done if you use the `execute` method of client or statement. In this case for all LOB columns a [Lob](https://github.wdf.sap.corp/d021332/node-hdb/blob/master/lib/protocol/Lob.js#L74-L89) object is returned. You can call `createReadStream` or `read` in order create a readable stream or to read the LOB completely. 
+
+### Write Streams
+
+Writing large objects is automatically done. You just have to pass instance of [`Readable`](http://nodejs.org/api/stream.html#stream_class_stream_readable_1) or a Buffer oobject as parameter.
+
+Take a look at the example [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js) for further details. 
 
 Running tests
 -------------
@@ -278,10 +336,12 @@ Also, for the examples you need a valid a ```config.json``` in the ```test/lib``
 - [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js): Pipe row into JSON-Transform and to `stdout`.
 - [app5](https://github.com/SAP/node-hdb/blob/master/examples/app5.js): Stream XS repository into the filesystem.
 - [app6](https://github.com/SAP/node-hdb/blob/master/examples/app6.js): Stream from the filesystem into a db table.
+- [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js): Insert a row with a large image into a db table (uses WriteLobRequest and Transaction internally).
 - [call1](https://github.com/SAP/node-hdb/blob/master/examples/call1.js): Call stored procedure. 
+- [call2](https://github.com/SAP/node-hdb/blob/master/examples/call2.js): Call stored procedure with lob input and output parameter.
+- [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js): Transaction handling (shows how to use commit and rollback).  
 - [csv](https://github.com/SAP/node-hdb/blob/master/examples/csv.js): Stream a db table into csv file.
 - [server](https://github.com/SAP/node-hdb/blob/master/examples/server.js): Stream rows into http response `http://localhost:1337/{schema}/{tablename}?top={top}`
-
 
 To call e.g. the first example:
 
@@ -291,8 +351,6 @@ node examples/app1
 
 Todo
 ----
-* Transaction handling
-* Support for (streamed) WriteLob requests
 * Improve documentation of the client api    
 * Improve error handling
 * SAML Authentication support

@@ -26,7 +26,7 @@ var fstream = require('fstream');
 var concatStream = require('concat-stream');
 
 var packageId = process.argv[2] || 'sap.hana.xs.ui.images';
-var dirname = path.join(os.tmpdir(), '_SYS_REPO', packageId.replace(/\./g, '/'));
+var dirname = path.join(os.tmpDir(), '_SYS_REPO', packageId.replace(/\./g, '/'));
 var schema = client.get('user');
 
 async.waterfall([connect, init, prepare, copyDir], done);

@@ -22,7 +22,6 @@ var async = require('async');
 var client = require('./client');
 var schema = client.get('user');
 var tmpdir = os.tmpDir();
-console.log(tmpdir);
 var dirname = path.join(__dirname, '..', 'test', 'fixtures', 'img');
 
 async.waterfall([connect, init, prepare, insert, select, fetch, write], done);
@@ -49,8 +48,8 @@ function createTable(cb) {
     'create column table TEST_BLOBS (',
     '"ID"     INT NOT NULL,',
     '"NAME"   NVARCHAR(256) NOT NULL,',
-    '"LARGE"  BLOB ST_MEMORY_LOB,',
-    '"SMALL"  BLOB ST_MEMORY_LOB,',
+    '"IMG"  BLOB ST_MEMORY_LOB,',
+    '"LOGO"  BLOB ST_MEMORY_LOB,',
     '"DESCR"  NCLOB ST_MEMORY_LOB,',
     'PRIMARY KEY ("ID"))'
   ].join('\n');
@@ -64,10 +63,11 @@ function prepare(cb) {
 
 function insert(statement, cb) {
   console.time('time');
-  var params = [1, 'sap'];
-  params.push(fs.createReadStream(path.join(dirname, 'sap-large.jpg')));
-  params.push(fs.createReadStream(path.join(dirname, 'sap-small.jpg')));
-  params.push(new Buffer('Hello World', 'utf8'));
+  var params = [1, 'SAP AG'];
+  params.push(fs.createReadStream(path.join(dirname, 'sap.jpg')));
+  params.push(fs.createReadStream(path.join(dirname, 'logo.png')));
+  params.push(new Buffer('SAP headquarters located in Walldorf, Germany',
+    'ascii'));
 
   statement.exec(params, function statementExecuted(err, rowsAffected) {
     /* jshint unused:false */
@@ -112,8 +112,8 @@ function fetch(rs, cb) {
 
 function write(row, cb) {
   async.series([
-    writeFile.bind(row.LARGE, 'sap-large.jpg'),
-    writeFile.bind(row.SMALL, 'sap-small.jpg'),
+    writeFile.bind(row.IMG, 'sap.jpg'),
+    writeFile.bind(row.LOGO, 'logo.png'),
     writeFile.bind(row.DESCR, 'sap-description.txt'),
   ], cb);
 }
@@ -128,6 +128,7 @@ function writeFile(filename, cb) {
     writeStream.removeListener('error', done);
     writeStream.removeListener('finish', onfinish);
     cb(err);
+    console.log(filename)
   }
 
   function onfinish() {

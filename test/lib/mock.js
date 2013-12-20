@@ -34,6 +34,7 @@ DATA.fetch = require('../fixtures/mock.fetch');
 DATA.prepare = require('../fixtures/mock.prepare');
 DATA.execute = require('../fixtures/mock.execute');
 DATA.lob = require('../fixtures/mock.readLob');
+DATA.writeLob = require('../fixtures/mock.writeLob');
 
 exports.createServer = function createServer() {
   var server = module.exports = net.createServer();
@@ -51,6 +52,7 @@ function handleConnection(socket) {
     packetCount: undefined,
     fetchNext: {}
   };
+  var buffer = null;
   socket.on('error', function onerror(err) {
     console.log('socket error', err);
   });
@@ -66,9 +68,24 @@ function handleConnection(socket) {
       socket.write(chunk.slice(4, 4 + 8));
       return;
     }
-    context.sessionId = bignum.readUInt64LE(chunk, 0);
-    context.packetCount = chunk.readUInt32LE(8);
-    handleMessage.call(socket, readMessage(chunk, 32), context);
+    if (buffer === null) {
+      context.sessionId = bignum.readUInt64LE(chunk, 0);
+      context.packetCount = chunk.readUInt32LE(8);
+      buffer = {
+        size: chunk.readUInt32LE(12),
+        length: chunk.length - 32,
+        chunks: [chunk.slice(32)]
+      };
+    } else {
+      buffer.length += chunk.length;
+      buffer.chunks.push(chunk);
+    }
+    if (buffer.length < buffer.size) {
+      return;
+    }
+    chunk = Buffer.concat(buffer.chunks, buffer.length);
+    buffer = null;
+    handleMessage.call(socket, readMessage(chunk, 0), context);
   });
 }
 
@@ -105,11 +122,17 @@ function handleMessage(msg, context) {
   case MessageType.READ_LOB:
     segment = handleReadLob(msg, context);
     break;
+  case MessageType.WRITE_LOB:
+    segment = handleWriteLob(msg, context);
+    break;
   case MessageType.DROP_STATEMENT_ID:
     segment = handleDropStatementID(msg);
     break;
   case MessageType.CLOSE_RESULT_SET:
     segment = handleCloseResultSet(msg);
+    break;
+  case MessageType.COMMIT:
+    segment = handleCommit(msg);
     break;
   default:
     throw new Error('Message type ' + msg.type + ' not supported');
@@ -141,7 +164,6 @@ function handleAuthenticate(msg) {
   segment.push(part);
   return segment;
 }
-
 
 function handleDisconnect(msg) {
   /* jshint unused:false */
@@ -226,13 +248,28 @@ function handleExecute(msg) {
   var idPart = msg.parts.filter(isKind.bind(PartKind.STATEMENT_ID))[0];
   var statementId = idPart.buffer.toString('hex');
   var paramsPart = msg.parts.filter(isKind.bind(PartKind.PARAMETERS))[0];
-  var params = paramsPart.buffer.toString('hex');
-  var sd = DATA.execute[statementId][params];
+  var sd = getStatementData(statementId, paramsPart.buffer);
   var segment = new Segment(sd.kind, sd.functionCode);
   sd.parts.forEach(function addPart(p) {
     segment.push(new Part(p.kind, p.attributes, p.argumentCount, p.buffer));
   });
   return segment;
+}
+
+function getStatementData(statementId, buffer) {
+  var statement = DATA.execute[statementId];
+  var key;
+  var start, end;
+  switch (statementId) {
+  case '0300000000000000':
+    start = 2;
+    end = start + buffer[1];
+    key = buffer.slice(start, end).toString('ascii');
+    break;
+  default:
+    key = buffer.toString('hex');
+  }
+  return statement[key];
 }
 
 function handleDropStatementID(msg) {
@@ -256,6 +293,33 @@ function handleReadLob(msg, context) {
   sd.parts.forEach(function addPart(p) {
     segment.push(new Part(p.kind, p.attributes, p.argumentCount, p.buffer));
   });
+  return segment;
+}
+
+function handleWriteLob(msg, context) {
+  /* jshint unused:false */
+  var msgPart = msg.parts.filter(isKind.bind(PartKind.WRITE_LOB_REQUEST))[0];
+  var sd = getWriteLobData(msgPart.buffer);
+  var segment = new Segment(sd.kind, sd.functionCode);
+  sd.parts.forEach(function addPart(p) {
+    segment.push(new Part(p.kind, p.attributes, p.argumentCount, p.buffer));
+  });
+  return segment;
+}
+
+function getWriteLobData(buffer) {
+  var statementId = buffer.slice(0, 8).toString('hex');
+  var options = buffer[8];
+  return DATA.writeLob[statementId][options];
+}
+
+function handleCommit(msg) {
+  /* jshint unused:false */
+  var segment = new Segment(SegmentKind.REPLY, FunctionCode.COMMIT);
+  var part = new Part(PartKind.TRANSACTION_FLAGS);
+  part.argumentCount = 1;
+  part.buffer = new Buffer('011c01', 'hex');
+  segment.push(part);
   return segment;
 }
 
