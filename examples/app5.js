@@ -43,7 +43,7 @@ if (packageId.indexOf('*') === -1) {
   packageId = packageId.replace(/\*/g, '%');
 }
 var sql = util.format(tpl, fields.join(','), operator);
-var dirname = path.join(os.tmpdir(), '_SYS_REPO');
+var dirname = path.join(os.tmpDir(), '_SYS_REPO');
 
 async.waterfall([connect, prepare, execute, copyRepo], done);
 

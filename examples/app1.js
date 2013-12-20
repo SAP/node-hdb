@@ -20,10 +20,17 @@ var client = require('./client');
 var fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE'];
 var sql = util.format('select top 50 %s from TABLES', fields.join(','));
 
-async.waterfall([connect, executeAndfetchRows], done);
+async.waterfall([connect, executeAndfetchRows, disconnect], done);
 
 function connect(cb) {
   client.connect(cb);
+}
+
+function disconnect(rows, cb) {
+  function done(err) {
+    cb(err, rows);
+  }
+  client.disconnect(done);
 }
 
 function executeAndfetchRows(cb) {

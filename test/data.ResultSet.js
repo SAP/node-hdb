@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('../lib');
+var lib = require('./lib');
 var Parser = lib.Parser;
 
 var metadata = require('./fixtures/resultSetMetadata').TABLES;
@@ -22,7 +22,6 @@ var data = require('./fixtures/resultSetData').TABLES;
 describe('Data', function () {
 
   describe('#ResultSet', function () {
-
 
     var count = data.part.argumentCount;
     var first = 0;

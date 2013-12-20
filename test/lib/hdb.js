@@ -13,26 +13,11 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var Segment = require('./Segment');
-var common = require('../common');
-var MessageType = common.MessageType;
-var PartKind = common.PartKind;
-
-module.exports = function fetchNext(options) {
-  var segment = new Segment(MessageType.FETCH_NEXT, {
-    commitImmediateley: true
-  });
-
-  // statementSequenceInfo
-  if (options.statementSequenceInfo) {
-    segment.add(PartKind.STATEMENT_CONTEXT, [options.statementSequenceInfo]);
-  }
-
-  // resultSetId
-  segment.add(PartKind.RESULT_SET_ID, options.resultSetId);
-
-  // fetchSize
-  segment.add(PartKind.FETCH_SIZE, options.fetchSize);
-
-  return segment;
+var lib = require(process.env.HDB_COV ? '../../lib-cov' : '../../lib');
+exports.lib = lib;
+exports.Client = lib.Client;
+exports.Stringifier = lib.Stringifier;
+exports.createJSONStringifier = lib.createJSONStringifier;
+exports.createClient = function createClient(options) {
+  return new lib.Client(options);
 };

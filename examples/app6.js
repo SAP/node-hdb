@@ -26,18 +26,13 @@ var fstream = require('fstream');
 var concatStream = require('concat-stream');
 
 var packageId = process.argv[2] || 'sap.hana.xs.ui.images';
-var dirname = path.join(os.tmpdir(), '_SYS_REPO', packageId.replace(/\./g, '/'));
+var dirname = path.join(os.tmpDir(), '_SYS_REPO', packageId.replace(/\./g, '/'));
 var schema = client.get('user');
 
-async.waterfall([connect, setSchema, init, prepare, copyDir], done);
+async.waterfall([connect, init, prepare, copyDir], done);
 
 function connect(cb) {
   client.connect(cb);
-}
-
-function setSchema(cb) {
-  var sql = util.format('set schema %s', schema);
-  client.exec(sql, cb);
 }
 
 function dropTable(cb) {

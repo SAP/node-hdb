@@ -15,6 +15,8 @@
 
 var lib = require('./lib');
 var request = lib.request;
+var common = lib.common;
+var MAX_SEGMENT_SIZE = common.MAX_PACKET_SIZE - common.PACKET_HEADER_LENGTH;
 var scramsha256 = lib.auth.SCRAMSHA256;
 
 describe('Request', function () {
@@ -37,7 +39,7 @@ describe('Request', function () {
     0x01, 0x00,
     0x00, 0x00, 0x00, 0x00,
     0x1a, 0x00, 0x00, 0x00,
-    0xc8, 0xff, 0x00, 0x00
+    0xc8, 0xff, 0x01, 0x00
   ]);
 
 
@@ -62,11 +64,13 @@ describe('Request', function () {
 
     it('should create an authenticate request',
       function () {
-        var req = request.authenticate(scramsha256, reqOptions);
+        var req = request.authenticate(scramsha256, {
+          authentication: reqOptions
+        });
         req.parts.should.have.length(1);
         req.parts[0].kind.should.equal(lib.common.PartKind.AUTHENTICATION);
         req.parts[0].args.should.eql(reqOptions);
-        req.toBuffer().should.eql(buffer);
+        req.toBuffer(MAX_SEGMENT_SIZE).should.eql(buffer);
       });
 
   });

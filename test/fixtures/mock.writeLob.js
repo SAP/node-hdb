@@ -13,19 +13,30 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var Segment = require('./Segment');
-var common = require('../common');
-var MessageType = common.MessageType;
+var common = require('../lib/hdb').lib.common;
+var SegmentKind = common.SegmentKind;
+var FunctionCode = common.FunctionCode;
 var PartKind = common.PartKind;
 
-module.exports = function authenticate(method, options) {
-  var segment = new Segment(MessageType.AUTHENTICATE);
-
-  // authentication
-  segment.add({
-    kind: PartKind.AUTHENTICATION,
-    module: method.Authentication
-  }, options.authentication || options);
-
-  return segment;
-};
+exports['0300000000000000'] = {
+  2: {
+    kind: SegmentKind.REPLY,
+    functionCode: FunctionCode.WRITE_LOB,
+    parts: [{
+      kind: PartKind.WRITE_LOB_REPLY,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer('0300000000000000', 'hex')
+    }]
+  },
+  6: {
+    kind: SegmentKind.REPLY,
+    functionCode: FunctionCode.WRITE_LOB,
+    parts: [{
+      kind: PartKind.WRITE_LOB_REPLY,
+      argumentCount: 0,
+      attributes: 0,
+      buffer: new Buffer(0)
+    }]
+  }
+}

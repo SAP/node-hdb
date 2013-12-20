@@ -6,8 +6,8 @@ check: test
 test: 
 	@NODE_ENV=test ./node_modules/.bin/mocha \
 		--reporter $(REPORTER) \
-		--recursive \
-		--bail
+		--bail \
+		--recursive 
 
 test-unit:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
@@ -18,6 +18,9 @@ test-acceptance:
 		--reporter $(REPORTER) \
 		--bail \
 		test/acceptance/*.js
+
+test-mock: 
+	@HDB_MOCK=1 $(MAKE) -s test
 
 test-cov: lib-cov
 	@HDB_COV=1 $(MAKE) -s test REPORTER=html-cov > coverage.html 

@@ -13,8 +13,14 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
 var lib = require('../lib');
 var TypeCode = lib.common.TypeCode;
+var LobOptions = lib.common.LobOptions;
+var MAX_PART_SIZE = Math.pow(2, 10);
+
+exports.MAX_PART_SIZE = MAX_PART_SIZE;
 
 exports.DEFAULT = {
   part: {
@@ -102,6 +108,7 @@ exports.ALL_TYPES = {
       '060ad7b941' +
       '0685ebc141' +
       '8c' +
+      // offset 167
       '1b06c8000000c6000000' +
       '1a060a0000008e010000' +
       '1a060b00000098010000',
@@ -191,5 +198,33 @@ exports.ALL_TYPES = {
   }, {
     type: TypeCode.NCLOB,
     value: nclob
+  }]
+};
+
+var logo = fs.readFileSync(path.join(__dirname, 'img', 'logo.png'));
+
+function logoBuffer(size) {
+  var buffer = new Buffer(size);
+  var offset = 15;
+  buffer[0] = TypeCode.INT;
+  buffer.writeInt32LE(1, 1);
+  buffer[5] = TypeCode.BLOB;
+  buffer[6] = LobOptions.DATA_INCLUDED;
+  buffer.writeInt32LE(size - offset, 7);
+  buffer.writeInt32LE(offset + 1, 11);
+  logo.copy(buffer, offset, 0, size - offset)
+  return buffer;
+}
+exports.LOGO = {
+  part: {
+    argumentCount: 1,
+    buffer: logoBuffer(MAX_PART_SIZE)
+  },
+  values: [{
+    type: TypeCode.INT,
+    value: 1
+  }, {
+    type: TypeCode.BLOB,
+    value: logo
   }]
 };

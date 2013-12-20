@@ -15,24 +15,26 @@
 /* jshint undef:false, expr:true */
 
 var async = require('async');
-var Statement = require('../lib').Statement;
-var db = require('../lib').createDatabase();
+var lib = require('../lib');
+var Statement = lib.Statement;
+var db = lib.createDatabase();
 
-describe('Database', function () {
-  before(db.connect.bind(db));
-  after(db.disconnect.bind(db));
+describe('db', function () {
+  before(db.init.bind(db));
+  after(db.end.bind(db));
   var client = db.client;
 
-  describe('Table NUMBERS', function () {
-    before(db.createNumbers.bind(db, [0, 25]));
+  describe('NUMBERS', function () {
+    before(db.createNumbers.bind(db));
     after(db.dropNumbers.bind(db));
 
-    describe('#PrepareStatement', function () {
+    describe('execute of Statement', function () {
 
-      it('should create and execute a prepared statement', function (done) {
+      it('should return all numbers like `b`', function (done) {
         var sql = 'select * from NUMBERS where B like ? order by A';
         var statement;
         async.series([
+
           function prepareStatement(callback) {
             client.prepare(sql, function onprepare(err, ps) {
               statement = ps;
@@ -43,7 +45,7 @@ describe('Database', function () {
               p.should.have.property('mode', 2);
               p.should.have.property('dataType', 9);
               p.should.have.property('ioType', 1);
-              callback(null, statement)
+              callback(null, statement);
             });
           },
           function endsWithTeen(callback) {
@@ -60,7 +62,7 @@ describe('Database', function () {
               if (err) {
                 return callback(err);
               }
-              rows.should.have.length(2);
+              rows.should.have.length(9);
               callback();
             });
           },
@@ -73,14 +75,15 @@ describe('Database', function () {
     });
 
 
-    describe('#ProcedureWithResult', function () {
-      before(db.createReadNumbersBetween.bind(db));
-      after(db.dropReadNumbersBetween.bind(db));
+    describe('execute of DBProcedure', function () {
+      before(db.createReadNumbersProc.bind(db));
+      after(db.dropReadNumbersProc.bind(db));
 
-      it('should read the numbers between 3 and 5', function (done) {
+      it('should return the numbers between `a` and `b`', function (done) {
         var sql = 'call READ_NUMBERS_BETWEEN (?, ?, ?)';
         var statement;
         async.series([
+
           function prepareStatement(callback) {
             client.prepare(sql, function (err, ps) {
               statement = ps;
@@ -102,7 +105,6 @@ describe('Database', function () {
               if (err) {
                 return callback(err);
               }
-              console.log(parameters)
               Object.keys(parameters).should.have.length(0);
               arguments.should.have.length(3);
               rows.should.have.length(3)
@@ -115,7 +117,7 @@ describe('Database', function () {
               if (err) {
                 return callback(err);
               }
-              rows.should.be.empty
+              rows.should.be.empty;
               callback();
             });
           },
