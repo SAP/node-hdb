@@ -17,7 +17,7 @@ var lib = require('./lib');
 var request = lib.request;
 var common = lib.common;
 var MAX_SEGMENT_SIZE = common.MAX_PACKET_SIZE - common.PACKET_HEADER_LENGTH;
-var scramsha256 = lib.auth.SCRAMSHA256;
+var auth = lib.auth;
 
 describe('Request', function () {
 
@@ -54,9 +54,9 @@ describe('Request', function () {
 
   var buffer = Buffer.concat([segmentHeader, partHeader, partBuffer]);
 
-  var reqOptions = {
+  var options = {
     user: 'SYSTEM',
-    algorithm: 'SCRAMSHA256',
+    password: 'secret',
     clientChallenge: new Buffer([0x01, 0x02, 0x03, 0x04])
   };
 
@@ -64,12 +64,14 @@ describe('Request', function () {
 
     it('should create an authenticate request',
       function () {
-        var req = request.authenticate(scramsha256, {
-          authentication: reqOptions
+        var algorithm = auth.createAlgorithm(options);
+        var req = request.authenticate({
+          authentication: algorithm.getInitialFields()
         });
         req.parts.should.have.length(1);
         req.parts[0].kind.should.equal(lib.common.PartKind.AUTHENTICATION);
-        req.parts[0].args.should.eql(reqOptions);
+        var fields = [options.user, 'SCRAMSHA256', options.clientChallenge];
+        req.parts[0].args.should.eql(fields);
         req.toBuffer(MAX_SEGMENT_SIZE).should.eql(buffer);
       });
 

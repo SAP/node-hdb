@@ -22,10 +22,13 @@ var options = JSON.parse(fs.readFileSync(filename));
 
 var pool = gp.Pool({
   name: 'hdb',
-  create: function (callback) {
+  // create a new client object 
+  create: function create(callback) {
     var client = hdb.createClient(options);
-    client.on('error', function onerror(err) {
+    client.hadError = false;
+    client.once('error', function onerror(err) {
       console.error('Client error:', err);
+      client.hadError = true;
     });
     client.connect(function onconnect(err) {
       if (err) {
@@ -34,12 +37,24 @@ var pool = gp.Pool({
       callback(null, client);
     });
   },
-  destroy: function ondestroy(client) {
-    client.end();
+  // If a client is removed from the pool 
+  // and the client is not already closed
+  // gently close the client connection.
+  destroy: function destroy(client) {
+    if (!client.hadError && client.readyState !== 'closed') {
+      client.end();
+    }
+  },
+  // validate is called before a client is acquired from pool.
+  // If the client is not connected it should be removed from pool. 
+  validate: function validate(client) {
+    return (!client.hadError && client.readyState === 'connected');
   },
   max: 3,
   min: 1,
   idleTimeoutMillis: 30000,
+  // don't destroy and recreat idle resources every idleTimeoutMillis
+  refreshIdle: false,
   log: false
 });
 
