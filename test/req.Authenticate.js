@@ -19,7 +19,7 @@ var common = lib.common;
 var MAX_SEGMENT_SIZE = common.MAX_PACKET_SIZE - common.PACKET_HEADER_LENGTH;
 var auth = lib.auth;
 
-describe('Request', function () {
+describe('Req', function () {
 
   var segmentHeader = new Buffer([
     0x48, 0x00, 0x00, 0x00,
@@ -64,9 +64,9 @@ describe('Request', function () {
 
     it('should create an authenticate request',
       function () {
-        var algorithm = auth.createAlgorithm(options);
+        var manager = auth.createManager(options);
         var req = request.authenticate({
-          authentication: algorithm.getInitialFields()
+          authentication: manager.initialData()
         });
         req.parts.should.have.length(1);
         req.parts[0].kind.should.equal(lib.common.PartKind.AUTHENTICATION);
