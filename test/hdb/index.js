@@ -13,6 +13,9 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-exports.Algorithm = require('./Algorithm');
-exports.Authentication = require('./Authentication');
-exports.Connect = require('./Connect');
+var lib = require(process.env.HDB_COV ? '../../lib-cov' : '../../lib');
+exports.lib = lib;
+exports.Client = lib.Client;
+exports.createClient = lib.createClient;
+exports.Stringifier = lib.Stringifier;
+exports.createJSONStringifier = lib.createJSONStringifier;

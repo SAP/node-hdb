@@ -13,28 +13,9 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var Fields = require('../../data/Fields');
+var MockConnection = require('./MockConnection');
 
-exports.convert = convert;
-exports.read = read;
-exports.write = write;
-exports.getByteLength = Fields.getByteLength;
-exports.getArgumentCount = Fields.getArgumentCount;
-
-function read(part) {
-  return convert(Fields.read(part));
-}
-
-function convert(fields) {
-  return {
-    algorithm: fields[0].toString('ascii'),
-    serverProof: fields[1]
-  };
-}
-
-function write(part, options) {
-  /* jshint validthis:true */
-
-  options = options || this;
-  return Fields.write(part, [options.user, options.algorithm, options.clientProof]);
-}
+exports.createServer = require('./server').create;
+exports.createConnection = function createConnection(settings) {
+  return new MockConnection(settings);
+};

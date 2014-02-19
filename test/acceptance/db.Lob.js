@@ -17,8 +17,7 @@
 var fs = require('fs');
 var path = require('path');
 var async = require('async');
-var lib = require('../lib');
-var db = lib.createDatabase();
+var db = require('../db')();
 
 describe('db', function () {
   before(db.init.bind(db));

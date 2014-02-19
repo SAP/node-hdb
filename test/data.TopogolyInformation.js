@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var PartKind = lib.common.PartKind;
 var MultilineOptions = lib.data[PartKind.TOPOLOGY_INFORMATION];
 

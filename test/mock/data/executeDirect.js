@@ -14,16 +14,15 @@
 'use strict';
 
 
-var lib = require('../lib/hdb').lib;
+var lib = require('../../hdb').lib;
 var bignum = lib.util.bignum;
-var common = lib.common;
-var SegmentKind = common.SegmentKind;
-var FunctionCode = common.FunctionCode;
-var PartKind = common.PartKind;
-var LobSourceType = common.LobSourceType;
-var LobOptions = common.LobOptions;
+var SegmentKind = lib.common.SegmentKind;
+var FunctionCode = lib.common.FunctionCode;
+var PartKind = lib.common.PartKind;
+var LobSourceType = lib.common.LobSourceType;
+var LobOptions = lib.common.LobOptions;
 
-var IMAGES = require('./images');
+var IMAGES = require('../../fixtures/images');
 
 exports['select * from dummy'] = {
   kind: SegmentKind.REPLY,

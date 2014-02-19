@@ -15,8 +15,6 @@
 
 var lib = require('./lib');
 exports.Client = lib.Client;
+exports.createClient = lib.createClient;
 exports.Stringifier = lib.Stringifier;
 exports.createJSONStringifier = lib.createJSONStringifier;
-exports.createClient = function createClient(options) {
-  return new lib.Client(options);
-};

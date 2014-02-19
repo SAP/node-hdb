@@ -13,9 +13,21 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
-var util = lib.util;
-var db = require('./db');
+var fs = require('fs');
+var path = require('path');
+var LocalDB = require('./LocalDB');
+var RemoteDB = require('./RemoteDB');
 
-util.extend(exports, lib);
-util.extend(exports, db);
+var options;
+try {
+  options = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
+} catch (err) {
+  options = null;
+}
+
+module.exports = function create() {
+  if (!options || process.env.HDB_MOCK) {
+    return new LocalDB();
+  }
+  return new RemoteDB(options);
+};
