@@ -13,21 +13,21 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
-var PartKind = lib.common.PartKind;
-var ResultSetMetadata = lib.data[PartKind.RESULT_SET_METADATA];
+var fs = require('fs');
+var path = require('path');
+var LocalDB = require('./LocalDB');
+var RemoteDB = require('./RemoteDB');
 
-var data = require('./fixtures/resultSetMetadata').VERSION_AND_CURRENT_USER;
+var options;
+try {
+  options = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
+} catch (err) {
+  options = null;
+}
 
-describe('Data', function () {
-
-  describe('#ResultSetMetadata', function () {
-
-    it('should read resultSet metadata', function () {
-      var columnMetadata = ResultSetMetadata.read(data.part);
-      columnMetadata.should.eql(data.columns);
-    });
-
-  });
-
-});
+module.exports = function create() {
+  if (!options || process.env.HDB_MOCK) {
+    return new LocalDB();
+  }
+  return new RemoteDB(options);
+};

@@ -14,7 +14,7 @@
 'use strict';
 
 var net = require('net');
-var lib = require('./hdb').lib;
+var lib = require('../hdb').lib;
 var util = lib.util;
 var bignum = util.bignum;
 var SegmentKind = lib.common.SegmentKind;
@@ -29,15 +29,15 @@ var Fields = lib.data[PartKind.AUTHENTICATION];
 var MAX_PACKET_SIZE = lib.common.MAX_PACKET_SIZE;
 
 var DATA = {};
-DATA.executeDirect = require('../fixtures/mock.executeDirect');
-DATA.fetch = require('../fixtures/mock.fetch');
-DATA.prepare = require('../fixtures/mock.prepare');
-DATA.execute = require('../fixtures/mock.execute');
-DATA.lob = require('../fixtures/mock.readLob');
-DATA.writeLob = require('../fixtures/mock.writeLob');
+DATA.executeDirect = require('./data/executeDirect');
+DATA.fetch = require('./data/fetch');
+DATA.prepare = require('./data/prepare');
+DATA.execute = require('./data/execute');
+DATA.lob = require('./data/readLob');
+DATA.writeLob = require('./data/writeLob');
 
-exports.createServer = function createServer() {
-  var server = module.exports = net.createServer();
+exports.create = function createServer() {
+  var server = net.createServer();
   server.maxConnections = 1;
   server.on('connection', handleConnection);
   return server;

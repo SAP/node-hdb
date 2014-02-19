@@ -14,7 +14,7 @@
 'use strict';
 
 var os = require('os');
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var auth = lib.auth;
 var PartKind = lib.common.PartKind;
 var Fields = lib.data[PartKind.AUTHENTICATION];
@@ -191,6 +191,7 @@ describe('Auth', function () {
   describe('#Mananger', function () {
 
     it('should not find an authentication method', function () {
+      /* jshint immed:false */
       (function () {
         auth.createManager({
           user: user
@@ -201,6 +202,7 @@ describe('Auth', function () {
         password: 'secret',
         clientChallenge: new Buffer(4)
       });
+
       (function () {
         manager.initialize(['chuck', emptyBuffer]);
       }).should.throwError();

@@ -14,7 +14,7 @@
 'use strict';
 
 var should = require('should');
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var PART_HEADER_LENGTH = lib.common.PART_HEADER_LENGTH;
 var PartKind = lib.common.PartKind;
 var Part = lib.reply.Part;

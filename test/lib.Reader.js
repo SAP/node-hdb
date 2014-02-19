@@ -15,7 +15,7 @@
 /*jshint expr:true*/
 
 var should = require('should');
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var bignum = lib.util.bignum;
 
 describe('Lib', function () {

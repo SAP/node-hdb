@@ -14,7 +14,7 @@
 'use strict';
 
 var should = require('should');
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var bignum = lib.util.bignum;
 
 function readInt64(hex) {

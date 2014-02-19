@@ -16,7 +16,7 @@
 var fs = require('fs');
 var path = require('path');
 var hdb = require('../index');
-var filename = path.join(__dirname, '..', 'test', 'lib', 'config.json');
+var filename = path.join(__dirname, '..', 'test', 'db', 'config.json');
 var options = JSON.parse(fs.readFileSync(filename));
 
 var client = hdb.createClient({

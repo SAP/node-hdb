@@ -13,11 +13,9 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require(process.env.HDB_COV ? '../../lib-cov' : '../../lib');
-exports.lib = lib;
-exports.Client = lib.Client;
-exports.Stringifier = lib.Stringifier;
-exports.createJSONStringifier = lib.createJSONStringifier;
-exports.createClient = function createClient(options) {
-  return new lib.Client(options);
+var MockConnection = require('./MockConnection');
+
+exports.createServer = require('./server').create;
+exports.createConnection = function createConnection(settings) {
+  return new MockConnection(settings);
 };

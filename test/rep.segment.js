@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var SegmentKind = lib.common.SegmentKind;
 var FunctionCode = lib.common.FunctionCode;
 var Segment = lib.reply.Segment;

@@ -15,9 +15,7 @@
 /* jshint undef:false, expr:true */
 
 var async = require('async');
-var lib = require('../lib');
-var Statement = lib.Statement;
-var db = lib.createDatabase();
+var db = require('../db')();
 
 describe('db', function () {
   before(db.init.bind(db));
@@ -38,7 +36,6 @@ describe('db', function () {
           function prepareStatement(callback) {
             client.prepare(sql, function onprepare(err, ps) {
               statement = ps;
-              statement.should.be.instanceof(Statement);
               var metadata = statement.parameterMetadata;
               metadata.should.have.length(1);
               var p = metadata[0];

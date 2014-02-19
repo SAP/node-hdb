@@ -14,12 +14,12 @@
 'use strict';
 /* jshint undef:false, expr:true */
 
-var lib = require('../lib');
+var lib = require('../hdb').lib;
 var stream = lib.util.stream;
 var Readable = stream.Readable;
 var Writable = stream.Writable;
 var ResultSet = lib.ResultSet;
-var db = lib.createDatabase();
+var db = require('../db')();
 
 describe('db', function () {
   before(db.init.bind(db));
