@@ -38,9 +38,8 @@ describe('db', function () {
           if (err) {
             return done(err);
           }
-          rows.should
-            .have.length(db.images.length)
-            .and.eql(db.images);
+          rows.should.have.length(db.images.length);
+          rows.should.eql(db.images);
           done();
         });
       });
