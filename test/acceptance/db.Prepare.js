@@ -104,8 +104,8 @@ describe('db', function () {
               }
               Object.keys(parameters).should.have.length(0);
               arguments.should.have.length(3);
-              rows.should.have.length(3)
-                .and.eql(db.numbers.slice(3, 6));
+              rows.should.have.length(3);
+              rows.should.eql(db.numbers.slice(3, 6));
               callback();
             });
           },

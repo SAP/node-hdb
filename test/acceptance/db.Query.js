@@ -38,9 +38,8 @@ describe('db', function () {
           if (err) {
             return done(err);
           }
-          rows.should
-            .have.length(db.numbers.length)
-            .and.eql(db.numbers);
+          rows.should.have.length(db.numbers.length);
+          rows.should.eql(db.numbers);
           done();
         });
       });
@@ -53,9 +52,8 @@ describe('db', function () {
           }
           rs.should.be.an.instanceof(ResultSet);
           rs.fetch(function onfetch(err, rows) {
-            rows.should
-              .have.length(db.numbers.length)
-              .and.eql(db.numbers);
+            rows.should.have.length(db.numbers.length);
+            rows.should.eql(db.numbers);
             rs.closed.should.be.true;
             done();
           });
@@ -80,9 +78,8 @@ describe('db', function () {
               rows = rows.concat(chunk);
             }
           }).once('end', function onend() {
-            rows.should
-              .have.length(db.numbers.length)
-              .and.eql(db.numbers);
+            rows.should.have.length(db.numbers.length);
+            rows.should.eql(db.numbers);
             done();
           });
         });
@@ -106,9 +103,8 @@ describe('db', function () {
             callback();
           };
           writable.once('finish', function onfinish() {
-            rows.should
-              .have.length(db.numbers.length)
-              .and.eql(db.numbers);
+            rows.should.have.length(db.numbers.length);
+            rows.should.eql(db.numbers);
             done();
           });
           readable.once('error', function onreadable() {
@@ -132,9 +128,8 @@ describe('db', function () {
             if (err) {
               return done(err);
             }
-            rows.should
-              .have.length(3)
-              .and.eql(db.numbers.slice(3, 6));
+            rows.should.have.length(3);
+            rows.should.eql(db.numbers.slice(3, 6));
             done();
           });
         });
