@@ -69,7 +69,7 @@ client.connect(function (err) {
 ```
 
 Establish a database connection
------------------------------------------
+-------------------------------
 
 The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for following connect calls on the created client instance.
 
@@ -85,8 +85,8 @@ console.log(client.readyState); // new
 ```
 
 When a client instance is created it does not immediately open a network connection to the database host. Initially the client is in state `new`. When you call `connect` the first time two things are done internally. 
-1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established. The client is in state `'disconnected'`. This step is skipped if the client is already in state `'disconnected'`. 
-2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in state `'connected'`. If authentication fails the client remains in state `'disconnect'`. 
+1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established. The client is in state `disconnected`. This step is skipped if the client is already in state `disconnected`. 
+2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in state `connected`. If authentication fails the client remains in state `'disconnect'`. 
 
 ```js
 client.connect(function (err) {
@@ -142,7 +142,7 @@ var client = hdb.createClient({
 });
 ```
  
-Direct Statement Execution 
+Direct Statement Execution
 --------------------------
 
 Direct statement execution is the simplest way to execute SQL statements.
