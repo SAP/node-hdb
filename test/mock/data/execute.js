@@ -13,10 +13,10 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var common = require('../lib/hdb').lib.common;
-var SegmentKind = common.SegmentKind;
-var FunctionCode = common.FunctionCode;
-var PartKind = common.PartKind;
+var lib = require('../../hdb').lib;
+var SegmentKind = lib.common.SegmentKind;
+var FunctionCode = lib.common.FunctionCode;
+var PartKind = lib.common.PartKind;
 
 exports['0100000000000000'] = {
   '1d05257465656e': {
@@ -160,4 +160,4 @@ exports['0300000000000000'] = {
         '041c01', 'hex')
     }]
   }
-}
+};

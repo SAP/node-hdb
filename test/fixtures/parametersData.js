@@ -15,7 +15,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var lib = require('../lib');
+var lib = require('../hdb').lib;
 var TypeCode = lib.common.TypeCode;
 var LobOptions = lib.common.LobOptions;
 var MAX_PART_SIZE = Math.pow(2, 10);
@@ -212,7 +212,7 @@ function logoBuffer(size) {
   buffer[6] = LobOptions.DATA_INCLUDED;
   buffer.writeInt32LE(size - offset, 7);
   buffer.writeInt32LE(offset + 1, 11);
-  logo.copy(buffer, offset, 0, size - offset)
+  logo.copy(buffer, offset, 0, size - offset);
   return buffer;
 }
 exports.LOGO = {

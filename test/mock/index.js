@@ -13,9 +13,13 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
-var util = lib.util;
-var db = require('./db');
+var MockConnection = require('./MockConnection');
+var MockResult = require('./MockResult');
 
-util.extend(exports, lib);
-util.extend(exports, db);
+exports.createServer = require('./server').create;
+exports.createConnection = function createConnection(settings) {
+  return new MockConnection(settings);
+};
+exports.createResult = function createResult(connection, options) {
+  return new MockResult(connection, options);
+};

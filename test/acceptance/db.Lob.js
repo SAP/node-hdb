@@ -17,8 +17,7 @@
 var fs = require('fs');
 var path = require('path');
 var async = require('async');
-var lib = require('../lib');
-var db = lib.createDatabase();
+var db = require('../db')();
 
 describe('db', function () {
   before(db.init.bind(db));
@@ -39,9 +38,8 @@ describe('db', function () {
           if (err) {
             return done(err);
           }
-          rows.should
-            .have.length(db.images.length)
-            .and.eql(db.images);
+          rows.should.have.length(db.images.length);
+          rows.should.eql(db.images);
           done();
         });
       });

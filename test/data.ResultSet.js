@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var Parser = lib.Parser;
 
 var metadata = require('./fixtures/resultSetMetadata').TABLES;

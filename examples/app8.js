@@ -13,30 +13,36 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = exports.util = require('./util');
-var Client = exports.Client = require('./Client');
-var protocol = require('./protocol');
+var async = require('async');
+var client = require('./client');
 
-util.extend(exports, protocol);
-exports.createJSONStringifier = createJSONStringifier;
-exports.createClient = createClient;
-exports.connect = connect;
+async.series([connect, execute, reconnect, execute, disconnect], done);
 
-function connect(options, cb) {
-  var client = createClient(options);
+function connect(cb) {
   client.connect(cb);
-  return client;
 }
 
-function createClient(options) {
-  return new Client(options);
+function disconnect(cb) {
+  client.disconnect(cb);
 }
 
-function createJSONStringifier() {
-  return new protocol.Stringifier({
-    header: '[',
-    footer: ']',
-    seperator: ',',
-    stringify: JSON.stringify
+function execute(cb) {
+  client.exec('select * from dummy', cb);
+}
+
+function reconnect(cb) {
+  client.set('autoReconnect', true);
+  // simulate a network error
+  client._connection._socket.end();
+  client.once('connect', function reconnected() {
+    cb();
   });
+}
+
+function done(err, results) {
+  client.end();
+  if (err) {
+    return console.error('Error', err);
+  }
+  console.log(results);
 }

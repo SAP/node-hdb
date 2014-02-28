@@ -118,7 +118,7 @@ function createCsvStringifier(metadata) {
 }
 
 function getDefaultParams() {
-  var filename = path.join(__dirname, '..', 'test', 'lib', 'config.json');
+  var filename = path.join(__dirname, '..', 'test', 'db', 'config.json');
   var config = JSON.parse(fs.readFileSync(filename));
   return {
     hostname: config.host,

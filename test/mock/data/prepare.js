@@ -13,10 +13,10 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var common = require('../lib/hdb').lib.common;
-var SegmentKind = common.SegmentKind;
-var FunctionCode = common.FunctionCode;
-var PartKind = common.PartKind;
+var lib = require('../../hdb').lib;
+var SegmentKind = lib.common.SegmentKind;
+var FunctionCode = lib.common.FunctionCode;
+var PartKind = lib.common.PartKind;
 
 exports['select * from numbers where b like ? order by a'] = {
   kind: SegmentKind.REPLY,
@@ -80,4 +80,4 @@ exports['insert into images values (?, ?)'] = {
       '02090100ffffffff1000000018000000021b0100ffffffff1000000008000000',
       'hex')
   }]
-}
+};

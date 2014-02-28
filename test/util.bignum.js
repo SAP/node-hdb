@@ -14,7 +14,7 @@
 'use strict';
 
 var should = require('should');
-var lib = require('./lib');
+var lib = require('./hdb').lib;
 var bignum = lib.util.bignum;
 
 function readInt64(hex) {
@@ -65,7 +65,7 @@ function readUInt128(hex) {
   return bignum.readUInt128LE(new Buffer(hex, 'hex'), 0);
 }
 
-describe('BigNum', function () {
+describe('Util', function () {
 
   describe('#Int64', function () {
 
@@ -112,7 +112,7 @@ describe('BigNum', function () {
 
   });
 
-  describe('#Unsigned Int64', function () {
+  describe('#UInt64', function () {
 
     it('read numbers', function () {
       readUInt64('0000000000000000').should.equal(0);
@@ -308,7 +308,7 @@ describe('BigNum', function () {
 
   });
 
-  describe('#Unsigned Int128', function () {
+  describe('#UInt128', function () {
     it('should write numbers', function () {
       writeUInt128('340282366920938463463374607431768211455').should.eql(
         'ffffffffffffffffffffffffffffffff'
@@ -326,4 +326,5 @@ describe('BigNum', function () {
       ).should.eql('18446744073709551615');
     });
   });
+
 });
