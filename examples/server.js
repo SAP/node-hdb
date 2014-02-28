@@ -18,7 +18,6 @@ var os = require('os');
 var url = require('url');
 var http = require('http');
 var pool = require('./pool');
-var zlib = require('zlib');
 var hdb = require('../index');
 var hostname = os.hostname().toLowerCase();
 var port = process.env.PORT || 1337;
@@ -68,7 +67,6 @@ var pooledHandler = pool.pooled(function (client, req, res, cb) {
       .createArrayStream()
       .once('error', done)
       .pipe(createStringifier())
-      .pipe(zlib.createGzip())
       .pipe(res)
       .on('finish', done);
   }
@@ -127,8 +125,7 @@ function createRequestParams(req) {
 
 function getResponseHeaders(params) {
   var headers = {
-    'Content-Type': 'application/json',
-    'Content-Encoding': 'gzip',
+    'Content-Type': 'application/json'
   };
   if (params.top > 10000) {
     headers['Content-Disposition'] =

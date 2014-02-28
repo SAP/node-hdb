@@ -13,13 +13,13 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var MockConnection = require('./MockConnection');
-var MockResult = require('./MockResult');
+module.exports = MockResult;
 
-exports.createServer = require('./server').create;
-exports.createConnection = function createConnection(settings) {
-  return new MockConnection(settings);
-};
-exports.createResult = function createResult(connection, options) {
-  return new MockResult(connection, options);
+function MockResult(connection, options) {
+  this.connection = connection;
+  this.options = options;
+}
+
+MockResult.prototype.handle = function handle(err, reply, cb) {
+  cb(err, reply);
 };

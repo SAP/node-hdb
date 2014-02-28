@@ -14,6 +14,7 @@
 'use strict';
 /*jshint expr:true*/
 
+var should = require('should');
 var lib = require('./hdb').lib;
 var util = lib.util;
 var mock = require('./mock');
@@ -28,15 +29,19 @@ function TestClient(options) {
     password: 'secret'
   }, options);
   lib.Client.call(this, options);
+  this._result = undefined;
 }
 
 TestClient.prototype._createConnection = mock.createConnection;
+TestClient.prototype._createResult = function _createResult() {
+  return this._result = mock.createResult.apply(this, arguments);
+};
 
 describe('hdb', function () {
 
   describe('#Client', function () {
 
-    it('should create a Client', function (done) {
+    it('should create, connect and close a client', function (done) {
       var client = new TestClient();
       var connection = client._connection;
 
@@ -76,9 +81,58 @@ describe('hdb', function () {
       });
     });
 
-
-    it('should reconnect on error', function (done) {
+    // connect
+    it('should not connect with invalid state error', function (done) {
       var client = new TestClient();
+      var connection = client._connection;
+      connection.readyState = 'connected';
+      client.connect(function (err) {
+        err.code.should.equal('EHDBCONNECT');
+        done();
+      });
+    });
+
+    it('should not connect because of network error', function (done) {
+      var client = new TestClient();
+      client._connection.errors.open = true;
+      var openError = null;
+      client.on('error', function (err) {
+        err.message.should.equal('open');
+        openError = err;
+      });
+      client.connect(function (err) {
+        err.should.equal(openError);
+        done();
+      });
+    });
+
+    it('should connect with saml assertion', function (done) {
+      var client = new TestClient({
+        assertion: 'assertion'
+      });
+      var connection = client._connection;
+      client.connect(function (err) {
+        should(err === null).be.ok;
+        should(client.get('assertion')).not.be.ok;
+        done();
+      });
+    });
+
+    it('should connect after disconnect', function (done) {
+      var client = new TestClient();
+      client._connection.readyState = 'disconnected';
+      // open should not be called
+      client._connection.errors.open = true;
+      client.connect(function (err) {
+        should(err === null).be.ok;
+        done();
+      });
+    });
+
+    it('should automatically reconnect after network error', function (done) {
+      var client = new TestClient({
+        autoReconnect: true
+      });
       var connection = client._connection;
       var errorCount = 0;
       var closeCount = 0;
@@ -113,10 +167,10 @@ describe('hdb', function () {
       }
       client.on('close', onclose);
 
-      function onconnect(err) {
+      function onconnect() {
         connectCount += 1;
         if (connectCount === 1) {
-          connection.setError('reconnect');
+          connection.destroy(new Error('reconnect'));
           return;
         }
         client.close();
@@ -125,15 +179,174 @@ describe('hdb', function () {
       client.connect();
     });
 
-    it('should roolback without error', function (done) {
+    // set and get
+    it('should get and set an option', function () {
       var client = new TestClient();
       var connection = client._connection;
+      client.set('foo', true).should.equal(client);
+      client.get('foo').should.equal(connection._settings.foo);
+      client.set({
+        bar: 1
+      });
+      client.get().should.equal(connection._settings);
+    });
+
+    // disconnect
+    it('should disconnect a client', function (done) {
+      var client = new TestClient();
+      client.disconnect(function (err) {
+        done(err);
+      });
+    });
+
+    // destroy
+    it('should destroy a client without error', function (done) {
+      var client = new TestClient();
+      client.once('close', function (hadError) {
+        hadError.should.be.false;
+        done();
+      });
+      client.destroy();
+    });
+
+    it('should destroy a client with error', function (done) {
+      var client = new TestClient();
+      client.once('error', function (err) {
+        err.message.should.equal('destroy');
+      });
+      client.once('close', function (hadError) {
+        hadError.should.be.true;
+        done();
+      });
+      client.destroy(new Error('destroy'));
+    });
+
+    // exec
+    it('should exec a command', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      connection.replies.executeDirect = {};
+      var options = {
+        autoFetch: false
+      };
+      client.exec('sql', options, function (err, reply) {
+        should(err === null).be.ok;
+        client._connection.options.should.eql({
+          command: 'sql'
+        });
+        reply.should.equal(connection.replies.executeDirect);
+        done();
+      });
+    });
+
+    // execute
+    it('should execute a command', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      connection.replies.executeDirect = {};
+      client.execute('sql', function (err, reply) {
+        should(err === null).be.ok;
+        reply.should.equal(connection.replies.executeDirect);
+        done();
+      });
+    });
+
+    it('should execute a command with autoFetch', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      connection.replies.executeDirect = {};
+      var autoFetch = true;
+      var command = 'sql';
+      client.execute(command, autoFetch, function (err, reply) {
+        should(err === null).be.ok;
+        connection.options.should.eql({
+          command: command
+        });
+        client._result.options.autoFetch.should.be.true;
+        reply.should.equal(connection.replies.executeDirect);
+        done();
+      });
+    });
+
+    it('should execute a command with error', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      connection.errors.executeDirect = true;
+      client.execute('sql', function (err) {
+        err.should.be.an.Error;
+        done();
+      });
+    });
+
+    // prepare
+    it('should prepare a statement', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      var options = {
+        command: 'sql'
+      };
+      client.prepare(options.command, function (err, statement) {
+        should(err === null).be.ok;
+        connection.options.should.eql(options);
+        statement.parameterMetadata.should.equal('parameterMetadata');
+        statement.resultSetMetadata.should.equal('metadata');
+        done();
+      });
+    });
+
+    it('should prepare a statement with options argument', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      var options = {
+        command: 'sql'
+      };
+      client.prepare(options, function (err, statement) {
+        should(err === null).be.ok;
+        connection.options.should.eql(options);
+        statement.parameterMetadata.should.equal('parameterMetadata');
+        statement.resultSetMetadata.should.equal('metadata');
+        done();
+      });
+    });
+
+    // commit    
+    it('should commit without error', function (done) {
+      var client = new TestClient();
+      client.commit(function (err) {
+        done(err);
+      });
+    });
+
+    it('should not commit signaled by transaction flags', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      connection._transactionFlags.committed = false;
+      client.commit(function (err) {
+        if (err) {
+          return done();
+        }
+        done(new Error('commit'));
+      });
+    });
+
+    it('should commit with protocol error', function (done) {
+      var client = new TestClient();
+      client._connection.errors.commit = true;
+      client.commit(function (err) {
+        err.message.should.equal('commit');
+        done();
+      });
+    });
+
+    // rollback
+    it('should roolback without error', function (done) {
+      var client = new TestClient();
       client.rollback(function (err) {
         done(err);
       });
     });
 
-    it('should roolback with error', function (done) {
+    it('should not roolback signaled by transaction flags', function (done) {
       var client = new TestClient();
       var connection = client._connection;
       connection._transactionFlags.rolledBack = false;
@@ -145,35 +358,13 @@ describe('hdb', function () {
       });
     });
 
-    it('should commit without error', function (done) {
+    it('should rollback with protocol error', function (done) {
       var client = new TestClient();
-      var connection = client._connection;
-      client.commit(function (err) {
-        done(err);
+      client._connection.errors.rollback = true;
+      client.rollback(function (err) {
+        err.message.should.equal('rollback');
+        done();
       });
-    });
-
-    it('should commit with error', function (done) {
-      var client = new TestClient();
-      var connection = client._connection;
-      connection._transactionFlags.committed = false;
-      client.commit(function (err) {
-        if (err) {
-          return done();
-        }
-        done(new Error('commit'))
-      });
-    });
-
-    it('should get and set an option', function () {
-      var client = new TestClient();
-      var connection = client._connection;
-      client.set('foo', true).should.equal(client);
-      client.get('foo').should.equal(connection._settings.foo);
-      client.set({
-        bar: 1
-      });
-      client.get().should.equal(connection._settings);
     });
 
   });

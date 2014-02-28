@@ -4,14 +4,31 @@ SAP HANA Database Client for Node
 A JavaScript client for Node implementing the 
 [SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_Database_SQL_command_network_protocol_en.pdf).
 
-[![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)
+[![NPM](https://nodei.co/npm/hdb.png?compact=true)](https://npmjs.org/package/hdb) &nbsp;&nbsp;&nbsp; [![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)
 
+Table of contents
+-------------
+
+* [Install](#install)
+* [Getting started](#getting-started)
+* [Establish a database connection](#establish-a-database-connection)
+* [Direct Statement Execution](#direct-statement-execution)
+* [Prepared Statement Execution](#prepared-statement-execution)
+* [Streaming results](#streaming-results)
+* [Transaction handling](#transaction-handling)
+* [Streaming Large Objects](#streaming-large-objects)
+* [Running tests](#running-tests)
+* [Running examples](#running-examples)
+* [Todo](#todo)
+ 
 Install
 -------
 
 Install from npm:
 
-[![NPM](https://nodei.co/npm/hdb.png?compact=true)](https://npmjs.org/package/hdb)
+```bash
+npm install hdb
+```
 
 or clone from the [GitHub repository](https://github.com/SAP/node-hdb) to run tests and examples locally:
 
@@ -21,10 +38,12 @@ cd node-hdb
 npm install
 ```
 
-Introduction
+Getting started
 ------------
 
-A very simple example how to use this module:
+If you do not have access to a SAP HANA server, go to the [SAP HANA Developer Center](http://scn.sap.com/community/developer-center/hana) and choose one of the options to [get your own trial SAP HANA Server](http://scn.sap.com/docs/DOC-31722).
+
+This is a very simple example how to use this module:
 
 ```js
 var hdb    = require('hdb');
@@ -49,23 +68,10 @@ client.connect(function (err) {
 });
 ```
 
-Authentication methods
-----------------------
-
-The SAP HANA Database supports the following authentication methods:
-
-- **SCRAMSHA256** user/password based authentication method
-- _GSS_
-- _SAML_
-
-Currently only the SCRAMSHA256 authentication method is supported.
-
-
-Establishing a connection to the database
+Establish a database connection
 -----------------------------------------
 
-In order to be able to handle connection errors it is recommended to explicitly
-establish a connection  using the `connect` method of the client object.
+The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for following connect calls on the created client instance.
 
 ```js
 var hdb    = require('hdb');
@@ -73,21 +79,68 @@ var client = hdb.createClient({
   host     : 'hostname',
   port     : 30015,
   user     : 'user',
-  password : 'secret'
-	
+  password : 'secret'	
 });
+console.log(client.readyState); // new
+```
 
-client.connect({
-  user     : 'somebody',
-  password : 'abc123'
-}, function (err) {
+When a client instance is created it does not immediately open a network connection to the database host. Initially the client is in state `new`. When you call `connect` the first time two things are done internally. 
+1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established. The client is in state `'disconnected'`. This step is skipped if the client is already in state `'disconnected'`. 
+2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in state `'connected'`. If authentication fails the client remains in state `'disconnect'`. 
+
+```js
+client.connect(function (err) {
   if (err) {
-    return console.error('Client connection error:', err);
+    return console.error('Error:', err);
   } 
-  console.log('Client connected!');  
+  console.log(client.readyState); // connected
 });
 ```
-If user and password are specified it will override the defaults of the client. It is possible to disconnect and reconnect with a different user on the same client instance and the same network connection.    
+If user and password are specified they will override the defaults of the client. It is possible to disconnect and reconnect with a different user on the same client instance and the same network connection.    
+
+### Authentication mechanisms
+Details about the different authentication method can be found in the [SAP HANA Security Guide](http://help.sap.com/hana/SAP_HANA_Security_Guide_en.pdf).
+
+#### User / Password 
+Users authenticate themselves with their database `user` and `password`.  
+
+#### SAML assertion
+SAML bearer assertions as well as unsolicited SAML responses that include an 
+unencrypted SAML assertion can be used to authenticate users. SAML assertions and responses must be signed using XML signatures. XML Digital signatures can be created with [xml-crypto](https://www.npmjs.org/package/xml-crypto) or [xml-dsig](https://www.npmjs.org/package/xml-dsig).
+
+Instead of `user` and `password` you have to provide a SAML `assertion`.  
+
+```js
+client.connect({ 
+  assertion: '<Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ...>...</Assertion>'
+},function (err) {
+  if (err) {
+    return console.error('Error:', err);
+  }
+  console.log('User:', client.get('user'));
+  console.log('SessionCookie:', client.get('SessionCookie')); 
+});
+```
+
+After a successful SAML authentication the server returns the database `user` and a `SessionCookie` which can be used for reconnect. 
+
+#### Kerberos 
+A Kerberos authentication provider can be used to authenticate users.
+> This mechanism is currently not implemented. Please contact me if you require Kerberos based authentication.
+
+### Encrypted network communication 
+To establish an encrypted database connection just pass whether `key`, `cert` and `ca` or a `pfx` to createClient.
+
+```js
+var client = hdb.createClient({
+  host : 'hostname',
+  port : 30015,
+  key  : fs.readFileSync('client-key.pem'),	
+  cert : fs.readFileSync('client-cert.pem'),
+  ca   : [fs.readFileSync('trusted-cert.pem')],
+  ...
+});
+```
  
 Direct Statement Execution 
 --------------------------
@@ -95,9 +148,6 @@ Direct Statement Execution
 Direct statement execution is the simplest way to execute SQL statements.
 The only input parameter is the SQL command to be executed.
 Generally we return the statement execution results using callbacks.
-For callbacks we follow the convention described in the
-[Node.js Style Guide](http://nodeguide.com/style.html#callbacks) 
-to reserve the first parameter of any callback for an optional error object.
 The type of returned result depends on the kind of statement. 
 
 ### DDL Statement
@@ -128,7 +178,7 @@ client.exec('insert into TEST.NUMBERS values (1, \'one\')', function (err, affec
 
 ### Query
 
-The `exec` function is a convinient way to completely retrieve the result of a query. In this case all selected `rows` are fetched and returned in the callback. The `resultSet` is automatically closed and all `Lobs` are completely read and returned as Buffer objects. If streaming of the results is required you will have to use the `execute` function. This is described in section [Streaming results](#streaming-results).
+The `exec` function is a convenient way to completely retrieve the result of a query. In this case all selected `rows` are fetched and returned in the callback. The `resultSet` is automatically closed and all `Lobs` are completely read and returned as Buffer objects. If streaming of the results is required you will have to use the `execute` function. This is described in section [Streaming results](#streaming-results).
 
 ```js
 client.exec('select A, B from TEST.NUMBERS oder by A', function(err, rows) {
@@ -293,7 +343,7 @@ execTransaction(function(err, ok){
 
 Take a look at the example [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js) for further details. 
 
-Streaming Large Objects (LOBs)
+Streaming Large Objects
 -------------
 
 ### Read Streams
@@ -321,13 +371,13 @@ To run the unit tests as well as acceptance tests for _hdb_ you have to run:
 make test
 ```
 
-For the acceptance tests a database connection has to be established. Therefore you need to copy the configuration template [config.tpl.json](https://github.com/SAP/node-hdb/blob/master/test/lib/config.tpl.json) in the ```test/lib``` folder to ```config.json``` and change the connection data to yours. If the ```config.json``` file does not exist a local mock server is started.
+For the acceptance tests a database connection has to be established. Therefore you need to copy the configuration template [config.tpl.json](https://github.com/SAP/node-hdb/blob/master/test/db/config.tpl.json) in the ```test/db``` folder to ```config.json``` and change the connection data to yours. If the ```config.json``` file does not exist a local mock server is started.
 
 
 Running examples
 ----------------
 
-Also, for the examples you need a valid a ```config.json``` in the ```test/lib``` folder. 
+Also, for the examples you need a valid a ```config.json``` in the ```test/db``` folder. 
 
 
 - [app1](https://github.com/SAP/node-hdb/blob/master/examples/app1.js): Simple query. 
@@ -337,13 +387,14 @@ Also, for the examples you need a valid a ```config.json``` in the ```test/lib``
 - [app5](https://github.com/SAP/node-hdb/blob/master/examples/app5.js): Stream XS repository into the filesystem.
 - [app6](https://github.com/SAP/node-hdb/blob/master/examples/app6.js): Stream from the filesystem into a db table.
 - [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js): Insert a row with a large image into a db table (uses WriteLobRequest and Transaction internally).
+- [app8](https://github.com/SAP/node-hdb/blob/master/examples/app8.js): Automatic reconnect when network connection is lost.
 - [call1](https://github.com/SAP/node-hdb/blob/master/examples/call1.js): Call stored procedure. 
 - [call2](https://github.com/SAP/node-hdb/blob/master/examples/call2.js): Call stored procedure with lob input and output parameter.
 - [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js): Transaction handling (shows how to use commit and rollback).  
 - [csv](https://github.com/SAP/node-hdb/blob/master/examples/csv.js): Stream a db table into csv file.
 - [server](https://github.com/SAP/node-hdb/blob/master/examples/server.js): Stream rows into http response `http://localhost:1337/{schema}/{tablename}?top={top}`
 
-To call e.g. the first example:
+To run e.g. the first example:
 
 ```bash
 node examples/app1
@@ -353,6 +404,5 @@ Todo
 ----
 * Improve documentation of the client api    
 * Improve error handling
-* SAML Authentication support
-* Enhance tests
+* Increase test coverage 
 * ...

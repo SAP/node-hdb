@@ -28,6 +28,18 @@ function MockConnection(settings) {
   this.connectOptions = {};
   this.autoCommit = true;
   this.readyState = 'new';
+  this.options = null;
+  this.errors = {
+    open: false,
+    connect: false,
+    executeDirect: false,
+    prepare: false,
+    commit: false,
+    rollback: false
+  };
+  this.replies = {
+    executeDirect: undefined,
+  };
   this._settings = settings || {};
   this._hadError = false;
   this._transactionFlags = {
@@ -43,16 +55,38 @@ MockConnection.prototype.open = function open(options, cb) {
   options.should.have.property('host');
   options.should.have.property('port');
   this.readyState.should.equal('new');
-  setTimeout(function () {
-    self.emit('open');
-    cb();
-  }, 1);
+  util.setImmediate(function () {
+    var err = self.getError('open');
+    if (err) {
+      self.emit('error', err);
+    } else {
+      self.emit('open');
+    }
+    cb(err);
+  });
 };
 
-MockConnection.prototype.setError = function setError(msg) {
-  this.emit('error', new Error(msg));
-  this._hadError = true;
-  util.setImmediate(this.close.bind(this));
+MockConnection.prototype.getError = function getError(id) {
+  if (this.errors[id]) {
+    return new Error(id);
+  }
+  return null;
+};
+
+MockConnection.prototype.getReply = function getReply(id) {
+  return this.replies[id];
+};
+
+
+MockConnection.prototype.destroy = function destroy(err) {
+  if (err) {
+    this.emit('error', err);
+    this._hadError = true;
+  }
+  var self = this;
+  util.setImmediate(function () {
+    self.close();
+  });
 };
 
 MockConnection.prototype.close = function close() {
@@ -60,27 +94,54 @@ MockConnection.prototype.close = function close() {
   this.emit('close', this._hadError);
 };
 
+MockConnection.prototype.prepare = function prepare(options, cb) {
+  var self = this;
+  this.options = options;
+  util.setImmediate(function () {
+    var err = self.getError('prepare');
+    cb(err, {
+      statementId: 'statementId',
+      parameterMetadata: 'parameterMetadata',
+      resultSets: [{
+        metadata: 'metadata'
+      }]
+    });
+  });
+};
+
+MockConnection.prototype.executeDirect = function executeDirect(options, cb) {
+  var self = this;
+  this.options = options;
+  util.setImmediate(function () {
+    var err = self.getError('executeDirect');
+    var reply = self.getReply('executeDirect')
+    cb(err, reply);
+  });
+};
+
 MockConnection.prototype.connect = function connect(options, cb) {
   /* jshint expr: true */
   var self = this;
+  this.options = options;
   options.should.be.an.Object;
   options.should.have.property('user');
   options.should.have.property('password');
   this.readyState = 'connecting';
   util.setImmediate(function () {
-    this.readyState = 'connected';
-    self.emit('connect');
-    cb();
+    var err = self.getError('connect');
+    if (err) {
+      self.readyState = 'disconnected';
+    } else {
+      self.readyState = 'connected';
+    }
+    cb(err);
   });
 };
 
 MockConnection.prototype.disconnect = function disconnect(cb) {
-  /* jshint expr: true */
-  var self = this;
   this.readyState = 'disconnecting';
   util.setImmediate(function () {
     this.readyState = 'disconnected';
-    self.emit('disconnect');
     cb();
   });
 };
@@ -88,17 +149,19 @@ MockConnection.prototype.disconnect = function disconnect(cb) {
 MockConnection.prototype.commit = function commit(cb) {
   var self = this;
   util.setImmediate(function () {
-    cb(null, {
+    var err = self.getError('commit');
+    cb(err, {
       transactionFlags: self._transactionFlags
-    })
+    });
   });
 };
 
 MockConnection.prototype.rollback = function rollback(cb) {
   var self = this;
   util.setImmediate(function () {
-    cb(null, {
+    var err = self.getError('rollback');
+    cb(err, {
       transactionFlags: self._transactionFlags
-    })
+    });
   });
 };
