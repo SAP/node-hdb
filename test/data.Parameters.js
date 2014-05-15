@@ -47,6 +47,18 @@ describe('Data', function () {
       });
     });
 
+    it('should write binary types', function (done) {
+      var test = data.BINARY;
+      var writer = Writer.create(test.values);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should write a blob', function (done) {
       var test = data.LOGO;
       var writer = Writer.create(test.values);
