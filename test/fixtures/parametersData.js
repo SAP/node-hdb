@@ -201,6 +201,26 @@ exports.ALL_TYPES = {
   }]
 };
 
+var uuid = '536A6F342D036BA5E10000000A434504'
+
+exports.BINARY = {
+  part: {
+    argumentCount: 1,
+    buffer: new Buffer('0c10' + uuid + '0c10' + uuid + '0c10' + uuid, 'hex')
+  },
+  values: [{
+    type: TypeCode.BINARY,
+    value: new Buffer(uuid, 'hex')
+  }, {
+    type: TypeCode.VARBINARY,
+    value: new Buffer(uuid, 'hex')
+  }, {
+    type: TypeCode.BSTRING,
+    value: new Buffer(uuid, 'hex')
+  }]
+};
+
+
 var logo = fs.readFileSync(path.join(__dirname, 'img', 'logo.png'));
 
 function logoBuffer(size) {
