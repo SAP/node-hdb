@@ -13,10 +13,16 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-module.exports = {
-  BASE_FORMAT: 0,
-  COMPLETE_DATATYPE_SUPPORT: 1,
-  // deprecated
-  EXTENDED_DATE_TIME_SUPPORT: 3,
-  LEVEL4: 4
+var chromeNet = require('chrome-net');
+
+exports.connect = function connect(options, cb) {
+  function connectionListener() {
+    /* jshint validthis:true */
+    this.setNoDelay(true);
+    if (typeof cb === 'function') {
+      cb.apply(this, arguments);
+    }
+  }
+  return chromeNet.connect(options, connectionListener);
 };
+exports._connect = chromeNet.connect;

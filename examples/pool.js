@@ -7,9 +7,9 @@
 // http: //www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an 
+// software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific 
+// either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
 
@@ -22,7 +22,7 @@ var options = JSON.parse(fs.readFileSync(filename));
 
 var pool = gp.Pool({
   name: 'hdb',
-  // create a new client object 
+  // create a new client object
   create: function create(callback) {
     var client = hdb.createClient(options);
     client.hadError = false;
@@ -37,7 +37,7 @@ var pool = gp.Pool({
       callback(null, client);
     });
   },
-  // If a client is removed from the pool 
+  // If a client is removed from the pool
   // and the client is not already closed
   // gently close the client connection.
   destroy: function destroy(client) {
@@ -46,7 +46,7 @@ var pool = gp.Pool({
     }
   },
   // validate is called before a client is acquired from pool.
-  // If the client is not connected it should be removed from pool. 
+  // If the client is not connected it should be removed from pool.
   validate: function validate(client) {
     return (!client.hadError && client.readyState === 'connected');
   },

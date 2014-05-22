@@ -7,9 +7,9 @@
 // http: //www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an 
+// software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific 
+// either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
 
@@ -77,8 +77,8 @@ var blob = new Buffer(
   '805d00000045494441542853636040030606060b80f83f125e80ae06850fd3a0afaf6f' +
   '00c350cd981ad14c46b605838dd756a22489b10dc320a8a6787cf4a826030370005135' +
   '2068971a00fc928ca7dff7607f0000000049454e44ae426082', 'hex');
-var clob = new Buffer('Hello CLOB', 'utf8');
-var nclob = new Buffer('Hello NCLOB', 'utf8');
+var clob = new Buffer('Bjoern Borg', 'ascii');
+var nclob = new Buffer('Bj\u00F6rn Borg', 'utf8');
 exports.ALL_TYPES = {
   part: {
     argumentCount: 1,
@@ -110,8 +110,8 @@ exports.ALL_TYPES = {
       '8c' +
       // offset 167
       '1b06c8000000c6000000' +
-      '1a060a0000008e010000' +
-      '1a060b00000098010000',
+      '19060b0000008e010000' +
+      '1a060b00000099010000',
       'hex'), blob, clob, nclob])
   },
   values: [{

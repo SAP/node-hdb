@@ -9,9 +9,9 @@
 // http: //www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an 
+// software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific 
+// either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
 
@@ -83,7 +83,6 @@ function insert(statement, cb) {
 }
 
 function select(cb) {
-  console.time('time');
   var sql = 'select * from TEST_BLOBS where ID = 1';
   client.execute(sql, cb);
 }
@@ -142,7 +141,6 @@ function writeFile(filename, cb) {
 }
 
 function done(err) {
-  console.timeEnd('time');
   if (err) {
     console.error('Error', err);
   } else {
