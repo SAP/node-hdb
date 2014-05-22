@@ -83,7 +83,6 @@ function insert(statement, cb) {
 }
 
 function select(cb) {
-  console.time('time');
   var sql = 'select * from TEST_BLOBS where ID = 1';
   client.execute(sql, cb);
 }
@@ -142,7 +141,6 @@ function writeFile(filename, cb) {
 }
 
 function done(err) {
-  console.timeEnd('time');
   if (err) {
     console.error('Error', err);
   } else {
