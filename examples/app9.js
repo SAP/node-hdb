@@ -106,12 +106,10 @@ function done(err, rows) {
   if (err) {
     return console.error(err);
   }
-
   console.log(util.inspect(rows.map(mapRow), {
     colors: true,
     depth: 9
   }));
-
 }
 
 function mapRow(row) {
