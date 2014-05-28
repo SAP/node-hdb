@@ -92,7 +92,6 @@ function insert(statement, cb) {
   statement.exec(values, function statementExecuted(err, rowsAffected) {
     /* jshint unused:false */
     console.timeEnd('time');
-    console.log(rowsAffected);
     cb(err);
   });
 }
@@ -103,13 +102,19 @@ function select(cb) {
 }
 
 function done(err, rows) {
+  client.end();
   if (err) {
     return console.error(err);
-  } else {
-    console.log(util.inspect(rows, {
-      colors: true,
-      depth: 9
-    }));
   }
-  client.end();
+
+  console.log(util.inspect(rows.map(mapRow), {
+    colors: true,
+    depth: 9
+  }));
+
+}
+
+function mapRow(row) {
+  row.CONTENT = row.CONTENT.toString('ascii');
+  return row;
 }
