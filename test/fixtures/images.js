@@ -17,6 +17,9 @@ var fs = require('fs');
 var path = require('path');
 
 module.exports = [{
+  NAME: 'lobby.jpg',
+  BDATA: fs.readFileSync(path.join(__dirname, 'img', 'lobby.jpg'))
+}, {
   NAME: 'locked.png',
   BDATA: fs.readFileSync(path.join(__dirname, 'img', 'locked.png'))
 }, {

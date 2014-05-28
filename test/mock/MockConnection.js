@@ -114,7 +114,7 @@ MockConnection.prototype.executeDirect = function executeDirect(options, cb) {
   this.options = options;
   util.setImmediate(function () {
     var err = self.getError('executeDirect');
-    var reply = self.getReply('executeDirect')
+    var reply = self.getReply('executeDirect');
     cb(err, reply);
   });
 };

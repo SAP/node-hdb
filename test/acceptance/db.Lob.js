@@ -52,10 +52,10 @@ describe('db', function () {
         }
 
         function insert(statement, cb) {
-          var filename = 'logo.png';
-          var pathname = path.join(dirname, filename);
-
-          var params = ['logo.1.png', fs.createReadStream(pathname)];
+          var params = [
+            'logo.1.png',
+            fs.createReadStream(path.join(dirname, 'logo.png'))
+          ];
 
           statement.exec(params, cb);
         }
@@ -86,16 +86,62 @@ describe('db', function () {
           }
 
           function insert(statement, cb) {
-            var filename = 'sap.jpg';
-            var pathname = path.join(dirname, filename);
-
-            var params = ['sap.2.jpg', fs.createReadStream(pathname)];
+            var params = [
+              'sap.2.jpg',
+              fs.createReadStream(path.join(dirname, 'sap.jpg'))
+            ];
 
             statement.exec(params, cb);
           }
 
           function validate(rowsAffected, cb) {
             rowsAffected.should.equal(1);
+            cb();
+          }
+
+          async.waterfall([prepare, insert, validate], done);
+        });
+
+      it('should insert multiple different images via batch',
+        function (done) {
+          function onnew(kind) {
+            kind.should.equal('write');
+          }
+          transaction.once('new', onnew);
+
+          function onend(success, kind) {
+            success.should.be.true;
+            kind.should.equal('write');
+          }
+          transaction.once('end', onend);
+
+          function prepare(cb) {
+            var sql = 'insert into images values (?, ?)';
+            client.prepare(sql, cb);
+          }
+
+          function insert(statement, cb) {
+
+            var params = [
+              ['lobby.3.jpg',
+                fs.createReadStream(path.join(dirname, 'lobby.jpg'))
+              ],
+              ['locked.3.png',
+                fs.createReadStream(path.join(dirname, 'locked.png'))
+              ],
+              ['logo.3.png',
+                fs.createReadStream(path.join(dirname, 'logo.png'))
+              ],
+              ['sap.3.jpg',
+                fs.createReadStream(path.join(dirname, 'sap.jpg'))
+              ],
+            ];
+
+            statement.exec(params, cb);
+          }
+
+          function validate(rowsAffected, cb) {
+            rowsAffected.should.eql([1, 1, 1, 1]);
             cb();
           }
 

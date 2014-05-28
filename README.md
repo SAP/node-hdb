@@ -14,6 +14,7 @@ Table of contents
 * [Establish a database connection](#establish-a-database-connection)
 * [Direct Statement Execution](#direct-statement-execution)
 * [Prepared Statement Execution](#prepared-statement-execution)
+* [Bulk Insert](#bulk-insert)
 * [Streaming results](#streaming-results)
 * [Transaction handling](#transaction-handling)
 * [Streaming Large Objects](#streaming-large-objects)
@@ -273,6 +274,28 @@ statement.drop(function(err){
 ```
 The callback is optional in this case.
 
+Bulk Insert
+---------------
+
+If you want to insert multiple rows with a single execute you just 
+have to provide the all parameters as array.
+
+```js
+client.prepare('insert into TEST.NUMBERS values (?, ?)', function(err, statement){
+  if (err) {
+    return console.error('Prepare error:', err);
+  }  
+  statement.exec([[1, 'one'], ['2', 'two'], [3, 'three']], function(err, affectedRows) {
+    if (err) {
+      return console.error('Exec error:', err);
+    }
+    console.log('Array of affected rows:', affectedRows);  
+  });
+});
+```
+Take a look at the example [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js) for further details. 
+
+
 Streaming results
 ---------------
 
@@ -388,8 +411,10 @@ Also, for the examples you need a valid a ```config.json``` in the ```test/db```
 - [app6](https://github.com/SAP/node-hdb/blob/master/examples/app6.js): Stream from the filesystem into a db table.
 - [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js): Insert a row with a large image into a db table (uses WriteLobRequest and Transaction internally).
 - [app8](https://github.com/SAP/node-hdb/blob/master/examples/app8.js): Automatic reconnect when network connection is lost.
+- [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js): Insert multiple rows with large images into a db table as one batch.
 - [call1](https://github.com/SAP/node-hdb/blob/master/examples/call1.js): Call stored procedure. 
 - [call2](https://github.com/SAP/node-hdb/blob/master/examples/call2.js): Call stored procedure with lob input and output parameter.
+- [call3](https://github.com/SAP/node-hdb/blob/master/examples/call3.js): Call stored procedure with table as input parameter.
 - [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js): Transaction handling (shows how to use commit and rollback).  
 - [csv](https://github.com/SAP/node-hdb/blob/master/examples/csv.js): Stream a db table into csv file.
 - [server](https://github.com/SAP/node-hdb/blob/master/examples/server.js): Stream rows into http response `http://localhost:1337/{schema}/{tablename}?top={top}`

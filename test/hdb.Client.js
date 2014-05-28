@@ -34,7 +34,8 @@ function TestClient(options) {
 
 TestClient.prototype._createConnection = mock.createConnection;
 TestClient.prototype._createResult = function _createResult() {
-  return this._result = mock.createResult.apply(this, arguments);
+  this._result = mock.createResult.apply(this, arguments);
+  return this._result;
 };
 
 describe('hdb', function () {
@@ -110,7 +111,6 @@ describe('hdb', function () {
       var client = new TestClient({
         assertion: 'assertion'
       });
-      var connection = client._connection;
       client.connect(function (err) {
         should(err === null).be.ok;
         should(client.get('assertion')).not.be.ok;
@@ -354,7 +354,7 @@ describe('hdb', function () {
         if (err) {
           return done();
         }
-        done(new Error('roolback'))
+        done(new Error('roolback'));
       });
     });
 

@@ -248,7 +248,7 @@ function handleExecute(msg) {
   var idPart = msg.parts.filter(isKind.bind(PartKind.STATEMENT_ID))[0];
   var statementId = idPart.buffer.toString('hex');
   var paramsPart = msg.parts.filter(isKind.bind(PartKind.PARAMETERS))[0];
-  var sd = getStatementData(statementId, paramsPart.buffer);
+  var sd = getStatementData(statementId, paramsPart);
   var segment = new Segment(sd.kind, sd.functionCode);
   sd.parts.forEach(function addPart(p) {
     segment.push(new Part(p.kind, p.attributes, p.argumentCount, p.buffer));
@@ -256,8 +256,9 @@ function handleExecute(msg) {
   return segment;
 }
 
-function getStatementData(statementId, buffer) {
+function getStatementData(statementId, paramsPart) {
   var statement = DATA.execute[statementId];
+  var buffer = paramsPart.buffer;
   var key;
   var start, end;
   switch (statementId) {

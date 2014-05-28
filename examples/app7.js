@@ -127,7 +127,7 @@ function writeFile(filename, cb) {
     writeStream.removeListener('error', done);
     writeStream.removeListener('finish', onfinish);
     cb(err);
-    console.log(filename)
+    console.log(filename);
   }
 
   function onfinish() {
