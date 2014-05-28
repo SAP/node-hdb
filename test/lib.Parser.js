@@ -14,7 +14,6 @@
 'use strict';
 /*jshint expr:true*/
 
-var should = require('should');
 var lib = require('./hdb').lib;
 var TypeCode = lib.common.TypeCode;
 var metadata = [{

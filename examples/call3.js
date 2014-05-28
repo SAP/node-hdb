@@ -33,14 +33,14 @@ function createTableType(cb) {
   dropAndCreate({
     drop: 'drop type tt1',
     create: 'create type tt1 as table (i smallint)'
-  }, cb)
+  }, cb);
 }
 
 function createLocalTemporaryTable(cb) {
   dropAndCreate({
     drop: 'drop table #local_test_table_1',
     create: 'create local temporary table #local_test_table_1 (i smallint)'
-  }, cb)
+  }, cb);
 }
 
 function createProcedure(cb) {
@@ -54,7 +54,7 @@ function createProcedure(cb) {
       '  out1 = select (i*i) as i from :in1;',
       'end;'
     ].join('\n')
-  }, cb)
+  }, cb);
 }
 
 function prepare(cb) {
@@ -80,7 +80,8 @@ function updateLocalTemporaryTable(values, cb) {
       return statement.exec.bind(statement, [value]);
     }
 
-    async.series(values.map(createTasks), function (err) {
+    async.series(values.map(createTasks), function () {
+      // ignore error
       statement.drop(cb);
     });
   }

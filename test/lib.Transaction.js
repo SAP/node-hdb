@@ -33,7 +33,7 @@ describe('Lib', function () {
         err.should.be.an.Error;
         err.level.should.equal(lib.common.ErrorLevel.FATAL);
         done();
-      })
+      });
       transaction.setFlags({
         sessionClosingTransactionErrror: true
       });
@@ -44,7 +44,7 @@ describe('Lib', function () {
       transaction.on('new', function (kind) {
         kind.should.equal('read');
         done();
-      })
+      });
       transaction.setFlags({
         noWriteTransactionStarted: true
       });
@@ -55,7 +55,7 @@ describe('Lib', function () {
       transaction.on('new', function (kind) {
         kind.should.equal('write');
         done();
-      })
+      });
       transaction.setFlags({
         writeTransactionStarted: true
       });

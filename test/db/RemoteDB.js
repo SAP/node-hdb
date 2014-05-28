@@ -13,7 +13,6 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var async = require('async');
 var util = require('util');
 var TestDB = require('./TestDB');
 
@@ -74,16 +73,12 @@ RemoteDB.prototype.createTable = function createTable(tablename, columns,
   }
 
   function insertInto(statement) {
-    function createInsertTask(params) {
-      return statement.exec.bind(statement, params);
-    }
-    var tasks = values.map(createInsertTask);
 
     function onresult(err) {
       statement.drop();
       cb(err);
     }
-    async.series(tasks, onresult);
+    statement.exec(values, onresult);
   }
 
   function onprepare(err, statement) {

@@ -37,37 +37,30 @@ exports.DEFAULT = {
       '1e00' +
       '1e00', 'hex')
   },
-  values: [{
-    type: TypeCode.NSTRING,
-    value: 'all'
-  }, {
-    type: TypeCode.STRING,
-    value: 'date'
-  }, {
-    type: TypeCode.STRING,
-    value: 'desc'
-  }, {
-    type: TypeCode.INT,
-    value: 1
-  }, {
-    type: TypeCode.INT,
-    value: 40
-  }, {
-    type: TypeCode.TINYINT,
-    value: 0
-  }, {
-    type: TypeCode.NSTRING,
-    value: 'all'
-  }, {
-    type: TypeCode.NSTRING,
-    value: ''
-  }, {
-    type: TypeCode.NSTRING,
-    value: ''
-  }, {
-    type: TypeCode.NSTRING,
-    value: ''
-  }]
+  types: [
+    TypeCode.NSTRING,
+    TypeCode.STRING,
+    TypeCode.STRING,
+    TypeCode.INT,
+    TypeCode.INT,
+    TypeCode.TINYINT,
+    TypeCode.NSTRING,
+    TypeCode.NSTRING,
+    TypeCode.NSTRING,
+    TypeCode.NSTRING
+  ],
+  values: [
+    'all',
+    'date',
+    'desc',
+    1,
+    40,
+    0,
+    'all',
+    '',
+    '',
+    ''
+  ]
 };
 
 var blob = new Buffer(
@@ -114,110 +107,85 @@ exports.ALL_TYPES = {
       '1a060b00000099010000',
       'hex'), blob, clob, nclob])
   },
-  values: [{
-    type: TypeCode.INT,
-    value: 1
-  }, {
-    type: TypeCode.SMALLINT,
-    value: 2
-  }, {
-    type: TypeCode.INT,
-    value: 3
-  }, {
-    type: TypeCode.SMALLINT,
-    value: 4
-  }, {
-    type: TypeCode.INT,
-    value: 5
-  }, {
-    type: TypeCode.SMALLINT,
-    value: 6
-  }, {
-    type: TypeCode.BIGINT,
-    value: 7
-  }, {
-    type: TypeCode.BIGINT,
-    value: 8
-  }, {
-    type: TypeCode.DECIMAL,
-    value: 9.9
-  }, {
-    type: TypeCode.REAL,
-    value: 10.1
-  }, {
-    type: TypeCode.DOUBLE,
-    value: 11.11
-  }, {
-    type: TypeCode.DATE,
-    value: '2013-11-20'
-  }, {
-    type: TypeCode.DATE,
-    value: '2013-11-20'
-  }, {
-    type: TypeCode.TIMESTAMP,
-    value: '2013-11-20T13:40:52.007'
-  }, {
-    type: TypeCode.TIME,
-    value: '13:40:52.007'
-  }, {
-    type: TypeCode.TIME,
-    value: '13:40:52.007'
-  }, {
-    type: TypeCode.TIMESTAMP,
-    value: '2013-11-20T13:40:52.007'
-  }, {
-    type: TypeCode.TIMESTAMP,
-    value: '2013-11-20T13:40:52.007'
-  }, {
-    type: TypeCode.VARCHAR1,
-    value: 'nineteen'
-  }, {
-    type: TypeCode.NVARCHAR,
-    value: 'twenty'
-  }, {
-    type: TypeCode.VARBINARY,
-    value: null
-  }, {
-    type: TypeCode.DECIMAL,
-    value: 22.22
-  }, {
-    type: TypeCode.REAL,
-    value: 23.23
-  }, {
-    type: TypeCode.REAL,
-    value: 24.24
-  }, {
-    type: TypeCode.BINARY,
-    value: null
-  }, {
-    type: TypeCode.BLOB,
-    value: blob
-  }, {
-    type: TypeCode.CLOB,
-    value: clob
-  }, {
-    type: TypeCode.NCLOB,
-    value: nclob
-  }]
+  types: [
+    TypeCode.INT,
+    TypeCode.SMALLINT,
+    TypeCode.INT,
+    TypeCode.SMALLINT,
+    TypeCode.INT,
+    TypeCode.SMALLINT,
+    TypeCode.BIGINT,
+    TypeCode.BIGINT,
+    TypeCode.DECIMAL,
+    TypeCode.REAL,
+    TypeCode.DOUBLE,
+    TypeCode.DATE,
+    TypeCode.DATE,
+    TypeCode.TIMESTAMP,
+    TypeCode.TIME,
+    TypeCode.TIME,
+    TypeCode.TIMESTAMP,
+    TypeCode.TIMESTAMP,
+    TypeCode.VARCHAR1,
+    TypeCode.NVARCHAR,
+    TypeCode.VARBINARY,
+    TypeCode.DECIMAL,
+    TypeCode.REAL,
+    TypeCode.REAL,
+    TypeCode.BINARY,
+    TypeCode.BLOB,
+    TypeCode.CLOB,
+    TypeCode.NCLOB
+  ],
+  values: [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9.9,
+    10.1,
+    11.11,
+    '2013-11-20',
+    '2013-11-20',
+    '2013-11-20T13:40:52.007',
+    '13:40:52.007',
+    '13:40:52.007',
+    '2013-11-20T13:40:52.007',
+    '2013-11-20T13:40:52.007',
+    'nineteen',
+    'twenty',
+    null,
+    22.22,
+    23.23,
+    24.24,
+    null,
+    blob,
+    clob,
+    nclob
+  ]
 };
 
-var uuid = '536A6F342D036BA5E10000000A434504'
+var uuid = '536A6F342D036BA5E10000000A434504';
 
 exports.BINARY = {
   part: {
     argumentCount: 1,
     buffer: new Buffer('0c10' + uuid + '0c10' + uuid + '0c10' + uuid, 'hex')
   },
-  values: [{
-    type: TypeCode.BINARY,
-    value: new Buffer(uuid, 'hex')
-  }, {
-    type: TypeCode.VARBINARY,
-    value: new Buffer(uuid, 'hex')
-  }, {
-    type: TypeCode.BSTRING,
-    value: new Buffer(uuid, 'hex')
-  }]
+  types: [
+    TypeCode.BINARY,
+    TypeCode.VARBINARY,
+    TypeCode.BSTRING
+  ],
+  values: [
+    new Buffer(uuid, 'hex'),
+    new Buffer(uuid, 'hex'),
+    new Buffer(uuid, 'hex')
+  ]
 };
 
 
@@ -240,11 +208,12 @@ exports.LOGO = {
     argumentCount: 1,
     buffer: logoBuffer(MAX_PART_SIZE)
   },
-  values: [{
-    type: TypeCode.INT,
-    value: 1
-  }, {
-    type: TypeCode.BLOB,
-    value: logo
-  }]
+  types: [
+    TypeCode.INT,
+    TypeCode.BLOB
+  ],
+  values: [
+    1,
+    logo
+  ]
 };
