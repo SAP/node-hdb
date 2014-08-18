@@ -2,7 +2,7 @@ SAP HANA Database Client for Node
 ====================================
 
 A JavaScript client for Node implementing the 
-[SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_Database_SQL_command_network_protocol_en.pdf).
+[SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_SQL_Command_Network_Protocol_Reference_en.pdf).
 
 [![NPM](https://nodei.co/npm/hdb.png?compact=true)](https://npmjs.org/package/hdb) &nbsp;&nbsp;&nbsp; [![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)
 
