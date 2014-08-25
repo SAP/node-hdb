@@ -69,8 +69,34 @@ describe('db', function () {
         ], done);
       });
 
-    });
+      it('should return an invalid parameters error', function (done) {
+        var statement;
+        async.series([
 
+          function prepare(cb) {
+            var sql = 'insert into NUMBERS values (?, ?)';
+            client.prepare(sql, function (err, ps) {
+              statement = ps;
+              cb(err);
+            });
+          },
+          function insert(cb) {
+            var values = [1, new Buffer('invalid type', 'ascii')];
+            statement.exec(values, function (err) {
+              err.should.be.instanceof(Error);
+              cb();
+            });
+          },
+          function drop(cb) {
+            statement.drop(function (err) {
+              // ignore error
+              cb();
+            });
+          }
+        ], done);
+      });
+
+    });
 
     describe('execute of DBProcedure', function () {
       before(db.createReadNumbersProc.bind(db));
