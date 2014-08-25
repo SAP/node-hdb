@@ -81,3 +81,22 @@ exports['insert into images values (?, ?)'] = {
       'hex')
   }]
 };
+
+exports['insert into numbers values (?, ?)'] = {
+  kind: SegmentKind.REPLY,
+  functionCode: FunctionCode.INSERT,
+  parts: [{
+    kind: PartKind.STATEMENT_ID,
+    argumentCount: 1,
+    attributes: 0,
+    buffer: new Buffer(
+      '0400000000000000', 'hex')
+  }, {
+    kind: PartKind.PARAMETER_METADATA,
+    argumentCount: 2,
+    attributes: 0,
+    buffer: new Buffer(
+      '02030100ffffffff0a0000000100000002090100ffffffff1000000008000000',
+      'hex')
+  }]
+}
