@@ -22,7 +22,7 @@
   ],
   "main": "./index.js",
   "scripts": {
-    "test": "make test"
+    "test": "make test-coveralls"
   },
   "browser": {
     "./lib/protocol/tcp.js": "./chrome/sockets/tcp.js"
@@ -33,14 +33,15 @@
   "dependencies": {},
   "devDependencies": {
     "async": "^0.9.0",
-    "chrome-net": "^2.0.0",
-    "concat-stream": "^1.4.1",
+    "chrome-net": "^2.2.0",
+    "concat-stream": "^1.4.6",
+    "coveralls": "^2.11.1",
     "debuglog": "^1.0.0",
-    "fstream": "^0.1.25",
-    "generic-pool": "^2.0.4",
-    "mocha": "^1.19.0",
-    "readable-stream": "~1.0.x",
-    "should": "^3.3.1"
+    "fstream": "^1.0.2",
+    "generic-pool": "^2.1.1",
+    "istanbul": "^0.3.0",
+    "mocha": "^1.21.4",
+    "should": "^4.0.4"
   },
   "optionalDependencies": {}
 }
