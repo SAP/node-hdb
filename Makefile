@@ -26,7 +26,7 @@ test-coveralls:
 	  --report lcovonly \
 		./node_modules/mocha/bin/_mocha -- \
 			-R spec -b --recursive \
-			&& cat ./coverage/lcov.info | ./bin/coveralls.js \
+			&& cat ./coverage/lcov.info | node ./bin/coveralls.js \
 			&& rm -rf ./coverage
 
 clean:
