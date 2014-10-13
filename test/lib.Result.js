@@ -68,7 +68,7 @@ describe('Lib', function () {
 
   describe('#Result', function () {
 
-    it('should handle an exec error', function (done) {
+    it('should handle an execution error', function (done) {
       var result = createResult();
       var execError = new Error('exec error');
       var reply = {};
@@ -89,11 +89,45 @@ describe('Lib', function () {
       });
     });
 
+    it('should handle a DDL function code', function (done) {
+      var result = createResult();
+      var reply = {
+        functionCode: FunctionCode.DDL
+      };
+      result.handle(null, reply, function (err) {
+        (!err).should.be.ok;
+        done();
+      });
+    });
+
+    it('should handle a query with error', function (done) {
+      var result = createResult();
+      var reply = {
+        functionCode: FunctionCode.SELECT,
+        resultSets: []
+      };
+      result.handle(null, reply, function (err) {
+        (!err).should.be.ok;
+        done();
+      });
+    });
+
     it('should return no lob column names', function () {
       var result = createResult({
         parameterMetadata: false
       });
       result.getLobColumnNames().should.have.length(0);
+    });
+
+    it('should create output parameters', function () {
+      var result = createResult();
+      var part = {
+        argumentCount: 1,
+        buffer: new Buffer('010d000000', 'hex')
+      };
+      result.createOutputParameters(part).should.eql({
+        X: 13
+      });
     });
 
   });

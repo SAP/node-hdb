@@ -1,6 +1,5 @@
 node_modules
 coverage
-lib-cov
 build
 coverage.html
 config.json
