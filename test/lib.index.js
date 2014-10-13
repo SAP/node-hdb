@@ -12,26 +12,33 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
+/* jshint expr: true */
 
-exports.util = require('./util');
-exports.util.extend(exports, require('./protocol'));
-exports.Client = require('./Client');
+var lib = require('./hdb').lib;
+var Client = lib.Client;
 
-exports.createClient = function createClient(options) {
-  return new exports.Client(options);
+function TestClient() {}
+TestClient.prototype.connect = function connect(cb) {
+  setImmediate(cb);
 };
 
-exports.connect = function connect(options, cb) {
-  var client = exports.createClient(options);
-  client.connect(cb);
-  return client;
-};
+describe('Lib', function () {
 
-exports.createJSONStringifier = function createJSONStringifier() {
-  return new exports.Stringifier({
-    header: '[',
-    footer: ']',
-    seperator: ',',
-    stringify: JSON.stringify
+  describe('#index', function () {
+    before(function () {
+      lib.Client = TestClient;
+    });
+    after(function () {
+      lib.Client = Client;
+    });
+
+    it('should connect', function (done) {
+      var client = lib.connect({}, function (err) {
+        (!err).should.be.ok;
+        done();
+      });
+      client.should.be.instanceof(TestClient);
+    });
+
   });
-};
+});

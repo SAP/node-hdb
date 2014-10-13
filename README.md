@@ -4,7 +4,8 @@ SAP HANA Database Client for Node
 A JavaScript client for Node implementing the 
 [SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_SQL_Command_Network_Protocol_Reference_en.pdf).
 
-[![NPM](https://nodei.co/npm/hdb.png?compact=true)](https://npmjs.org/package/hdb) &nbsp;&nbsp;&nbsp; [![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)
+[![NPM](https://nodei.co/npm/hdb.png?downloads=true)](https://npmjs.org/package/hdb)&nbsp;&nbsp;&nbsp; 
+[![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/SAP/node-hdb/badge.png?branch=master)](https://coveralls.io/r/SAP/node-hdb?branch=master)&nbsp;&nbsp;&nbsp;[![Dependency Status](https://gemnasium.com/SAP/node-hdb.svg)](https://gemnasium.com/SAP/node-hdb)
 
 Table of contents
 -------------
@@ -85,8 +86,10 @@ var client = hdb.createClient({
 console.log(client.readyState); // new
 ```
 
-When a client instance is created it does not immediately open a network connection to the database host. Initially the client is in state `new`. When you call `connect` the first time two things are done internally. 
-1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established. The client is in state `disconnected`. This step is skipped if the client is already in state `disconnected`. 
+When a client instance is created it does not immediately open a network connection to the database host. Initially the client is in state `new`. When you call `connect` the first time two things are done internally.
+
+1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established. The client is in state `disconnected`. This step is skipped if the client is already in state `disconnected`.
+
 2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in state `connected`. If authentication fails the client remains in state `'disconnect'`. 
 
 ```js
@@ -375,7 +378,7 @@ Reading large object as stream can be done if you use the `execute` method of cl
 
 ### Write Streams
 
-Writing large objects is automatically done. You just have to pass instance of [`Readable`](http://nodejs.org/api/stream.html#stream_class_stream_readable_1) or a Buffer oobject as parameter.
+Writing large objects is automatically done. You just have to pass instance of [`Readable`](http://nodejs.org/api/stream.html#stream_class_stream_readable_1) or a Buffer object as parameter.
 
 Take a look at the example [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js) for further details. 
 

@@ -82,17 +82,6 @@ describe('hdb', function () {
       });
     });
 
-    // connect
-    it('should not connect with invalid state error', function (done) {
-      var client = new TestClient();
-      var connection = client._connection;
-      connection.readyState = 'connected';
-      client.connect(function (err) {
-        err.code.should.equal('EHDBCONNECT');
-        done();
-      });
-    });
-
     it('should not connect because of network error', function (done) {
       var client = new TestClient();
       client._connection.errors.open = true;
@@ -114,6 +103,16 @@ describe('hdb', function () {
       client.connect(function (err) {
         should(err === null).be.ok;
         should(client.get('assertion')).not.be.ok;
+        done();
+      });
+    });
+
+    it('should directly connect without constructor', function (done) {
+      var client = new TestClient();
+      var connection = client._connection;
+      connection.readyState = 'connected';
+      client.connect(function (err) {
+        err.code.should.equal('EHDBCONNECT');
         done();
       });
     });
