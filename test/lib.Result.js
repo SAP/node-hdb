@@ -81,10 +81,21 @@ describe('Lib', function () {
     it('should handle an invalid function code', function (done) {
       var result = createResult();
       var reply = {
-        functionCode: FunctionCode.NIL
+        functionCode: -42
       };
       result.handle(null, reply, function (err) {
         err.should.be.instanceof(Error);
+        done();
+      });
+    });
+
+    it('should handle an initial function code', function (done) {
+      var result = createResult();
+      var reply = {
+        functionCode: FunctionCode.NIL
+      };
+      result.handle(null, reply, function (err) {
+        (!err).should.be.ok;
         done();
       });
     });
