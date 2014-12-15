@@ -24,7 +24,10 @@ describe('Data', function () {
   describe('#ResultSetMetadata', function () {
 
     it('should read resultSet metadata', function () {
-      var columnMetadata = ResultSetMetadata.read(data.part);
+      var columnMetadata = ResultSetMetadata.read(data.part).map(
+        function (column) {
+          return column.toPlainObject();
+        });
       columnMetadata.should.eql(data.columns);
     });
 

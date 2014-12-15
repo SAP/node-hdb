@@ -40,7 +40,7 @@ describe('Data', function () {
       SqlError.read({
         buffer: buffer,
         argumentCount: 1
-      }).should.eql(error);
+      }).toPlainObject().should.eql(error);
     });
 
   });
