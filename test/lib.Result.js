@@ -16,6 +16,7 @@
 
 var lib = require('./hdb').lib;
 var Result = lib.Result;
+var Lob = lib.Lob;
 var FunctionCode = lib.common.FunctionCode;
 var TypeCode = lib.common.TypeCode;
 var IoType = lib.common.IoType;
@@ -33,6 +34,41 @@ Stub.prototype.readLob = function readLob() {
     cb.apply(null, self.ouputArgs);
   });
 };
+
+function createResultSet(err, rows) {
+  return {
+    error: err,
+    rows: rows,
+    fetch: function fetch(cb) {
+      setImmediate(function () {
+        if (err) {
+          return cb(err);
+        }
+        cb(null, rows);
+      });
+    },
+    close: function close(cb) {
+      setImmediate(function () {
+        cb(null);
+      });
+    }
+  };
+}
+
+function createLob(err, buffer) {
+  var lob = new Lob(null, {
+    locatorId: 1
+  });
+  lob.read = function readLob(cb) {
+    setImmediate(function () {
+      if (err) {
+        return cb(err);
+      }
+      cb(null, buffer);
+    });
+  };
+  return lob;
+}
 
 function createResult(options) {
   options = lib.util.extend({
@@ -61,8 +97,6 @@ function createResult(options) {
   }
   return result;
 }
-
-
 
 describe('Lib', function () {
 
@@ -141,5 +175,139 @@ describe('Lib', function () {
       });
     });
 
+    it('should create a lob', function () {
+      var result = createResult();
+
+      result._connection._readLob = function readLob() {};
+      var lob = result.createLob({
+        locatorId: 1
+      });
+      lob.locatorId.should.equal(1);
+    });
+
+    it('should handle a db procedure call without auto fetch',
+      function (done) {
+        var result = createResult({
+          autoFetch: false
+        });
+        var _params = {};
+        var _rows = [{
+          'DUMMY': 'X'
+        }];
+        var resultSet = createResultSet(null, _rows);
+        result.handleDBCall(function (err, params, rs) {
+          (!err).should.be.ok;
+          params.should.equal(_params);
+          rs.should.equal(resultSet);
+          done();
+        }, _params, [resultSet]);
+      });
+
+    it('should handle a db procedure call with lob instance',
+      function (done) {
+        var result = createResult({
+          autoFetch: true,
+          parameterMetadata: [{
+            dataType: TypeCode.NCLOB,
+            ioType: IoType.OUTPUT,
+            name: 'Z'
+          }],
+        });
+        var _buffer = new Buffer('foo', 'utf8');
+        var _params = {
+          Z: createLob(null, _buffer)
+        };
+        var _rows = [{
+          'DUMMY': 'X'
+        }];
+        var resultSet = createResultSet(null, _rows);
+        result.handleDBCall(
+          function (err, params, rows) {
+            (!err).should.be.ok;
+            params.Z.should.equal(_buffer);
+            rows.should.eql(_rows);
+            done();
+          }, _params, [resultSet]);
+      });
+
+    it('should handle a db procedure call with lob buffer',
+      function (done) {
+        var result = createResult({
+          autoFetch: true,
+          parameterMetadata: [{
+            dataType: TypeCode.NCLOB,
+            ioType: IoType.OUTPUT,
+            name: 'Z'
+          }],
+        });
+        var _buffer = new Buffer('foo', 'utf8');
+        var _params = {
+          Z: _buffer
+        };
+        var _rows = [{
+          'DUMMY': 'X'
+        }];
+        var resultSet = createResultSet(null, _rows);
+        result.handleDBCall(
+          function (err, params, rows) {
+            (!err).should.be.ok;
+            params.Z.should.equal(_buffer);
+            rows.should.eql(_rows);
+            done();
+          }, _params, [resultSet]);
+      });
+
+
+    it('should handle a db procedure call with read lob error',
+      function (done) {
+        var result = createResult({
+          autoFetch: true,
+          parameterMetadata: [{
+            dataType: TypeCode.NCLOB,
+            ioType: IoType.OUTPUT,
+            name: 'Z'
+          }],
+        });
+        var _err = new Error('Dummy');
+        var _params = {
+          Z: createLob(_err)
+        };
+        var _rows = [{
+          'DUMMY': 'X'
+        }];
+        var resultSet = createResultSet(null, _rows);
+        result.handleDBCall(
+          function (err) {
+            err.should.equal(_err);
+            done();
+          }, _params, [resultSet]);
+      });
+
+    it('should handle a db procedure call with error',
+      function (done) {
+        var result = createResult({
+          autoFetch: true
+        });
+        var _err = new Error('Dummy');
+        var resultSet = createResultSet(_err);
+        result.handleDBCall(function (err) {
+          err.should.equal(_err);
+          done();
+        }, {}, [resultSet]);
+      });
+
+
+    it('should handle a query with error',
+      function (done) {
+        var result = createResult({
+          autoFetch: true
+        });
+        var _err = new Error('Dummy');
+        var resultSet = createResultSet(_err);
+        result.handleQuery(function (err) {
+          err.should.equal(_err);
+          done();
+        }, [resultSet]);
+      });
   });
 });
