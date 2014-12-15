@@ -12,6 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
+/* jshint expr: true */
 
 var lib = require('./hdb').lib;
 var SegmentKind = lib.common.SegmentKind;
@@ -48,6 +49,22 @@ describe('Rep', function () {
         '  ]',
         '}\n'
       ].join('\n'));
+    });
+
+    it('should get a part', function () {
+      var segment = new Segment();
+      (!segment.getPart(1)).should.be.ok;
+      var parts = [{
+        kind: 1,
+        buffer: new Buffer([1])
+      }, {
+        kind: 1,
+        buffer: new Buffer([2])
+      }];
+      segment.parts = parts.slice(0, 1);
+      segment.getPart(1).should.eql(parts[0]);
+      segment.parts = parts.slice(0);
+      segment.getPart(1).should.eql(parts);
     });
 
   });

@@ -14,21 +14,16 @@
 'use strict';
 
 var lib = require('./hdb').lib;
-var PartKind = lib.common.PartKind;
-var ResultSetMetadata = lib.data[PartKind.RESULT_SET_METADATA];
 
-var data = require('./fixtures/resultSetMetadata').VERSION_AND_CURRENT_USER;
+describe('Req', function () {
 
-describe('Data', function () {
+  describe('#index', function () {
 
-  describe('#ResultSetMetadata', function () {
-
-    it('should read resultSet metadata', function () {
-      var columnMetadata = ResultSetMetadata.read(data.part).map(
-        function (column) {
-          return column.toPlainObject();
-        });
-      columnMetadata.should.eql(data.columns);
+    it('should create an execute direct request', function () {
+      var request = lib.request.executeDirect({
+        commitImmediateley: true
+      });
+      request.commitImmediateley.should.equal(1);
     });
 
   });

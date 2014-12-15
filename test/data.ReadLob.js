@@ -45,7 +45,9 @@ describe('Data', function () {
   };
 
   var replyOptions = {
-    locatorId: new Buffer([0x00, 0x00, 0x00, 0x00, 0xf0, 0x18, 0x03, 0x00]),
+    locatorId: new Buffer([0x00, 0x00, 0x00, 0x00, 0xf0, 0x18, 0x03,
+      0x00
+    ]),
     options: 1,
     chunk: new Buffer([0x60, 0x61, 0x62, 0x63])
   };
@@ -58,7 +60,7 @@ describe('Data', function () {
     });
 
     it('should read a ReadLob reply', function () {
-      var options = ReadLobReply.read(replyPart);
+      var options = ReadLobReply.read(replyPart).toPlainObject();
       options.should.eql(replyOptions);
     });
 

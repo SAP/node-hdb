@@ -63,8 +63,11 @@ describe('Data', function () {
 
   describe('#ParameterMetadata', function () {
 
-    it('shoul read parameter metadata', function () {
-      var metadata = ParameterMetadata.read(paramsPart);
+    it('should read parameter metadata', function () {
+      var metadata = ParameterMetadata.read(paramsPart).map(
+        function (param) {
+          return param.toPlainObject();
+        });
       metadata.should.eql(paramsMetadata);
     });
 

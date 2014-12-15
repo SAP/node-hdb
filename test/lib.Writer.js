@@ -85,7 +85,8 @@ describe('Lib', function () {
           }
           part.buffer.should.have.length(SIZE);
           var exp = new Buffer(
-            '0100000000000000020000000000000000eb030000', 'hex');
+            '0100000000000000020000000000000000eb030000',
+            'hex');
           part.buffer.slice(0, 21).should.eql(exp);
           done();
         });
@@ -221,44 +222,54 @@ describe('Lib', function () {
       writer._buffers[0][1].should.equal(247);
     });
 
-    it('should get Parameters where buffer excatly fits', function (done) {
+    it('should get Parameters where buffer excatly fits', function (
+      done) {
       var writer = new Writer([TypeCode.BLOB]);
       var stream = new lib.util.stream.Readable();
       var buffer = new Buffer('blob', 'ascii');
       var size = 10 + buffer.length;
       stream.push(buffer);
-      stream.push(null)
+      stream.push(null);
       writer.setValues([stream]);
       writer.getParameters(size, function (err, buffer) {
         buffer.should.have.length(size);
-        buffer.slice(10).toString('ascii').should.equal('blob');
-        EventEmitter.listenerCount(stream, 'readable').should.equal(0);
-        EventEmitter.listenerCount(stream, 'error').should.equal(0);
-        EventEmitter.listenerCount(stream, 'end').should.equal(0);
+        buffer.slice(10).toString('ascii').should.equal(
+          'blob');
+        EventEmitter.listenerCount(stream, 'readable').should
+          .equal(0);
+        EventEmitter.listenerCount(stream, 'error').should.equal(
+          0);
+        EventEmitter.listenerCount(stream, 'end').should.equal(
+          0);
         done();
       });
     });
 
-    it('should get WriteLobRequest where buffer excatly fits', function (
-      done) {
-      var writer = new Writer([TypeCode.BLOB]);
-      var stream = new lib.util.stream.Readable();
-      var buffer = new Buffer('blob', 'ascii');
-      var size = 21 + buffer.length;
-      stream.push(buffer);
-      stream.push(null)
-      stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
-      writer._lobs.push(stream);
-      writer.getWriteLobRequest(size, function (err, part) {
-        part.argumentCount.should.equal(1);
-        part.buffer.should.have.length(size);
-        part.buffer.slice(21).toString('ascii').should.equal('blob');
-        EventEmitter.listenerCount(stream, 'readable').should.equal(0);
-        EventEmitter.listenerCount(stream, 'error').should.equal(0);
-        EventEmitter.listenerCount(stream, 'end').should.equal(0);
-        done();
+    it('should get WriteLobRequest where buffer excatly fits',
+      function (
+        done) {
+        var writer = new Writer([TypeCode.BLOB]);
+        var stream = new lib.util.stream.Readable();
+        var buffer = new Buffer('blob', 'ascii');
+        var size = 21 + buffer.length;
+        stream.push(buffer);
+        stream.push(null);
+        stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+        writer._lobs.push(stream);
+        writer.getWriteLobRequest(size, function (err, part) {
+          part.argumentCount.should.equal(1);
+          part.buffer.should.have.length(size);
+          part.buffer.slice(21).toString('ascii').should.equal(
+            'blob');
+          EventEmitter.listenerCount(stream, 'readable').should
+            .equal(0);
+          EventEmitter.listenerCount(stream, 'error').should.equal(
+            0);
+          EventEmitter.listenerCount(stream, 'end').should.equal(
+            0);
+          done();
+        });
       });
-    });
 
     it('should emit a stream error while getting Parameters',
       function (done) {
@@ -283,6 +294,7 @@ describe('Lib', function () {
         };
         writer.setValues([stream]);
         writer.getParameters(64, function (err) {
+          /* jshint expr: true */
           should(err).be.ok;
           done();
         });
@@ -294,7 +306,7 @@ describe('Lib', function () {
         var writer = new Writer([TypeCode.BLOB]);
         var stream = new EventEmitter();
         stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
-        stream.read = function (size) {
+        stream.read = function () {
           return null;
         };
         writer._lobs.push(stream);
@@ -315,6 +327,7 @@ describe('Lib', function () {
         };
         writer._lobs.push(stream);
         writer.getWriteLobRequest(64, function (err) {
+          /* jshint expr: true */
           should(err).be.ok;
           done();
         });
@@ -336,21 +349,25 @@ describe('Lib', function () {
       var writer = new Writer([TypeCode.DATE]);
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
-      Writer.prototype.setValues.bind(writer, ['2014+10+11']).should.throw();
+      Writer.prototype.setValues.bind(writer, ['2014+10+11']).should
+        .throw();
     });
 
     it('should raise wrong input type error for TIME', function () {
       var writer = new Writer([TypeCode.TIME]);
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
-      Writer.prototype.setValues.bind(writer, ['12.00.00']).should.throw();
+      Writer.prototype.setValues.bind(writer, ['12.00.00']).should
+        .throw();
     });
 
     it('should raise wrong input type error for TIMESTAMP', function () {
       var writer = new Writer([TypeCode.TIMESTAMP]);
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
-      Writer.prototype.setValues.bind(writer, ['2014-08-21|14:02:34']).should
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21|14:02:34'
+        ]).should
         .throw();
     });
 

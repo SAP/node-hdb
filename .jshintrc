@@ -33,7 +33,9 @@
   "white": true,
   "predef": [
       "describe",
-      "it"
+      "it",
+      "before",
+      "after"
   ]
 }
 
