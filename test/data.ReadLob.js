@@ -14,6 +14,7 @@
 'use strict';
 
 var lib = require('./hdb').lib;
+var bignum = lib.util.bignum;
 var PartKind = lib.common.PartKind;
 var ReadLobReply = lib.data[PartKind.READ_LOB_REPLY];
 var ReadLobRequest = lib.data[PartKind.READ_LOB_REQUEST];
@@ -39,7 +40,7 @@ describe('Data', function () {
     argumentCount: 1,
     buffer: new Buffer([
       0x00, 0x00, 0x00, 0x00, 0xf0, 0x18, 0x03, 0x00,
-      0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x06, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x60, 0x61, 0x62, 0x63, 0x00, 0x00, 0x00, 0x00
     ])
   };
@@ -48,7 +49,7 @@ describe('Data', function () {
     locatorId: new Buffer([0x00, 0x00, 0x00, 0x00, 0xf0, 0x18, 0x03,
       0x00
     ]),
-    options: 1,
+    options: 6,
     chunk: new Buffer([0x60, 0x61, 0x62, 0x63])
   };
 
@@ -57,11 +58,26 @@ describe('Data', function () {
     it('should write a ReadLob request', function () {
       var part = ReadLobRequest.write({}, reqOptions);
       part.should.eql(reqPart);
+      ReadLobRequest.getByteLength(reqOptions).should.equal(24);
+      ReadLobRequest.getArgumentCount(reqOptions).should.equal(1);
+    });
+
+    it('should read a ReadLob request', function () {
+      var options = ReadLobRequest.read(reqPart);
+      options.locatorId = bignum.readInt64LE(options.locatorId, 0);
+      options.should.eql(reqOptions);
     });
 
     it('should read a ReadLob reply', function () {
-      var options = ReadLobReply.read(replyPart).toPlainObject();
+      /* jshint expr: true */
+      var readLobReply = ReadLobReply.read(replyPart);
+      readLobReply.isNull.should.be.false;
+      readLobReply.isDataIncluded.should.be.true;
+      readLobReply.isLast.should.be.true;
+      var options = readLobReply.toPlainObject();
       options.should.eql(replyOptions);
+      ReadLobReply.getArgumentCount(options.chunk).should.equal(1);
+      ReadLobReply.getByteLength(options.chunk).should.equal(20);
     });
 
   });

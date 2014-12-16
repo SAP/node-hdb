@@ -12,6 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
+/* jshint expr: true */
 
 var lib = require('./hdb').lib;
 var PartKind = lib.common.PartKind;
@@ -64,11 +65,16 @@ describe('Data', function () {
   describe('#ParameterMetadata', function () {
 
     it('should read parameter metadata', function () {
-      var metadata = ParameterMetadata.read(paramsPart).map(
-        function (param) {
-          return param.toPlainObject();
-        });
-      metadata.should.eql(paramsMetadata);
+      var parameterMetadata = ParameterMetadata.read(paramsPart);
+      var argumentCount = ParameterMetadata.getArgumentCount(
+        parameterMetadata);
+      argumentCount.should.equal(paramsMetadata.length);
+      parameterMetadata.forEach(function (param) {
+        param.isReadOnly().should.be.false;
+        param.isMandatory().should.be.false;
+        param.isAutoIncrement().should.be.false;
+      });
+      parameterMetadata.toPlainArray().should.eql(paramsMetadata);
     });
 
   });

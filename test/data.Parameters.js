@@ -21,7 +21,7 @@ describe('Data', function () {
 
   describe('#Parameters', function () {
 
-    it('shoul write multiple parameters values', function () {
+    it('should write multiple parameters values', function () {
       var value = [new Buffer([1]), new Buffer([2])];
       var part = Parameters.write({}, value);
       part.argumentCount.should.equal(2);
@@ -30,7 +30,7 @@ describe('Data', function () {
       Parameters.getByteLength(value).should.equal(2);
     });
 
-    it('shoul write one parameters value', function () {
+    it('should write one parameters value', function () {
       var value = new Buffer([1]);
       var part = Parameters.write({}, value);
       part.argumentCount.should.equal(1);
