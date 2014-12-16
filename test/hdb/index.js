@@ -19,3 +19,17 @@ exports.Client = lib.Client;
 exports.createClient = lib.createClient;
 exports.Stringifier = lib.Stringifier;
 exports.createJSONStringifier = lib.createJSONStringifier;
+
+Object.prototype.toPlainObject = function () {
+  var obj = {};
+  Object.keys(this).forEach(function (key) {
+    obj[key] = this[key];
+  }, this);
+  return obj;
+};
+
+Array.prototype.toPlainArray = function toPlainArray() {
+  return this.map(function (obj) {
+    return obj.toPlainObject();
+  });
+};

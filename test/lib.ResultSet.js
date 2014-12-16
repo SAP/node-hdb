@@ -100,6 +100,7 @@ function createResultSet(options) {
 }
 
 function createSimpleResultSet() {
+  /* jshint bitwise:false */
   var options = {
     id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
     metadata: [{
@@ -133,7 +134,8 @@ function createSimpleResultSet() {
       ])
     }, {
       argumentCount: 1,
-      attributes: ResultSetAttributes.LAST,
+      attributes: ResultSetAttributes.LAST |
+        ResultSetAttributes.CLOSED,
       buffer: Buffer.concat([
         writeInt(5),
       ])
@@ -250,7 +252,8 @@ describe('Lib', function () {
       lob.should.be.instanceof(Lob);
     });
 
-    it('should fetch all rows with LOB and close the resultSet',
+    it(
+      'should fetch all rows with a LOB and resultSet already closed',
       function (
         done) {
         var rs = createResultSetWithLob();
@@ -271,16 +274,14 @@ describe('Lib', function () {
             NVARCHAR: 'abc',
             NCLOB: new Buffer([123, 0, 0, 0, 0, 0, 0, 0])
           }]);
-          rs.closed.should.be.false;
-          rs.close(function (err) {
-            rs.closed.should.be.true;
-            done(err);
-          });
+          rs.finished.should.be.true;
+          rs.closed.should.be.true;
+          done();
         });
       });
 
     it(
-      'should fetch all rows without LOB and resultSet already closed',
+      'should fetch all rows without a LOB and resultSet already closed',
       function (done) {
         var rs = createResultSetWithoutLob();
         rs.fetch(function (err, rows) {
@@ -297,8 +298,6 @@ describe('Lib', function () {
             SMALLINT: 3,
             NVARCHAR: 'abc'
           }]);
-        });
-        rs.once('end', function onend() {
           rs.finished.should.be.true;
           rs.closed.should.be.true;
           done();
@@ -341,31 +340,34 @@ describe('Lib', function () {
         });
       });
 
-    it('should create an array stream', function (done) {
-      var rs = createSimpleResultSet();
-      var stream = rs.createReadStream({
-        arrayMode: true
+    it('should create an array stream and close the resultSet ' +
+      'at the first readable event',
+      function (done) {
+        var rs = createSimpleResultSet();
+        var stream = rs.createReadStream({
+          arrayMode: true
+        });
+        stream._readableState.objectMode.should.be.true;
+        var rows = [];
+        stream.once('readable', function onreadable() {
+          rows = rows.concat(stream.read());
+          rs.close();
+        });
+        rs.once('end', function onend() {
+          rows.should.eql([{
+            SMALLINT: 1,
+          }]);
+          rs.finished.should.be.true;
+          rs.closed.should.be.false;
+        });
+        rs.once('close', function onend() {
+          rs.closed.should.be.true;
+          done();
+        });
       });
-      stream._readableState.objectMode.should.be.true;
-      var rows = [];
-      stream.once('readable', function onreadable() {
-        rows = rows.concat(stream.read());
-        rs.close();
-      });
-      rs.once('end', function onend() {
-        rows.should.eql([{
-          SMALLINT: 1,
-        }]);
-        rs.finished.should.be.true;
-        rs.closed.should.be.false;
-      });
-      rs.once('close', function onend() {
-        rs.closed.should.be.true;
-        done();
-      });
-    });
 
-    it('should create a binary stream', function (done) {
+    it('should create a binary stream and read all data', function (
+      done) {
       var rs = createSimpleResultSet();
       var stream = rs.createReadStream({
         objectMode: false
@@ -380,11 +382,9 @@ describe('Lib', function () {
           [1, 1, 0, 1, 2, 0, 1, 3, 0, 1, 4, 0, 1, 5, 0]
         ));
         rs.finished.should.be.true;
-        rs.closed.should.be.false;
-        rs.close();
+        rs.closed.should.be.true;
       });
       rs.once('close', function onend() {
-        rs.closed.should.be.true;
         done();
       });
     });
