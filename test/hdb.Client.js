@@ -243,7 +243,9 @@ describe('hdb', function () {
       var client = new TestClient();
       var connection = client._connection;
       connection.replies.executeDirect = {};
-      client.execute('sql', function (err, reply) {
+      client.execute({
+        sql: 'sql'
+      }, function (err, reply) {
         should(err === null).be.ok;
         reply.should.equal(connection.replies.executeDirect);
         done();
@@ -254,9 +256,10 @@ describe('hdb', function () {
       var client = new TestClient();
       var connection = client._connection;
       connection.replies.executeDirect = {};
-      var autoFetch = true;
       var command = 'sql';
-      client.execute(command, autoFetch, function (err, reply) {
+      client.execute(command, {
+        autoFetch: true
+      }, function (err, reply) {
         should(err === null).be.ok;
         connection.options.should.eql({
           command: command
@@ -308,7 +311,7 @@ describe('hdb', function () {
       });
     });
 
-    // commit   
+    // commit
     it('should commit without error', function (done) {
       var client = new TestClient();
       client.commit(function (err) {

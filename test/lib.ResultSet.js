@@ -312,15 +312,17 @@ describe('Lib', function () {
         var rows = [];
         stream.on('readable', function onreadable() {
           var row = stream.read();
-          rows.push(row);
-          if (row.SMALLINT === 2) {
-            rs.pause();
-            setTimeout(function () {
-              rs.resume();
-            }, 1);
-          }
-          if (row.SMALLINT === 3) {
-            rs.close();
+          if (row) {
+            rows.push(row);
+            if (row.SMALLINT === 2) {
+              rs.pause();
+              setTimeout(function () {
+                rs.resume();
+              }, 1);
+            }
+            if (row.SMALLINT === 3) {
+              rs.close();
+            }
           }
         });
         rs.once('end', function onend() {
@@ -375,7 +377,10 @@ describe('Lib', function () {
       stream._readableState.objectMode.should.be.false;
       var chunks = [];
       stream.on('readable', function onreadable() {
-        chunks.push(stream.read());
+        var chunk = stream.read();
+        if (chunk !== null) {
+          chunks.push(chunk);
+        }
       });
       rs.once('end', function onend() {
         Buffer.concat(chunks).should.eql(new Buffer(

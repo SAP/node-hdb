@@ -35,25 +35,34 @@ describe('Util', function () {
       var readable = util.createReadStream(ds, {
         objectMode: true
       });
+      var values = [3, 2, 1];
+
+      function emitData() {
+        process.nextTick(function () {
+          if (values.length) {
+            ds.emit('data', new Buffer([values.shift()]));
+          } else {
+            ds.emit('end');
+          }
+        });
+      }
+
       var chunks = [];
       readable.on('readable', function () {
         var chunk = this.read();
-        var value = chunk[0];
-        chunks.unshift(value);
-        value -= 1;
-        if (value) {
-          ds.emit('data', new Buffer([value]));
-        } else {
-          ds.emit('end');
+        if (chunk !== null) {
+          var value = chunk[0];
+          chunks.unshift(value);
+          emitData();
         }
       });
       readable.on('end', function () {
-        resumeCount.should.equal(4);
         chunks.should.eql([1, 2, 3]);
+        resumeCount.should.equal(4);
         done();
       });
       ds.emit('data', false);
-      ds.emit('data', new Buffer([3]));
+      emitData();
     });
 
     it('should convert from camelCase', function () {
