@@ -173,13 +173,13 @@ describe('Auth', function () {
     var sessionCookie = new Buffer('fcac0f42', 'hex');
 
     it('should get the corresponding authentication method instance', function () {
-      var pid = process.pid;
-      process.pid = undefined;
+      var pid = lib.util.pid;
+      lib.util.pid = undefined;
       var manager = auth.createManager({
         user: user,
         sessionCookie: sessionCookie
       });
-      process.pid = pid;
+      lib.util.pid = pid;
       var authMethod = manager.getMethod(method);
       var length = sessionCookie.length;
       authMethod.sessionCookie.slice(0, length).should.eql(sessionCookie);
