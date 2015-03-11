@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('../../hdb').lib;
+var lib = require('../../../lib');
 var SegmentKind = lib.common.SegmentKind;
 var FunctionCode = lib.common.FunctionCode;
 var PartKind = lib.common.PartKind;
@@ -99,4 +99,29 @@ exports['insert into numbers values (?, ?)'] = {
       '02030100ffffffff0a0000000100000002090100ffffffff1000000008000000',
       'hex')
   }]
-}
+};
+
+exports['select * from dummy where a = ?'] = {
+  kind: SegmentKind.REPLY,
+  functionCode: FunctionCode.SELECT,
+  parts: [{
+    kind: PartKind.STATEMENT_ID,
+    argumentCount: 1,
+    attributes: 0,
+    buffer: new Buffer(
+      '0700000000000000', 'hex')
+  }, {
+    kind: PartKind.RESULT_SET_METADATA,
+    argumentCount: 1,
+    attributes: 0,
+    buffer: new Buffer(
+      '020800000100000000000000ffffffff06000000060000000544554d4d590544' +
+      '554d4d59', 'hex')
+  }, {
+    kind: PartKind.PARAMETER_METADATA,
+    argumentCount: 1,
+    attributes: 0,
+    buffer: new Buffer(
+      '02030100ffffffff0200000000000000', 'hex')
+  }]
+};

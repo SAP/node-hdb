@@ -15,21 +15,30 @@
 
 var lib = require('../lib');
 var PartKind = lib.common.PartKind;
-var MultilineOptions = lib.data[PartKind.TOPOLOGY_INFORMATION];
-
-var data = require('./fixtures/topogolyInformation').DEFAULT;
+var Binary = lib.data[PartKind.RESULT_SET_ID];
 
 describe('Data', function () {
 
-  describe('#TopologyInformation', function () {
+  describe('#Binary', function () {
 
-    it('should write topology information', function () {
-      MultilineOptions.write({}, data.options).should.eql(data.part);
-      MultilineOptions.write.call(data.options).should.eql(data.part);
+    it('should deserialize a Binary Part from buffer', function () {
+      var buffer = new Buffer([1, 2, 3, 4]);
+      var part = {
+        argumentCount: 1,
+        buffer: buffer
+      };
+      var value = Binary.read(part);
+      value.should.eql(buffer);
+      Binary.getArgumentCount(value).should.equal(1);
+      Binary.getByteLength(value).should.equal(buffer.length);
     });
 
-    it('should deserialize options from buffer', function () {
-      MultilineOptions.read(data.part).should.eql(data.options);
+    it('should serialize a Binary Part', function () {
+      var buffer = new Buffer(0);
+      Binary.write.call(buffer).should.eql({
+        argumentCount: 1,
+        buffer: buffer
+      });
     });
 
   });

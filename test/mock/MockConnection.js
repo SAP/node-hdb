@@ -14,7 +14,7 @@
 'use strict';
 
 var EventEmitter = require('events').EventEmitter;
-var lib = require('../hdb').lib;
+var lib = require('../../lib');
 var util = lib.util;
 
 module.exports = MockConnection;

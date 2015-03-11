@@ -14,7 +14,7 @@
 'use strict';
 
 
-var lib = require('../../hdb').lib;
+var lib = require('../../../lib');
 var bignum = lib.util.bignum;
 var SegmentKind = lib.common.SegmentKind;
 var FunctionCode = lib.common.FunctionCode;

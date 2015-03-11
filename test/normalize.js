@@ -13,19 +13,23 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('../lib');
+module.exports = normalize;
 
-describe('Req', function () {
+function normalize(source) {
+  if (Array.isArray(source)) {
+    return normalizeArray(source);
+  }
+  return normalizeObject(source);
+}
 
-  describe('#index', function () {
-
-    it('should create an execute direct request', function () {
-      var request = lib.request.executeDirect({
-        commitImmediateley: true
-      });
-      request.commitImmediateley.should.equal(1);
-    });
-
+function normalizeObject(source) {
+  var obj = {};
+  Object.keys(source).forEach(function (key) {
+    obj[key] = source[key];
   });
+  return obj;
+}
 
-});
+function normalizeArray(source) {
+  return source.map(normalizeObject);
+}

@@ -12,24 +12,21 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
+/*jshint expr:true*/
 
-var lib = require(process.env.HDB_COV ? '../../lib-cov' : '../../lib');
-exports.lib = lib;
-exports.Client = lib.Client;
-exports.createClient = lib.createClient;
-exports.Stringifier = lib.Stringifier;
-exports.createJSONStringifier = lib.createJSONStringifier;
+var lib = require('../lib');
+var MessageBuffer = lib.MessageBuffer;
 
-Object.prototype.toPlainObject = function () {
-  var obj = {};
-  Object.keys(this).forEach(function (key) {
-    obj[key] = this[key];
-  }, this);
-  return obj;
-};
+describe('Lib', function () {
 
-Array.prototype.toPlainArray = function toPlainArray() {
-  return this.map(function (obj) {
-    return obj.toPlainObject();
+  describe('#MessageBuffer', function () {
+
+    it('should create a message buffer', function () {
+      var messageBuffer = new MessageBuffer();
+      messageBuffer.push(null);
+      messageBuffer.should.have.length(0);
+    });
+
   });
-};
+
+});

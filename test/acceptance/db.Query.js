@@ -14,7 +14,7 @@
 'use strict';
 /* jshint undef:false, expr:true */
 
-var lib = require('../hdb').lib;
+var lib = require('../../lib');
 var stream = lib.util.stream;
 var Readable = stream.Readable;
 var Writable = stream.Writable;

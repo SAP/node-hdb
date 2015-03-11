@@ -14,51 +14,55 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var Lob = lib.Lob;
 var PartKind = lib.common.PartKind;
 var ReadLobReply = lib.data[PartKind.READ_LOB_REPLY];
 var LobOptions = lib.common.LobOptions;
-
-
 var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
 
-function createReadLobReply(options, chunk) {
-  var buffer = new Buffer(chunk.length + 16);
+function createReadLobReply(chunk, isLast) {
+  /* jshint bitwise:false */
+  var buffer;
+  if (Buffer.isBuffer(chunk) && chunk.length) {
+    buffer = new Buffer(chunk.length + 16);
+    if (isLast) {
+      buffer[8] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
+    } else {
+      buffer[8] = LobOptions.DATA_INCLUDED;
+    }
+    buffer.writeInt32LE(chunk.length, 9);
+    chunk.copy(buffer, 16);
+  } else {
+    buffer = new Buffer(16);
+    buffer.fill(0);
+  }
   locatorId.copy(buffer, 0);
-  buffer[8] = options;
-  buffer.writeInt32LE(chunk.length, 9);
-  chunk.copy(buffer, 16);
   return new ReadLobReply.read({
     argumentCount: 1,
     buffer: buffer
   });
 }
 
-function createLob(err) {
+function createLob(err, length) {
   /* jshint bitwise:false */
-  var options = createReadLobReply(LobOptions.DATA_INCLUDED, new Buffer([1]));
-  options.readSize = 1;
-  var readLobReplies = [
-    createReadLobReply(LobOptions.DATA_INCLUDED, new Buffer([2])),
-    createReadLobReply(LobOptions.DATA_INCLUDED, new Buffer([3])),
-    createReadLobReply(LobOptions.DATA_INCLUDED, new Buffer([4])),
-    createReadLobReply(LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA,
-      new Buffer([5])),
-  ];
+  var i = 0;
+  var ld = createReadLobReply(new Buffer([++i]));
+  var options = {
+    readSize: 1
+  };
 
   function readLob(options, cb) {
-    setImmediate(function () {
+    setTimeout(function () {
       if (err) {
         return cb(err);
       }
-      var readLobReply = readLobReplies.shift();
       cb(null, {
-        readLobReply: readLobReply
+        readLobReply: createReadLobReply(new Buffer([++i]), i >= length)
       });
-    });
+    }, 1);
   }
-  return new Lob(readLob, options);
+  return new Lob(readLob, ld, options);
 }
 
 describe('Lib', function () {
@@ -66,7 +70,7 @@ describe('Lib', function () {
   describe('#Lob', function () {
 
     it('should read a Lob', function (done) {
-      var lob = createLob();
+      var lob = createLob(null, 5);
       lob.read(function (err, buffer) {
         buffer.should.eql(new Buffer([1, 2, 3, 4, 5]));
         done();
@@ -74,16 +78,16 @@ describe('Lib', function () {
     });
 
     it('should read a Lob with error', function (done) {
-      var _err = new Error('Dummy');
-      var lob = createLob(_err);
+      var dummyError = new Error('Dummy');
+      var lob = createLob(dummyError);
       lob.read(function (err) {
-        err.should.eql(_err);
+        err.should.eql(dummyError);
         done();
       });
     });
 
     it('should create a read stream', function (done) {
-      var lob = createLob();
+      var lob = createLob(null, 5);
       var stream = lob.createReadStream();
       var chunks = [];
       stream.on('readable', function () {
@@ -102,28 +106,52 @@ describe('Lib', function () {
         done(err);
       });
       stream.once('end', function () {
-        Buffer.concat(chunks).should.eql(new Buffer([1, 2, 3,
-          4, 5
-        ]));
+        Buffer.concat(chunks).should.eql(new Buffer([1, 2, 3, 4, 5]));
         done();
       });
     });
 
     it('should not create a read stream', function () {
-      var lob = createLob();
+      var lob = createLob(null);
       lob.pause();
       var stream = lob.createReadStream();
       (stream === null).should.be.ok;
     });
 
-
     it('should try to read a lob in invalid state', function (done) {
-      var lob = createLob();
+      var lob = createLob(null);
       lob.pause();
       lob.read(function (err) {
         err.message.should.eql('Lob invalid state error');
         done();
       });
+    });
+
+    it('should receive data in paused state', function (done) {
+      var ld = createReadLobReply(new Buffer([1]));
+      var options = {
+        readSize: 1
+      };
+
+      function readLob(options, cb) {
+        lob.pause();
+        setTimeout(function () {
+          lob.resume();
+        }, 1);
+        cb(null, {
+          readLobReply: createReadLobReply(new Buffer([2]), true)
+        });
+      }
+      var lob = new Lob(readLob, ld, options);
+      var chunks = [];
+      lob.on('data', function ondata(chunk) {
+        chunks.push(chunk);
+      });
+      lob.on('end', function onend() {
+        Buffer.concat(chunks).should.eql(new Buffer([1, 2]));
+        done();
+      });
+      lob.resume();
     });
 
   });

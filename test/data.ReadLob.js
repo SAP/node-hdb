@@ -13,7 +13,8 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
+var normalize = require('./normalize');
 var bignum = lib.util.bignum;
 var PartKind = lib.common.PartKind;
 var ReadLobReply = lib.data[PartKind.READ_LOB_REPLY];
@@ -56,8 +57,8 @@ describe('Data', function () {
   describe('#ReadLob', function () {
 
     it('should write a ReadLob request', function () {
-      var part = ReadLobRequest.write({}, reqOptions);
-      part.should.eql(reqPart);
+      ReadLobRequest.write({}, reqOptions).should.eql(reqPart);
+      ReadLobRequest.write.call(reqOptions).should.eql(reqPart);
       ReadLobRequest.getByteLength(reqOptions).should.equal(24);
       ReadLobRequest.getArgumentCount(reqOptions).should.equal(1);
     });
@@ -74,7 +75,7 @@ describe('Data', function () {
       readLobReply.isNull.should.be.false;
       readLobReply.isDataIncluded.should.be.true;
       readLobReply.isLast.should.be.true;
-      var options = readLobReply.toPlainObject();
+      var options = normalize(readLobReply);
       options.should.eql(replyOptions);
       ReadLobReply.getArgumentCount(options.chunk).should.equal(1);
       ReadLobReply.getByteLength(options.chunk).should.equal(20);

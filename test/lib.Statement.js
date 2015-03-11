@@ -14,7 +14,7 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var Statement = lib.Statement;
 var FunctionCode = lib.common.FunctionCode;
 var TypeCode = lib.common.TypeCode;
@@ -106,7 +106,8 @@ describe('Lib', function () {
       var result = statement._createResult({
         autoFetch: 1
       });
-      result._autoFetch.should.equal(true);
+      result.autoFetch.should.equal(true);
+      result.readSize.should.equal(lib.Lob.DEFAULT_READ_SIZE);
       statement._connection.should.equal(result._connection);
       statement.resultSetMetadata.should.equal(result._resultSetMetadata);
       statement.parameterMetadata.should.eql(result._parameterMetadata);
@@ -130,7 +131,7 @@ describe('Lib', function () {
       });
     });
 
-    it('should execute a statement with options INT', function (
+    it('should execute a statement with values part of options', function (
       done) {
       var statement = createStatement({
         createResult: function (options) {
@@ -139,7 +140,29 @@ describe('Lib', function () {
         }
       });
       var values = [1];
-      statement.execute(values, 1, function (err, rowsAffected) {
+      statement.execute({
+        values: values,
+        autoFetch: true
+      }, function (err, rowsAffected) {
+        (!err).should.be.ok;
+        rowsAffected.should.equal(1);
+        done();
+      });
+    });
+
+    it('should execute a statement with parameters part of options', function (
+      done) {
+      var statement = createStatement({
+        createResult: function (options) {
+          options.autoFetch.should.equal(true);
+          return new Stub([null, 1]);
+        }
+      });
+      var values = [1];
+      statement.execute({
+        parameters: values,
+        autoFetch: true
+      }, function (err, rowsAffected) {
         (!err).should.be.ok;
         rowsAffected.should.equal(1);
         done();

@@ -15,7 +15,7 @@
 /*jshint expr:true*/
 
 var should = require('should');
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var util = lib.util;
 var mock = require('./mock');
 
@@ -303,7 +303,7 @@ describe('hdb', function () {
         command: 'sql'
       };
       client.prepare(options, function (err, statement) {
-        should(err === null).be.ok;
+        (err === null).should.be.ok;
         connection.options.should.eql(options);
         statement.parameterMetadata.should.equal('parameterMetadata');
         statement.resultSetMetadata.should.equal('metadata');

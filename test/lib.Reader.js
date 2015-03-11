@@ -15,8 +15,49 @@
 /*jshint expr:true*/
 
 var should = require('should');
-var lib = require('./hdb').lib;
+var lib = require('../lib');
+var LobOptions = lib.common.LobOptions;
+var LobSourceType = lib.common.LobSourceType;
 var bignum = lib.util.bignum;
+var lobFactoy = {
+  createLob: function createLob(ld) {
+    return ld;
+  }
+};
+
+function createLobBuffer(locatorId, chunk, encoding) {
+  /* jshint bitwise:false */
+  var buffer, sourceType;
+  switch (encoding) {
+  case 'utf8':
+  case 'utf-8':
+    sourceType = LobSourceType.NCLOB;
+    break;
+  case 'ascii':
+    sourceType = LobSourceType.CLOB;
+    break;
+  default:
+    sourceType = LobSourceType.BLOB;
+    break;
+  }
+  if (!chunk || !chunk.length) {
+    buffer = new Buffer(2);
+    buffer[0] = sourceType;
+    buffer[1] = LobOptions.NULL_INDICATOR;
+    return buffer;
+  }
+  buffer = new Buffer(32 + chunk.length);
+  buffer[0] = sourceType;
+  buffer[1] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
+  buffer[2] = buffer[3] = 0;
+  var charLength = encoding ? chunk.toString(encoding).length : 0;
+  bignum.writeInt64LE(buffer, charLength, 4);
+  bignum.writeInt64LE(buffer, chunk.length, 12);
+  locatorId.copy(buffer, 20);
+  buffer.writeInt32LE(chunk.length, 28);
+  chunk.copy(buffer, 32);
+  return buffer;
+}
 
 describe('Lib', function () {
 
@@ -271,17 +312,46 @@ describe('Lib', function () {
 
 
     it('should read a LongDate', function () {
-      var buffer = new Buffer(24);
+      var buffer = new Buffer(40);
       buffer.fill(0x00, 0, 8);
       bignum.writeInt64LE(buffer, '3155380704000000001', 8);
       bignum.writeInt64LE(buffer, 2, 16);
+      bignum.writeInt64LE(buffer, '1000000000000000001', 24);
+      bignum.writeInt64LE(buffer, '1000000000000000000', 32);
       var reader = new lib.Reader(buffer);
-      should(reader.readLongDate() === null).ok;
-      should(reader.readLongDate() === null).ok;
+      (reader.readLongDate() === null).should.be.ok;
+      (reader.readLongDate() === null).should.be.ok;
       reader.readLongDate().should.equal(1);
+      reader.readLongDate().should.equal('1000000000000000000');
+      reader.readLongDate().should.equal('999999999999999999');
       reader.hasMore().should.equal(false);
     });
   });
 
+  it('should read a BLob', function () {
+    /* jshint bitwise:false */
+    var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+    var chunk = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+    var buffer = createLobBuffer(locatorId, chunk);
+    var reader = new lib.Reader(buffer, lobFactoy);
+    var lob = reader.readBLob();
+    lob.locatorId.should.eql(locatorId);
+    lob.options.should.equal(LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA);
+    lob.chunk.should.eql(chunk);
+    lob.size.should.equal(chunk.length);
+  });
+
+  it('should read a CLob', function () {
+    /* jshint bitwise:false */
+    var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+    var chunk = new Buffer('12345678', 'ascii');
+    var buffer = createLobBuffer(locatorId, chunk, 'ascii');
+    var reader = new lib.Reader(buffer, lobFactoy);
+    var lob = reader.readCLob();
+    lob.locatorId.should.eql(locatorId);
+    lob.options.should.equal(LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA);
+    lob.chunk.should.eql(chunk);
+    lob.size.should.equal(chunk.length);
+  });
 
 });

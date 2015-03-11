@@ -14,18 +14,30 @@
 'use strict';
 
 var lib = require('../lib');
+var PartKind = lib.common.PartKind;
+var Int32 = lib.data[PartKind.ROWS_AFFECTED];
 
-describe('Req', function () {
+describe('Data', function () {
 
-  describe('#index', function () {
+  describe('#Int32', function () {
 
-    it('should create an execute direct request', function () {
-      var request = lib.request.executeDirect({
-        commitImmediateley: true
-      });
-      request.commitImmediateley.should.equal(1);
+    it('should deserialize an Int32 Part from buffer', function () {
+      var part = {
+        argumentCount: 1,
+        buffer: new Buffer([1, 0, 0, 0])
+      };
+      var value = Int32.read(part);
+      value.should.equal(1);
+      Int32.getArgumentCount(value).should.equal(1);
+      Int32.getByteLength(value).should.equal(4);
     });
 
+    it('should serialize an Int32 Part', function () {
+      Int32.write.call(1).should.eql({
+        argumentCount: 1,
+        buffer: new Buffer([1, 0, 0, 0])
+      });
+    });
   });
 
 });

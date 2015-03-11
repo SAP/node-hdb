@@ -14,7 +14,7 @@
 'use strict';
 /*jshint expr:true*/
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var TypeCode = lib.common.TypeCode;
 var metadata = [{
   dataType: TypeCode.DECIMAL,
@@ -97,6 +97,7 @@ describe('Lib', function () {
     });
 
     it('should parse rows with nestTables = "_"', function () {
+      /* jshint camelcase: false */
       var parser = lib.Parser.create(metadata);
       var options = {
         nestTables: '_'

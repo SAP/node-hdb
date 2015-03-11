@@ -14,7 +14,7 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var Client = lib.Client;
 
 function TestClient() {}

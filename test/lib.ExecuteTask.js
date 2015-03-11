@@ -14,7 +14,7 @@
 'use strict';
 /* jshint expr:true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var ExecuteTask = lib.ExecuteTask;
 var FunctionCode = lib.common.FunctionCode;
 var TypeCode = lib.common.TypeCode;

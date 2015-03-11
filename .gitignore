@@ -1,6 +1,5 @@
 node_modules
 coverage
-build
 coverage.html
 config.json
 hdb.js

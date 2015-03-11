@@ -14,7 +14,7 @@
 'use strict';
 
 var should = require('should');
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var TypeCode = lib.common.TypeCode;
 var Writer = lib.Writer;
 var EventEmitter = require('events').EventEmitter;

@@ -15,7 +15,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var lib = require('../hdb').lib;
+var lib = require('../../lib');
 var TypeCode = lib.common.TypeCode;
 var LobOptions = lib.common.LobOptions;
 var MAX_PART_SIZE = Math.pow(2, 10);
