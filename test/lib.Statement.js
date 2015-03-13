@@ -15,33 +15,18 @@
 /* jshint expr: true */
 
 var lib = require('../lib');
+var mock = require('./mock');
 var Statement = lib.Statement;
 var FunctionCode = lib.common.FunctionCode;
 var TypeCode = lib.common.TypeCode;
 var IoType = lib.common.IoType;
 
-function Stub(args) {
-  this.inputArgs = null;
-  this.ouputArgs = args;
-}
-
-Stub.prototype.execute = function execute() {
-  this.inputArgs = Array.prototype.slice.call(arguments);
-  var cb = this.inputArgs.pop();
-  var self = this;
-  setImmediate(function () {
-    cb.apply(null, self.ouputArgs);
-  });
-};
-Stub.prototype.handle = Stub.prototype.execute;
-
-
 function createStatement(options) {
   options = lib.util.extend({
-    outputArgs: [null, {
+    executeReply: {
       functionCode: FunctionCode.INSERT,
       rowsAffected: 1
-    }],
+    },
     id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
     functionCode: FunctionCode.INSERT,
     parameterMetadata: [{
@@ -55,7 +40,8 @@ function createStatement(options) {
       columnDisplayName: 'Y'
     }]
   }, options);
-  var connection = new Stub(options.outputArgs);
+  var connection = mock.createConnection();
+  connection.replies.execute = options.executeReply;
   var statement = new Statement(connection);
   connection.should.equal(statement._connection);
   statement.id = options.id;
@@ -63,7 +49,7 @@ function createStatement(options) {
   statement.parameterMetadata = options.parameterMetadata;
   statement.resultSetMetadata = options.resultSetMetadata;
   if (typeof options.createResult === 'function') {
-    statement._createResult = options.createResult.bind(statement);
+    statement._createResult = options.createResult;
   }
   return statement;
 }
@@ -77,8 +63,7 @@ describe('Lib', function () {
       var connection = statement._connection;
       var values = [1];
       statement.execute(values, function (err, rowsAffected) {
-        connection.inputArgs.should.have.length(1);
-        connection.inputArgs[0].should.eql({
+        connection.options.should.eql({
           functionCode: statement.functionCode,
           statementId: statement.id,
           parameters: {
@@ -101,42 +86,34 @@ describe('Lib', function () {
       });
     });
 
-    it('should create an execution result handler', function () {
-      var statement = createStatement();
-      var result = statement._createResult({
-        autoFetch: 1
-      });
-      result.autoFetch.should.equal(true);
-      result.readSize.should.equal(lib.Lob.DEFAULT_READ_SIZE);
-      statement._connection.should.equal(result._connection);
-      statement.resultSetMetadata.should.equal(result._resultSetMetadata);
-      statement.parameterMetadata.should.eql(result._parameterMetadata);
-    });
-
     it('should execute a statement with an options object', function (
       done) {
+      var replies = null;
       var statement = createStatement({
-        createResult: function (options) {
+        createResult: function (connection, options) {
+          replies = connection.replies;
           options.autoFetch.should.equal(true);
-          return new Stub([null, 1]);
+          return mock.createResult(connection, options);
         }
       });
       var values = [1];
       statement.execute(values, {
         autoFetch: true
-      }, function (err, rowsAffected) {
-        (!err).should.be.ok;
-        rowsAffected.should.equal(1);
+      }, function (err, reply) {
+        (!!err).should.be.not.ok;
+        reply.should.equal(replies.execute);
         done();
       });
     });
 
     it('should execute a statement with values part of options', function (
       done) {
+      var replies = null;
       var statement = createStatement({
-        createResult: function (options) {
+        createResult: function (connection, options) {
+          replies = connection.replies;
           options.autoFetch.should.equal(true);
-          return new Stub([null, 1]);
+          return mock.createResult(connection, options);
         }
       });
       var values = [1];
@@ -145,17 +122,19 @@ describe('Lib', function () {
         autoFetch: true
       }, function (err, rowsAffected) {
         (!err).should.be.ok;
-        rowsAffected.should.equal(1);
+        rowsAffected.should.equal(replies.execute);
         done();
       });
     });
 
     it('should execute a statement with parameters part of options', function (
       done) {
+      var replies = null;
       var statement = createStatement({
-        createResult: function (options) {
+        createResult: function (connection, options) {
+          replies = connection.replies;
           options.autoFetch.should.equal(true);
-          return new Stub([null, 1]);
+          return mock.createResult(connection, options);
         }
       });
       var values = [1];
@@ -164,7 +143,7 @@ describe('Lib', function () {
         autoFetch: true
       }, function (err, rowsAffected) {
         (!err).should.be.ok;
-        rowsAffected.should.equal(1);
+        rowsAffected.should.equal(replies.execute);
         done();
       });
     });

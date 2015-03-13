@@ -69,11 +69,13 @@ describe('db', function () {
 
       it('should return a single row with name nest tables', function (done) {
         var sql = 'select * from dummy where a = ?';
-        db.client.prepare(sql, function (err, statement) {
+        db.client.prepare({
+          sql: sql,
+          nestTables: true
+        }, function (err, statement) {
           (!!err).should.be.not.ok;
           statement.exec({
-            parameters: [1],
-            nestTables: true
+            parameters: [1]
           }, function (err, rows) {
             (!!err).should.be.not.ok;
             rows.should.eql([{

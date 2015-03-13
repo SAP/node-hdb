@@ -15,32 +15,17 @@
 /* jshint expr: true */
 
 var lib = require('../lib');
+var mock = require('./mock');
 var Result = lib.Result;
 var Lob = lib.Lob;
 var FunctionCode = lib.common.FunctionCode;
 var TypeCode = lib.common.TypeCode;
 var IoType = lib.common.IoType;
 
-function Stub(args) {
-  this.inputArgs = null;
-  this.ouputArgs = args;
-}
-
-Stub.prototype.readLob = function readLob() {
-  this.inputArgs = Array.prototype.slice.call(arguments);
-  var cb = this.inputArgs.pop();
-  var self = this;
-  setImmediate(function () {
-    cb.apply(null, self.ouputArgs);
-  });
-};
-
 function createResultSet(err, rows) {
   return {
-    error: err,
-    rows: rows,
     fetch: function fetch(cb) {
-      setImmediate(function () {
+      process.nextTick(function () {
         if (err) {
           return cb(err);
         }
@@ -48,7 +33,7 @@ function createResultSet(err, rows) {
       });
     },
     close: function close(cb) {
-      setImmediate(function () {
+      process.nextTick(function () {
         cb(null);
       });
     }
@@ -59,8 +44,8 @@ function createLob(err, buffer) {
   var lob = new Lob(null, {
     locatorId: 1
   });
-  lob.read = function readLob(cb) {
-    setImmediate(function () {
+  lob.read = function read(cb) {
+    process.nextTick(function () {
       if (err) {
         return cb(err);
       }
@@ -72,7 +57,7 @@ function createLob(err, buffer) {
 
 function createResult(options) {
   options = lib.util.extend({
-    outputArgs: [null],
+    readLobReply: undefined,
     parameterMetadata: [{
       dataType: TypeCode.INT,
       ioType: IoType.IN_OUT,
@@ -84,8 +69,9 @@ function createResult(options) {
       columnDisplayName: 'Y'
     }]
   }, options);
-  var connection = new Stub(options.ouputArgs);
-  var result = new Result(connection, options);
+  var connection = mock.createConnection();
+  connection.replies.readLob = options.readLobReply;
+  var result = Result.create(connection, options);
   connection.should.equal(result._connection);
   result.setParameterMetadata(options.parameterMetadata);
   result.setResultSetMetadata(options.resultSetMetadata);

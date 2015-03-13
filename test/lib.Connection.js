@@ -15,8 +15,7 @@
 /*jshint expr:true*/
 
 var lib = require('../lib');
-var MockSocket = require('./mock/MockSocket');
-var MockAuthenticationManager = require('./mock/MockAuthenticationManager');
+var mock = require('./mock');
 var util = lib.util;
 var Connection = lib.Connection;
 var MessageType = lib.common.MessageType;
@@ -25,7 +24,7 @@ var SegmentKind = lib.common.SegmentKind;
 var PartKind = lib.common.PartKind;
 
 function connect(options, connectListener) {
-  var socket = new MockSocket(options);
+  var socket = mock.createSocket(options);
   util.setImmediate(connectListener);
   return socket;
 }
@@ -286,7 +285,7 @@ describe('Lib', function () {
       var credentials = {};
       connection._createAuthenticationManager = function createManager(options) {
         options.should.equal(credentials);
-        var manager = new MockAuthenticationManager(options);
+        var manager = mock.createManager(options);
         manager.sessionCookie = 'cookie';
         return manager;
       };
@@ -316,7 +315,7 @@ describe('Lib', function () {
     it('should receive an authentication error', function (done) {
       var connection = createConnection();
       var error = new Error('AUTHENTICATION_ERROR');
-      connection._createAuthenticationManager = MockAuthenticationManager.create;
+      connection._createAuthenticationManager = mock.createManager;
       connection.send = sendAuthenticationRequest;
       connection.connect({
         initialDataError: error
@@ -329,7 +328,7 @@ describe('Lib', function () {
     it('should receive a connect error', function (done) {
       var connection = createConnection();
       var error = new Error('CONNECT_ERROR');
-      connection._createAuthenticationManager = MockAuthenticationManager.create;
+      connection._createAuthenticationManager = mock.createManager;
       connection.send = sendAuthenticationRequest;
       connection.connect({
         finalDataError: error
@@ -342,7 +341,7 @@ describe('Lib', function () {
     it('should fail to initialize authentication manager', function (done) {
       var connection = createConnection();
       var error = new Error('INITIALIZE_ERROR');
-      connection._createAuthenticationManager = MockAuthenticationManager.create;
+      connection._createAuthenticationManager = mock.createManager;
       connection.send = sendAuthenticationRequest;
       connection.connect({
         initializeError: error

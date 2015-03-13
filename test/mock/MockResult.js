@@ -20,6 +20,17 @@ function MockResult(connection, options) {
   this.options = options;
 }
 
+MockResult.create = function createResult(connection, options) {
+  return new MockResult(connection, options);
+};
+
 MockResult.prototype.handle = function handle(err, reply, cb) {
   cb(err, reply);
+};
+
+MockResult.prototype.setResultSetMetadata = function setResultSetMetadata(metadata) {
+  this.resultSetMetadata = metadata;
+};
+MockResult.prototype.setParameterMetadata = function setParameterMetadata(metadata) {
+  this.parameterMetadata = metadata;
 };

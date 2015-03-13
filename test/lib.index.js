@@ -19,7 +19,7 @@ var Client = lib.Client;
 
 function TestClient() {}
 TestClient.prototype.connect = function connect(cb) {
-  setImmediate(cb);
+  process.nextTick(cb);
 };
 
 describe('Lib', function () {

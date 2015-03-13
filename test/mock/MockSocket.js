@@ -37,6 +37,10 @@ function MockSocket(options) {
   this.chunks = [chunk];
 }
 
+MockSocket.create = function createSocket(options) {
+  return new MockSocket(options);
+};
+
 util.inherits(MockSocket, EventEmitter);
 
 MockSocket.prototype.write = function write() {
