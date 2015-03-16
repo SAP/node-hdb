@@ -101,7 +101,7 @@ exports['insert into numbers values (?, ?)'] = {
   }]
 };
 
-exports['select * from dummy where a = ?'] = {
+exports['select * from dummy where dummy = ?'] = {
   kind: SegmentKind.REPLY,
   functionCode: FunctionCode.SELECT,
   parts: [{
@@ -122,6 +122,6 @@ exports['select * from dummy where a = ?'] = {
     argumentCount: 1,
     attributes: 0,
     buffer: new Buffer(
-      '02030100ffffffff0200000000000000', 'hex')
+      '02090100ffffffff1000000008000000', 'hex')
   }]
 };

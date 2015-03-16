@@ -1,11 +1,15 @@
 SAP HANA Database Client for Node
 ====================================
 
-A JavaScript client for Node implementing the 
+A JavaScript client for Node implementing the
 [SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_SQL_Command_Network_Protocol_Reference_en.pdf).
 
-[![NPM](https://nodei.co/npm/hdb.png?downloads=true)](https://npmjs.org/package/hdb)&nbsp;&nbsp;&nbsp; 
-[![Build Status](https://secure.travis-ci.org/SAP/node-hdb.png)](http://travis-ci.org/SAP/node-hdb)&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/SAP/node-hdb/badge.png?branch=master)](https://coveralls.io/r/SAP/node-hdb?branch=master)&nbsp;&nbsp;&nbsp;[![Dependency Status](https://gemnasium.com/SAP/node-hdb.svg)](https://gemnasium.com/SAP/node-hdb)
+[![Version](https://img.shields.io/npm/v/hdb.svg?style=flat-square)](https://npmjs.org/package/hdb)
+[![Build](https://img.shields.io/travis/SAP/node-hdb.svg?style=flat-square)](http://travis-ci.org/SAP/node-hdb)
+[![Coverage](https://img.shields.io/coveralls/SAP/node-hdb/master.svg?style=flat-square)](https://coveralls.io/r/SAP/node-hdb?branch=master)
+[![Dependencies](https://img.shields.io/gemnasium/SAP/node-hdb.svg?style=flat-square)](https://gemnasium.com/SAP/node-hdb)
+[![License](https://img.shields.io/npm/l/hdb.svg?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0.html)
+![Downloads](https://img.shields.io/npm/dm/hdb.svg?style=flat-square)
 
 Table of contents
 -------------
@@ -22,7 +26,7 @@ Table of contents
 * [Running tests](#running-tests)
 * [Running examples](#running-examples)
 * [Todo](#todo)
- 
+
 Install
 -------
 
@@ -55,17 +59,19 @@ var client = hdb.createClient({
   user     : 'user',
   password : 'secret'
 });
-
+client.on('error', function (err) {
+  console.error('Network connection error', err);
+});
 client.connect(function (err) {
   if (err) {
   	return console.error('Connect error', err);
-  }	
+  }
   client.exec('select * from DUMMY', function (err, rows) {
 	client.end();
     if (err) {
       return console.error('Execute error:', err);
     }
-    console.log('Results:', rows);  
+    console.log('Results:', rows);
   });
 });
 ```
@@ -73,7 +79,7 @@ client.connect(function (err) {
 Establish a database connection
 -------------------------------
 
-The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for following connect calls on the created client instance.
+The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for following connect calls on the created client instance. In case of network connection errors like a connection timeout or a database restart you should always register an error event handler in order to be able to handle this kind of problems.
 
 ```js
 var hdb    = require('hdb');
@@ -81,7 +87,10 @@ var client = hdb.createClient({
   host     : 'hostname',
   port     : 30015,
   user     : 'user',
-  password : 'secret'	
+  password : 'secret'
+});
+client.on('error', function (err) {
+  console.error('Network connection error', err);
 });
 console.log(client.readyState); // new
 ```
@@ -90,69 +99,69 @@ When a client instance is created it does not immediately open a network connect
 
 1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established. The client is in state `disconnected`. This step is skipped if the client is already in state `disconnected`.
 
-2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in state `connected`. If authentication fails the client remains in state `'disconnect'`. 
+2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in state `connected`. If authentication fails the client remains in state `'disconnect'`.
 
 ```js
 client.connect(function (err) {
   if (err) {
     return console.error('Error:', err);
-  } 
+  }
   console.log(client.readyState); // connected
 });
 ```
-If user and password are specified they will override the defaults of the client. It is possible to disconnect and reconnect with a different user on the same client instance and the same network connection.    
+If user and password are specified they will override the defaults of the client. It is possible to disconnect and reconnect with a different user on the same client instance and the same network connection.
 
 ### Authentication mechanisms
 Details about the different authentication method can be found in the [SAP HANA Security Guide](http://help.sap.com/hana/SAP_HANA_Security_Guide_en.pdf).
 
-#### User / Password 
-Users authenticate themselves with their database `user` and `password`.  
+#### User / Password
+Users authenticate themselves with their database `user` and `password`.
 
 #### SAML assertion
-SAML bearer assertions as well as unsolicited SAML responses that include an 
+SAML bearer assertions as well as unsolicited SAML responses that include an
 unencrypted SAML assertion can be used to authenticate users. SAML assertions and responses must be signed using XML signatures. XML Digital signatures can be created with [xml-crypto](https://www.npmjs.org/package/xml-crypto) or [xml-dsig](https://www.npmjs.org/package/xml-dsig).
 
-Instead of `user` and `password` you have to provide a SAML `assertion`.  
+Instead of `user` and `password` you have to provide a SAML `assertion`.
 
 ```js
-client.connect({ 
+client.connect({
   assertion: '<Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ...>...</Assertion>'
 },function (err) {
   if (err) {
     return console.error('Error:', err);
   }
   console.log('User:', client.get('user'));
-  console.log('SessionCookie:', client.get('SessionCookie')); 
+  console.log('SessionCookie:', client.get('SessionCookie'));
 });
 ```
 
-After a successful SAML authentication the server returns the database `user` and a `SessionCookie` which can be used for reconnect. 
+After a successful SAML authentication the server returns the database `user` and a `SessionCookie` which can be used for reconnect.
 
-#### Kerberos 
+#### Kerberos
 A Kerberos authentication provider can be used to authenticate users.
 > This mechanism is currently not implemented. Please contact me if you require Kerberos based authentication.
 
-### Encrypted network communication 
+### Encrypted network communication
 To establish an encrypted database connection just pass whether `key`, `cert` and `ca` or a `pfx` to createClient.
 
 ```js
 var client = hdb.createClient({
   host : 'hostname',
   port : 30015,
-  key  : fs.readFileSync('client-key.pem'),	
+  key  : fs.readFileSync('client-key.pem'),
   cert : fs.readFileSync('client-cert.pem'),
   ca   : [fs.readFileSync('trusted-cert.pem')],
   ...
 });
 ```
- 
+
 Direct Statement Execution
 --------------------------
 
 Direct statement execution is the simplest way to execute SQL statements.
 The only input parameter is the SQL command to be executed.
 Generally we return the statement execution results using callbacks.
-The type of returned result depends on the kind of statement. 
+The type of returned result depends on the kind of statement.
 
 ### DDL Statement
 
@@ -162,8 +171,8 @@ In the case of a DDL Statement nothing is returned.
 client.exec('create table TEST.NUMBERS (a int, b varchar(16))', function (err) {
   if (err) {
     return console.error('Error:', err);
-  } 
-  console.log('Table TEST.NUMBERS has been created');  
+  }
+  console.log('Table TEST.NUMBERS has been created');
 });
 ```
 
@@ -175,8 +184,8 @@ In the case of a DML Statement the number of `affectedRows` is returned.
 client.exec('insert into TEST.NUMBERS values (1, \'one\')', function (err, affectedRows) {
   if (err) {
     return console.error('Error:', err);
-  } 
-  console.log('Number of affected rows:', affectedRows);  
+  }
+  console.log('Number of affected rows:', affectedRows);
 });
 ```
 
@@ -188,15 +197,78 @@ The `exec` function is a convenient way to completely retrieve the result of a q
 client.exec('select A, B from TEST.NUMBERS oder by A', function(err, rows) {
   if (err) {
     return console.error('Error:', err);
-  } 
-  console.log('Rows:', rows);  
+  }
+  console.log('Rows:', rows);
+});
+```
+
+Different Representations of Query Results
+-----------------------------------
+The default representation of a single row is an Object where the property names are the columnDisplayNames of the resultSetMetadata.
+
+```js
+var command = 'select top 1 * from t1';
+client.exec(command, function(err, rows) {
+  /* rows will be an array like this:
+  [{
+    ID: 1,
+    A: 't1.1.a',
+    B: 't1.1.b'
+  }]
+  */
+});
+```
+
+If your SQL statement is a join with overlapping column names, you may want to get separate objects for each table per row. This is possible if you set option `nestTables` to true.
+
+```js
+var command = 'select top 1 * from t1 join t2 on t1.id = t2.id';
+var options = {
+  nestTables: true
+};
+client.exec(command, options, function(err, rows) {
+  /* rows will be an array like this now:
+  [{
+    T1: {
+      ID: 1,
+      A: 't1.1.a',
+      B: 't1.1.b',
+    },
+    T2: {
+      ID: 1
+      A: 't2.1.a',
+      B: 't2.1.b',
+    },
+  }]
+  */
+});
+```
+
+It is also possible to return all rows as an Array where the order of the column values is exactly the same as in the resultSetMetadata. In this case you have to set the option `rowsAsArray` to true.
+
+```js
+var command = 'select top 1 * from t1 join t2 on t1.id = t2.id';
+var options = {
+  rowsAsArray: true
+};
+client.exec(command, options, function(err, rows) {
+  /* rows will be an array like this now:
+  [[
+    1,
+    't1.1.a',
+    't1.1.b',
+    1
+    't2.1.a',
+    't2.1.b'
+  ]]
+  */
 });
 ```
 
 Prepared Statement Execution
 ----------------------------
 
-###  Prepare a Statement 
+###  Prepare a Statement
 
 The client returns a `statement` object which can be executed multiple times.
 
@@ -204,26 +276,26 @@ The client returns a `statement` object which can be executed multiple times.
 client.prepare('call * from DUMMY where X = ?', function (err, statement){
   if (err) {
     return console.error('Error:', err);
-  } 
+  }
   // do something with the statement
   console.log('StatementId', statement.id);
 });
 ```
 
-### Execute a Statement 
+### Execute a Statement
 
-The execution of a prepared statement is similar to the direct statement execution on the client. The difference is that the first parameter of `exec` function is an array with positional `parameters`. In case of named parameters it can also be an `parameters` object.   
+The execution of a prepared statement is similar to the direct statement execution on the client. The difference is that the first parameter of `exec` function is an array with positional `parameters`. In case of named parameters it can also be an `parameters` object.
 
 ```js
 statement.exec([1], function (err, rows) {
   if (err) {
     return console.error('Error:', err);
   }
-  console.log('Rows:', rows);  
+  console.log('Rows:', rows);
 });
 ```
 
-If you use the `execute` instead of `exec` function the `resultSet` is returned in the callback like in direct query execution above. 
+If you use the `execute` instead of `exec` function the `resultSet` is returned in the callback like in direct query execution above.
 
 ### Calling Stored Procedures
 
@@ -239,7 +311,7 @@ create procedure PROC_DUMMY (in a int, in b int, out c int, out d DUMMY, out e T
     e = select * from TABLES;
   end
 ```
-you can call it via a prepared statement. 
+you can call it via a prepared statement.
 The second argument is always an object with the scalar parameters.
 If there are no scalar parameters, an empty object ``{}`` will be returned.
 The following arguments are the `resultSets`.
@@ -248,9 +320,9 @@ The following arguments are the `resultSets`.
 client.prepare('call PROC_DUMMY (?, ?, ?, ?, ?)', function(err, statement){
   if (err) {
     return console.error('Prepare error:', err);
-  }  
+  }
   statement.exec({
-    A: 3, 
+    A: 3,
     B: 4
   }, function(err, parameters, dummyRows, tableRows) {
     if (err) {
@@ -271,7 +343,7 @@ To drop the statement simply call
 statement.drop(function(err){
   if (err) {
     return console.error('Drop error:', err);
-  }  
+  }
   console.log('Statement dropped');
 });
 ```
@@ -280,35 +352,35 @@ The callback is optional in this case.
 Bulk Insert
 ---------------
 
-If you want to insert multiple rows with a single execute you just 
+If you want to insert multiple rows with a single execute you just
 have to provide the all parameters as array.
 
 ```js
 client.prepare('insert into TEST.NUMBERS values (?, ?)', function(err, statement){
   if (err) {
     return console.error('Prepare error:', err);
-  }  
+  }
   statement.exec([[1, 'one'], ['2', 'two'], [3, 'three']], function(err, affectedRows) {
     if (err) {
       return console.error('Exec error:', err);
     }
-    console.log('Array of affected rows:', affectedRows);  
+    console.log('Array of affected rows:', affectedRows);
   });
 });
 ```
-Take a look at the example [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js) for further details. 
+Take a look at the example [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js) for further details.
 
 
 Streaming results
 ---------------
 
-If you use the `execute` function of client or statement instead of the `exec` function, a `resultSet` object is returned in the callback instead of an array of all rows. The `resultSet` object allows you to create an object based `row` stream or an array based stream of `rows` which can be piped to an writer object. Don't forget to close the `resultSet` if you use the `execute` function. 
- 
+If you use the `execute` function of client or statement instead of the `exec` function, a `resultSet` object is returned in the callback instead of an array of all rows. The `resultSet` object allows you to create an object based `row` stream or an array based stream of `rows` which can be piped to an writer object. Don't forget to close the `resultSet` if you use the `execute` function.
+
 ```js
 client.execute('select A, B from TEST.NUMBERS oder by A', function(err, rs) {
   if (err) {
     return console.error('Error:', err);
-  } 	
+  }
   rs.setFetchSize(2048);
   rs.createObjectStream()
     .pipe(new MyWriteStream())
@@ -319,7 +391,7 @@ client.execute('select A, B from TEST.NUMBERS oder by A', function(err, rs) {
     });
 });
 ```
-Take a look at the example [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js) for further details. 
+Take a look at the example [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js) for further details.
 
 Transaction handling
 ---------------
@@ -359,28 +431,28 @@ execTransaction(function(err, ok){
     return console.error('Commit or Rollback error', err);
   }
   if (ok) {
-    console.log('Commited'); 
+    console.log('Commited');
   } else {
-    console.log('Rolled back'); 
+    console.log('Rolled back');
   }
 })
 
 ```
 
-Take a look at the example [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js) for further details. 
+Take a look at the example [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js) for further details.
 
 Streaming Large Objects
 -------------
 
 ### Read Streams
 
-Reading large object as stream can be done if you use the `execute` method of client or statement. In this case for all LOB columns a [Lob](https://github.wdf.sap.corp/d021332/node-hdb/blob/master/lib/protocol/Lob.js#L74-L89) object is returned. You can call `createReadStream` or `read` in order create a readable stream or to read the LOB completely. 
+Reading large object as stream can be done if you use the `execute` method of client or statement. In this case for all LOB columns a [Lob](https://github.wdf.sap.corp/d021332/node-hdb/blob/master/lib/protocol/Lob.js#L74-L89) object is returned. You can call `createReadStream` or `read` in order create a readable stream or to read the LOB completely.
 
 ### Write Streams
 
 Writing large objects is automatically done. You just have to pass instance of [`Readable`](http://nodejs.org/api/stream.html#stream_class_stream_readable_1) or a Buffer object as parameter.
 
-Take a look at the example [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js) for further details. 
+Take a look at the example [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js) for further details.
 
 Running tests
 -------------
@@ -403,10 +475,10 @@ For the acceptance tests a database connection has to be established. Therefore 
 Running examples
 ----------------
 
-Also, for the examples you need a valid a ```config.json``` in the ```test/db``` folder. 
+Also, for the examples you need a valid a ```config.json``` in the ```test/db``` folder.
 
 
-- [app1](https://github.com/SAP/node-hdb/blob/master/examples/app1.js): Simple query. 
+- [app1](https://github.com/SAP/node-hdb/blob/master/examples/app1.js): Simple query.
 - [app2](https://github.com/SAP/node-hdb/blob/master/examples/app2.js): Fetch rows from `ResultSet`.
 - [app3](https://github.com/SAP/node-hdb/blob/master/examples/app3.js): Streaming rows `createObjectStream()`.
 - [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js): Pipe row into JSON-Transform and to `stdout`.
@@ -415,10 +487,11 @@ Also, for the examples you need a valid a ```config.json``` in the ```test/db```
 - [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js): Insert a row with a large image into a db table (uses WriteLobRequest and Transaction internally).
 - [app8](https://github.com/SAP/node-hdb/blob/master/examples/app8.js): Automatic reconnect when network connection is lost.
 - [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js): Insert multiple rows with large images into a db table as one batch.
-- [call1](https://github.com/SAP/node-hdb/blob/master/examples/call1.js): Call stored procedure. 
+- [app10](https://github.com/SAP/node-hdb/blob/master/examples/app10.js): Usage example of query option `nestTables`.
+- [call1](https://github.com/SAP/node-hdb/blob/master/examples/call1.js): Call stored procedure.
 - [call2](https://github.com/SAP/node-hdb/blob/master/examples/call2.js): Call stored procedure with lob input and output parameter.
 - [call3](https://github.com/SAP/node-hdb/blob/master/examples/call3.js): Call stored procedure with table as input parameter.
-- [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js): Transaction handling (shows how to use commit and rollback).  
+- [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js): Transaction handling (shows how to use commit and rollback).
 - [csv](https://github.com/SAP/node-hdb/blob/master/examples/csv.js): Stream a db table into csv file.
 - [server](https://github.com/SAP/node-hdb/blob/master/examples/server.js): Stream rows into http response `http://localhost:1337/{schema}/{tablename}?top={top}`
 
@@ -430,7 +503,6 @@ node examples/app1
 
 Todo
 ----
-* Improve documentation of the client api    
+* Improve documentation of the client api
 * Improve error handling
-* Increase test coverage 
 * ...

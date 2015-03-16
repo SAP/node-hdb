@@ -19,6 +19,7 @@ var PartKind = lib.common.PartKind;
 var SegmentKind = lib.common.SegmentKind;
 var FunctionCode = lib.common.FunctionCode;
 var Segment = lib.reply.Segment;
+var Part = lib.reply.Part;
 
 describe('Rep', function () {
 
@@ -92,6 +93,18 @@ describe('Rep', function () {
       });
       var reply = segment.getReply();
       reply.command.should.eql(['foo', 'bar', 'foobar']);
+    });
+
+    it('should serialize a segment to a buffer', function () {
+      var part = new Part(PartKind.ROWS_AFFECTED, 0, 1, new Buffer([1, 0, 0, 0]));
+      var segment = new Segment();
+      segment.push(part);
+      var buffer = segment.toBuffer(256);
+      buffer.readUInt32LE(0).should.equal(48);
+      buffer.readUInt16LE(8).should.equal(1);
+      buffer.readUInt32LE(10).should.equal(1);
+      buffer.readUInt16LE(24).should.equal(PartKind.ROWS_AFFECTED);
+      buffer.readUInt16LE(40).should.equal(1);
     });
 
   });

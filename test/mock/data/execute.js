@@ -203,7 +203,7 @@ exports['0300000000000000'] = {
 };
 
 exports['0700000000000000'] = {
-  '0301000000': {
+  '1d0158': {
     kind: SegmentKind.REPLY,
     functionCode: FunctionCode.SELECT,
     parts: [{

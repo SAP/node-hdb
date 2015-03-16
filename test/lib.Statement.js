@@ -20,6 +20,7 @@ var Statement = lib.Statement;
 var FunctionCode = lib.common.FunctionCode;
 var TypeCode = lib.common.TypeCode;
 var IoType = lib.common.IoType;
+var EMPTY_BUFFER = lib.common.EMPTY_BUFFER;
 
 function createStatement(options) {
   options = lib.util.extend({
@@ -195,7 +196,7 @@ describe('Lib', function () {
       var statement = createStatement({
         parameterMetadata: []
       });
-      (!statement._normalizeInputParameters()).should.be.ok;
+      statement._normalizeInputParameters().should.equal(EMPTY_BUFFER);
     });
 
     it('should raise an error for empty parameters values', function () {

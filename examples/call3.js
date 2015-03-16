@@ -32,14 +32,14 @@ function connect(cb) {
 function createTableType(cb) {
   dropAndCreate({
     drop: 'drop type tt1',
-    create: 'create type tt1 as table (i smallint)'
+    create: 'create type tt1 as table (i INT)'
   }, cb);
 }
 
 function createLocalTemporaryTable(cb) {
   dropAndCreate({
     drop: 'drop table #local_test_table_1',
-    create: 'create local temporary table #local_test_table_1 (i smallint)'
+    create: 'create local temporary table #local_test_table_1 (i INT)'
   }, cb);
 }
 
