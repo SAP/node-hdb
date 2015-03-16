@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var PartKind = lib.common.PartKind;
 var MultilineOptions = lib.data[PartKind.TOPOLOGY_INFORMATION];
 
@@ -24,15 +24,12 @@ describe('Data', function () {
   describe('#TopologyInformation', function () {
 
     it('should write topology information', function () {
-
-      var part = MultilineOptions.write({}, data.options);
-      part.should.eql(data.part);
+      MultilineOptions.write({}, data.options).should.eql(data.part);
+      MultilineOptions.write.call(data.options).should.eql(data.part);
     });
 
     it('should deserialize options from buffer', function () {
-      var topologyInformation = MultilineOptions.read(data.part);
-      topologyInformation.should.eql(data.options);
-
+      MultilineOptions.read(data.part).should.eql(data.options);
     });
 
   });

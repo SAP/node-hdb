@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var PartKind = lib.common.PartKind;
 var Options = lib.data[PartKind.CONNECT_OPTIONS];
 
@@ -26,7 +26,7 @@ describe('Data', function () {
       0x0b, 0x1d, 0x03, 0x00, 0x58, 0x53, 0x45,
       0x0c, 0x03, 0x01, 0x00, 0x00, 0x00,
       0x17, 0x03, 0x01, 0x00, 0x00, 0x00,
-      0x10, 0x03, 0x03, 0x00, 0x00, 0x00,
+      0x10, 0x04, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x02, 0x1c, 0x01,
       0x0f, 0x03, 0x02, 0x00, 0x00, 0x00,
       0x13, 0x1c, 0x01,
@@ -53,7 +53,7 @@ describe('Data', function () {
     value: 1
   }, {
     name: 16,
-    type: 3,
+    type: 4,
     value: 3
   }, {
     name: 2,
@@ -80,13 +80,12 @@ describe('Data', function () {
   describe('#Options', function () {
 
     it('should write an Options part', function () {
-      var part = Options.write({}, opts);
-      part.should.eql(optsPart);
+      Options.write({}, opts).should.eql(optsPart);
+      Options.write.call(opts).should.eql(optsPart);
     });
 
     it('should read an Options part', function () {
-      var options = Options.read(optsPart);
-      options.should.eql(opts);
+      Options.read(optsPart).should.eql(opts);
     });
 
   });

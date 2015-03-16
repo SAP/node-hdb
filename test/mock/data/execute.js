@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('../../hdb').lib;
+var lib = require('../../../lib');
 var SegmentKind = lib.common.SegmentKind;
 var FunctionCode = lib.common.FunctionCode;
 var PartKind = lib.common.PartKind;
@@ -198,6 +198,26 @@ exports['0300000000000000'] = {
       attributes: 0,
       buffer: new Buffer(
         '0300000000000000', 'hex')
+    }]
+  }
+};
+
+exports['0700000000000000'] = {
+  '1d0158': {
+    kind: SegmentKind.REPLY,
+    functionCode: FunctionCode.SELECT,
+    parts: [{
+      kind: PartKind.RESULT_SET_ID,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        '0700000001000000', 'hex')
+    }, {
+      kind: PartKind.RESULT_SET,
+      argumentCount: 1,
+      attributes: 17,
+      buffer: new Buffer(
+        '0158', 'hex')
     }]
   }
 };

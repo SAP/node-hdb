@@ -14,10 +14,12 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
+var PartKind = lib.common.PartKind;
 var SegmentKind = lib.common.SegmentKind;
 var FunctionCode = lib.common.FunctionCode;
 var Segment = lib.reply.Segment;
+var Part = lib.reply.Part;
 
 describe('Rep', function () {
 
@@ -38,8 +40,16 @@ describe('Rep', function () {
       segment.toBuffer(0).should.eql(data);
     });
 
-    it('should inspect a  Segment', function () {
+    it('should inspect a Segment', function () {
       var segment = new Segment();
+      segment.push({
+        inspect: function inspect(options) {
+          options.should.eql({
+            indentOffset: 4
+          });
+          return '';
+        }
+      });
       segment.inspect().should.equal([
         '{',
         '  kind: SegmentKind.INVALID,',
@@ -51,7 +61,7 @@ describe('Rep', function () {
       ].join('\n'));
     });
 
-    it('should get a part', function () {
+    it('should get a Part', function () {
       var segment = new Segment();
       (!segment.getPart(1)).should.be.ok;
       var parts = [{
@@ -65,6 +75,36 @@ describe('Rep', function () {
       segment.getPart(1).should.eql(parts[0]);
       segment.parts = parts.slice(0);
       segment.getPart(1).should.eql(parts);
+    });
+
+    it('should add some Parts to a Segment', function () {
+      var segment = new Segment();
+      segment.push({
+        kind: PartKind.COMMAND,
+        buffer: new Buffer('foo', 'utf8')
+      });
+      segment.push({
+        kind: PartKind.COMMAND,
+        buffer: new Buffer('bar', 'utf8')
+      });
+      segment.push({
+        kind: PartKind.COMMAND,
+        buffer: new Buffer('foobar', 'utf8')
+      });
+      var reply = segment.getReply();
+      reply.command.should.eql(['foo', 'bar', 'foobar']);
+    });
+
+    it('should serialize a segment to a buffer', function () {
+      var part = new Part(PartKind.ROWS_AFFECTED, 0, 1, new Buffer([1, 0, 0, 0]));
+      var segment = new Segment();
+      segment.push(part);
+      var buffer = segment.toBuffer(256);
+      buffer.readUInt32LE(0).should.equal(48);
+      buffer.readUInt16LE(8).should.equal(1);
+      buffer.readUInt32LE(10).should.equal(1);
+      buffer.readUInt16LE(24).should.equal(PartKind.ROWS_AFFECTED);
+      buffer.readUInt16LE(40).should.equal(1);
     });
 
   });

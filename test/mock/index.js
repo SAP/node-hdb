@@ -13,13 +13,14 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
+var server = require('./server');
 var MockConnection = require('./MockConnection');
 var MockResult = require('./MockResult');
+var MockSocket = require('./MockSocket');
+var MockAuthenticationManager = require('./MockAuthenticationManager');
 
-exports.createServer = require('./server').create;
-exports.createConnection = function createConnection(settings) {
-  return new MockConnection(settings);
-};
-exports.createResult = function createResult(connection, options) {
-  return new MockResult(connection, options);
-};
+exports.createServer = server.create;
+exports.createConnection = MockConnection.create;
+exports.createResult = MockResult.create;
+exports.createSocket = MockSocket.create;
+exports.createManager = MockAuthenticationManager.create;

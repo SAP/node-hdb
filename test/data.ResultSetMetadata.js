@@ -13,8 +13,14 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
+var normalize = require('./normalize');
 var PartKind = lib.common.PartKind;
+var ParameterMode = lib.common.ParameterMode;
+var READONLY = ParameterMode.READONLY;
+var AUTO_INCREMENT = ParameterMode.AUTO_INCREMENT;
+var MANDATORY = ParameterMode.MANDATORY;
+var OPTIONAL = ParameterMode.OPTIONAL;
 var ResultSetMetadata = lib.data[PartKind.RESULT_SET_METADATA];
 
 var data = require('./fixtures/resultSetMetadata').VERSION_AND_CURRENT_USER;
@@ -24,8 +30,20 @@ describe('Data', function () {
   describe('#ResultSetMetadata', function () {
 
     it('should read resultSet metadata', function () {
-      var columnMetadata = ResultSetMetadata.read(data.part).toPlainArray();
-      columnMetadata.should.eql(data.columns);
+      /* jshint bitwise: false */
+      var resultSetMetadata = ResultSetMetadata.read(data.part);
+      var columns = normalize(resultSetMetadata);
+      columns.should.eql(data.columns);
+      var argumentCount = ResultSetMetadata.getArgumentCount(columns);
+      argumentCount.should.equal(data.columns.length);
+
+      resultSetMetadata.forEach(function (column, index) {
+        var mode = data.columns[index].mode;
+        column.isReadOnly().should.equal(!!(mode & READONLY));
+        column.isAutoIncrement().should.equal(!!(mode & AUTO_INCREMENT));
+        column.isMandatory().should.equal(!!(mode & MANDATORY));
+        column.isOptional().should.equal(!!(mode & OPTIONAL));
+      });
     });
 
   });

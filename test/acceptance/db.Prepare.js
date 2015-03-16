@@ -32,7 +32,6 @@ describe('db', function () {
         var sql = 'select * from NUMBERS where B like ? order by A';
         var statement;
         async.series([
-
           function prepareStatement(callback) {
             client.prepare(sql, function onprepare(err, ps) {
               statement = ps;
@@ -72,7 +71,6 @@ describe('db', function () {
       it('should return an invalid parameters error', function (done) {
         var statement;
         async.series([
-
           function prepare(cb) {
             var sql = 'insert into NUMBERS values (?, ?)';
             client.prepare(sql, function (err, ps) {
@@ -89,6 +87,7 @@ describe('db', function () {
           },
           function drop(cb) {
             statement.drop(function (err) {
+              /* jshint unused:false */
               // ignore error
               cb();
             });

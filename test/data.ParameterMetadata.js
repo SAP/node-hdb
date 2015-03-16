@@ -14,7 +14,8 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
+var normalize = require('./normalize');
 var PartKind = lib.common.PartKind;
 var ParameterMetadata = lib.data[PartKind.PARAMETER_METADATA];
 
@@ -74,7 +75,7 @@ describe('Data', function () {
         param.isMandatory().should.be.false;
         param.isAutoIncrement().should.be.false;
       });
-      parameterMetadata.toPlainArray().should.eql(paramsMetadata);
+      normalize(parameterMetadata).should.eql(paramsMetadata);
     });
 
   });

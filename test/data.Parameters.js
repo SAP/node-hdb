@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var PartKind = lib.common.PartKind;
 var Parameters = lib.data[PartKind.PARAMETERS];
 
@@ -32,11 +32,16 @@ describe('Data', function () {
 
     it('should write one parameters value', function () {
       var value = new Buffer([1]);
-      var part = Parameters.write({}, value);
-      part.argumentCount.should.equal(1);
       Parameters.getArgumentCount(value).should.equal(1);
-      part.buffer.should.eql(value);
       Parameters.getByteLength(value).should.equal(1);
+      Parameters.write({}, value).should.eql({
+        argumentCount: 1,
+        buffer: value
+      });
+      Parameters.write.call(value).should.eql({
+        argumentCount: 1,
+        buffer: value
+      });
     });
 
   });

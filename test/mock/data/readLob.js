@@ -14,7 +14,7 @@
 'use strict';
 
 
-var lib = require('../../hdb').lib;
+var lib = require('../../../lib');
 var IMAGES = require('../../fixtures/images');
 var bignum = lib.util.bignum;
 var SegmentKind = lib.common.SegmentKind;

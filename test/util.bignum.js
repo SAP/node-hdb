@@ -14,7 +14,7 @@
 'use strict';
 
 var should = require('should');
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var bignum = lib.util.bignum;
 
 function readInt64(hex) {
@@ -88,7 +88,10 @@ describe('Util', function () {
       readInt64('0000000000000100').should.equal(Math.pow(2, 48));
       readInt64('0000000000001000').should.equal(Math.pow(2, 52));
       readInt64('0000000000002000').should.equal(Math.pow(2, 53));
+      readInt64('0000000000004000').should.equal('18014398509481984');
+      readInt64('0000000000008000').should.equal('36028797018963968');
       readInt64('bd34a75e47780300').should.equal(976672856159421);
+
       readInt64('0100000000002000').should.equal('9007199254740993');
       readInt64('7708530509f40102').should.equal('144664982633777271');
     });
@@ -97,8 +100,11 @@ describe('Util', function () {
       'ffffffffffffffff'.should.equal(writeInt64(-1));
       'feffffffffffffff'.should.equal(writeInt64(-2));
       '00000000ffffffff'.should.equal(writeInt64(-Math.pow(2, 32)));
+      '00000000ffffffff'.should.equal(writeInt64('-' + Math.pow(2, 32)));
       '000000000000f0ff'.should.equal(writeInt64(-Math.pow(2, 52)));
       '000000000000e0ff'.should.equal(writeInt64(-Math.pow(2, 53)));
+      '000000000000c0ff'.should.equal(writeInt64('-18014398509481984'));
+      '00000000000080ff'.should.equal(writeInt64('-36028797018963968'));
       'ffffffffffffdfff'.should.equal(writeInt64('-9007199254740993'));
     });
 
@@ -134,7 +140,6 @@ describe('Util', function () {
       'bd34a75e47780300'.should.equal(writeUInt64('976672856159421'));
       '7708530509f40102'.should.equal(writeUInt64('144664982633777271'));
     });
-
   });
 
   describe('#Decimal', function () {
@@ -223,10 +228,13 @@ describe('Util', function () {
         2, 53));
       readDec128('000000000000200000000000000040b0').m.should.equal(Math.pow(
         2, 53));
+      readDec128('ff3f7a10f35a00000000000000004030').m.should.equal(99999999999999);
       readDec128('01000000000020000000000000004030').m.should.equal(
         '9007199254740993');
       readDec128('ffffffffffffffffffffffffffffffef').m.should.equal(
         '10384593717069655257060992658440191');
+      readDec128('000000a1edccce1bc2d3000000000000').m.should.equal(
+        '1000000000000000000000000');
     });
 
     it('write positive numbers', function () {
@@ -242,6 +250,26 @@ describe('Util', function () {
       }).should.eql('ae080000000000000000000000003c30');
       writeDec128({
         s: 1,
+        m: '18446744073709551615',
+        e: 0
+      }).should.eql('ffffffffffffffff0000000000004030');
+      writeDec128({
+        s: 1,
+        m: '18446744073709551616',
+        e: 0
+      }).should.eql('00000000000000000100000000004030');
+      writeDec128({
+        s: 1,
+        m: '18446744073709551617',
+        e: 0
+      }).should.eql('01000000000000000100000000004030');
+      writeDec128({
+        s: 1,
+        m: '10000000000000000',
+        e: 0
+      }).should.eql('0000c16ff28623000000000000004030');
+      writeDec128({
+        s: 1,
         m: '10141919503094329964824243895208055',
         e: 0
       }).should.eql('7708530509f401027708530509f44130');
@@ -255,6 +283,11 @@ describe('Util', function () {
         m: 990000,
         e: -5
       }).should.eql('301b0f00000000000000000000003630');
+      writeDec128({
+        s: 1,
+        m: 99999999999999,
+        e: 0
+      }).should.eql('ff3f7a10f35a00000000000000004030');
     });
 
     it('write negative numbers', function () {
@@ -268,6 +301,11 @@ describe('Util', function () {
         m: 2222,
         e: -2
       }).should.eql('ae080000000000000000000000003cb0');
+      writeDec128({
+        s: -1,
+        m: '10384593717069655257060992658440191',
+        e: 8159
+      }).should.eql('ffffffffffffffffffffffffffffffef');
     });
 
     it('read float decimal numbers', function () {
@@ -309,22 +347,80 @@ describe('Util', function () {
   });
 
   describe('#UInt128', function () {
+
     it('should write numbers', function () {
-      writeUInt128('340282366920938463463374607431768211455').should.eql(
+      writeUInt128('340282366920938463463374607431768211455').should.equal(
         'ffffffffffffffffffffffffffffffff'
       );
-      writeUInt128('18446744073709551615').should.eql(
+      writeUInt128('18446744073709551614').should.equal(
+        'feffffffffffffff0000000000000000'
+      );
+      writeUInt128('18446744073709551615').should.equal(
         'ffffffffffffffff0000000000000000'
       );
+      writeUInt128('18446744073709551616').should.equal(
+        '00000000000000000100000000000000'
+      );
+      writeUInt128('18446744073709551617').should.equal(
+        '01000000000000000100000000000000'
+      );
+      writeUInt128('1').should.equal(
+        '01000000000000000000000000000000'
+      );
+      writeUInt128('100000000').should.equal(
+        '00e1f505000000000000000000000000'
+      );
+      writeUInt128('10000000000000000').should.equal(
+        '0000c16ff28623000000000000000000'
+      );
+      writeUInt128('1000000000000000000000000').should.equal(
+        '000000a1edccce1bc2d3000000000000'
+      );
+      writeUInt128('4294967296').should.equal(
+        '00000000010000000000000000000000'
+      );
     });
+
     it('should read numbers', function () {
       readUInt128(
         'ffffffffffffffffffffffffffffffff'
-      ).should.eql('340282366920938463463374607431768211455');
+      ).should.equal('340282366920938463463374607431768211455');
+      readUInt128(
+        '00000000000000000000000001000000'
+      ).should.equal('79228162514264337593543950336');
+      readUInt128(
+        '00000000000000000100000000000000'
+      ).should.equal('18446744073709551616');
+      readUInt128(
+        '01000000000000000000000000000000'
+      ).should.equal(1);
+      readUInt128(
+        '00e1f505000000000000000000000000'
+      ).should.equal(100000000);
+      readUInt128(
+        '0000c16ff28623000000000000000000'
+      ).should.equal('10000000000000000');
+      readUInt128(
+        '000000a1edccce1bc2d3000000000000'
+      ).should.equal('1000000000000000000000000');
+      readUInt128(
+        'feffffffffffffff0000000000000000'
+      ).should.equal('18446744073709551614');
       readUInt128(
         'ffffffffffffffff0000000000000000'
-      ).should.eql('18446744073709551615');
+      ).should.equal('18446744073709551615');
+
+      readUInt128(
+        '01000000000000000100000000000000'
+      ).should.equal('18446744073709551617');
+      readUInt128(
+        '00000000010000000000000000000000'
+      ).should.equal(4294967296);
+      readUInt128(
+        'ffffffff000000000000000000000000'
+      ).should.equal(4294967295);
     });
+
   });
 
 });

@@ -13,34 +13,58 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
+var normalize = require('./normalize');
 var PartKind = lib.common.PartKind;
+var ErrorLevel = lib.common.ErrorLevel;
 var SqlError = lib.data[PartKind.ERROR];
 
+function serializeError(error) {
+  var length = Buffer.byteLength(error.message);
+  var buffer = new Buffer(18 + length);
+  buffer.writeInt32LE(error.code, 0);
+  buffer.writeInt32LE(error.position, 4);
+  buffer.writeInt32LE(length, 8);
+  buffer.writeInt8(error.level, 12);
+  buffer.write(error.sqlState, 13, 5);
+  buffer.write(error.message, 18, length);
+  return buffer;
+}
 describe('Data', function () {
 
   describe('#SqlError', function () {
 
-    it('should deserialize sqlError from buffer', function () {
-      var error = {
-        message: 'hello',
+    it('should deserialize warning from buffer', function () {
+      var warning = {
+        message: 'foo',
         code: 1,
         position: 2,
-        level: 3,
+        level: ErrorLevel.WARNING,
         sqlState: 'HY001'
       };
-      var length = Buffer.byteLength(error.message);
-      var buffer = new Buffer(18 + length);
-      buffer.writeInt32LE(error.code, 0);
-      buffer.writeInt32LE(error.position, 4);
-      buffer.writeInt32LE(length, 8);
-      buffer.writeInt8(error.level, 12);
-      buffer.write(error.sqlState, 13, 5);
-      buffer.write(error.message, 18, length);
-      SqlError.read({
-        buffer: buffer,
+      var sqlError = SqlError.read({
+        buffer: serializeError(warning),
         argumentCount: 1
-      }).toPlainObject().should.eql(error);
+      });
+      normalize(sqlError).should.eql(warning);
+      SqlError.getArgumentCount(sqlError).should.equal(1);
+      SqlError.getByteLength(sqlError).should.equal(21);
+    });
+
+    it('should deserialize fatal error from buffer', function () {
+      var fatal = {
+        message: 'bar',
+        code: 1,
+        position: 2,
+        level: ErrorLevel.FATAL,
+        fatal: true,
+        sqlState: 'HY001'
+      };
+      var sqlError = SqlError.read({
+        buffer: serializeError(fatal),
+        argumentCount: 1
+      });
+      normalize(sqlError).should.eql(fatal);
     });
 
   });

@@ -12,7 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
-/* jshint undef:false */
+/* jshint undef:false, expr:true */
 
 var db = require('../db')();
 
@@ -20,22 +20,76 @@ describe('db', function () {
   before(db.init.bind(db));
   after(db.end.bind(db));
   describe('DUMMY  ', function () {
+
     describe('direct execute of Query', function () {
 
       it('should return a single row', function (done) {
         var sql = 'select * from DUMMY';
         db.client.exec(sql, function (err, rows) {
-          if (err) {
-            return done(err);
-          }
-          rows.should.have.length(1);
-          rows[0].should.eql({
+          (!!err).should.be.not.ok;
+          rows.should.eql([{
             DUMMY: 'X'
-          });
+          }]);
+          done();
+        });
+      });
+
+      it('should return a single row as array', function (done) {
+        var sql = 'select * from DUMMY';
+        db.client.exec({
+          sql: sql,
+          rowsAsArray: true
+        }, function (err, rows) {
+          (!!err).should.be.not.ok;
+          rows.should.eql([
+            ['X']
+          ]);
+          done();
+        });
+      });
+
+      it('should return a single row with name nest tables', function (done) {
+        var sql = 'select * from DUMMY';
+        db.client.exec(sql, {
+          nestTables: true
+        }, function (err, rows) {
+          (!!err).should.be.not.ok;
+          rows.should.eql([{
+            DUMMY: {
+              DUMMY: 'X'
+            }
+          }]);
           done();
         });
       });
 
     });
+
+    describe('prepared execute of a Query', function () {
+
+      it('should return a single row with name nest tables', function (done) {
+        var sql = 'select * from dummy where dummy = ?';
+        db.client.prepare({
+          sql: sql,
+          nestTables: true
+        }, function (err, statement) {
+          (!!err).should.be.not.ok;
+          statement.exec({
+            parameters: ['X']
+          }, function (err, rows) {
+            (!!err).should.be.not.ok;
+            rows.should.eql([{
+              DUMMY: {
+                DUMMY: 'X'
+              }
+            }]);
+            statement.drop(done);
+          });
+
+        });
+      });
+
+    });
+
   });
 });

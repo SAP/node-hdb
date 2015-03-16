@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var PartKind = lib.common.PartKind;
 var Command = lib.data[PartKind.COMMAND];
 var ClientId = lib.data[PartKind.CLIENT_ID];
@@ -29,8 +29,8 @@ describe('Data', function () {
     };
 
     it('should write a Command part', function () {
-      var part = Command.write({}, command);
-      part.should.eql(commandPart);
+      Command.write({}, command).should.eql(commandPart);
+      Command.write.call(command).should.eql(commandPart);
     });
 
     it('should get the byteLength of a Command part', function () {
@@ -52,8 +52,8 @@ describe('Data', function () {
     };
 
     it('should write a ClientId part', function () {
-      var part = ClientId.write({}, clientId);
-      part.should.eql(clientIdPart);
+      ClientId.write({}, clientId).should.eql(clientIdPart);
+      ClientId.write.call(clientId).should.eql(clientIdPart);
     });
 
     it('should get the byteLength of a ClientId part', function () {

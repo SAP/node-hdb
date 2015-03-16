@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var PartKind = lib.common.PartKind;
 var Fields = lib.data[PartKind.AUTHENTICATION];
 
@@ -53,18 +53,22 @@ describe('Data', function () {
     ]);
 
     it('should write small fields', function () {
-      var part = Fields.write({}, smallFields);
-      part.argumentCount.should.equal(1);
       Fields.getArgumentCount(smallFields).should.equal(1);
-      part.buffer.should.eql(smallBuffer);
       Fields.getByteLength(smallFields).should.equal(smallBuffer.length);
+      Fields.write({}, smallFields).should.eql({
+        argumentCount: 1,
+        buffer: smallBuffer
+      });
+      Fields.write.call(smallFields).should.eql({
+        argumentCount: 1,
+        buffer: smallBuffer
+      });
     });
 
     it('should read small fields', function () {
-      var fields = Fields.read({
+      Fields.read({
         buffer: smallBuffer
-      });
-      fields.should.eql(smallFields);
+      }).should.eql(smallFields);
     });
 
 

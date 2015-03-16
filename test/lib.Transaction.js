@@ -14,7 +14,7 @@
 'use strict';
 /*jshint expr:true*/
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 
 describe('Lib', function () {
 
@@ -43,6 +43,12 @@ describe('Lib', function () {
       var transaction = new lib.Transaction();
       transaction.on('new', function (kind) {
         kind.should.equal('read');
+        transaction.setFlags({
+          committed: true
+        });
+      });
+      transaction.on('end', function (success) {
+        success.should.equal(true);
         done();
       });
       transaction.setFlags({
@@ -54,6 +60,12 @@ describe('Lib', function () {
       var transaction = new lib.Transaction();
       transaction.on('new', function (kind) {
         kind.should.equal('write');
+        transaction.setFlags({
+          rolledBack: true
+        });
+      });
+      transaction.on('end', function (success) {
+        success.should.equal(false);
         done();
       });
       transaction.setFlags({
