@@ -14,12 +14,12 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var Client = lib.Client;
 
 function TestClient() {}
 TestClient.prototype.connect = function connect(cb) {
-  setImmediate(cb);
+  process.nextTick(cb);
 };
 
 describe('Lib', function () {

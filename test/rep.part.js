@@ -14,7 +14,7 @@
 'use strict';
 
 var should = require('should');
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var PART_HEADER_LENGTH = lib.common.PART_HEADER_LENGTH;
 var PartKind = lib.common.PartKind;
 var Part = lib.reply.Part;
@@ -83,6 +83,18 @@ describe('Rep', function () {
         '  attributes: 0,',
         '  buffer: new Buffer(',
         '    \'01000000\', \'hex\')',
+        '}'
+      ].join('\n'));
+    });
+
+    it('should inspect a empty Part', function () {
+      var part = new Part(PartKind.ROWS_AFFECTED, 0, 1, null);
+      part.inspect().should.equal([
+        '{',
+        '  kind: PartKind.ROWS_AFFECTED,',
+        '  argumentCount: 1,',
+        '  attributes: 0,',
+        '  buffer: null',
         '}'
       ].join('\n'));
     });

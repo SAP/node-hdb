@@ -12,9 +12,9 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
-
+/* jshint expr:true */
 var os = require('os');
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var auth = lib.auth;
 var PartKind = lib.common.PartKind;
 var Fields = lib.data[PartKind.AUTHENTICATION];
@@ -40,6 +40,17 @@ describe('Auth', function () {
       '41065150117e455fec2f03f6f47c19d405ade50dd65731dc0fb3f7954db62c8a' +
       'a67a7e825e1300bee975e74518238c9a', 'hex');
     var serverChallengeData = Fields.write({}, [salt, serverChallenge]).buffer;
+
+    it('should get the corresponding authentication method instance', function () {
+      var manager = auth.createManager({
+        user: user,
+        password: new Buffer(password, 'utf8'),
+        clientChallenge: clientChallenge
+      });
+      var authMethod = manager.getMethod(method);
+      Buffer.isBuffer(authMethod.password).should.be.true;
+      authMethod.password.toString('utf8').should.equal(password);
+    });
 
     it('should authenticate and connect successfully', function () {
       var manager = auth.createManager({
@@ -116,9 +127,17 @@ describe('Auth', function () {
     var assertion = new Buffer('3fca227d', 'hex');
     var sessionCookie = new Buffer('fcac0f42', 'hex');
 
-    it('should authenticate and connect successfully', function () {
+    it('should get the corresponding authentication method instance', function () {
       var manager = auth.createManager({
         user: null,
+        password: assertion
+      });
+      var authMethod = manager.getMethod(method);
+      authMethod.assertion.should.equal(assertion);
+    });
+
+    it('should authenticate and connect successfully', function () {
+      var manager = auth.createManager({
         assertion: assertion
       });
       manager.user.should.equal('');
@@ -152,6 +171,19 @@ describe('Auth', function () {
 
     var method = 'SessionCookie';
     var sessionCookie = new Buffer('fcac0f42', 'hex');
+
+    it('should get the corresponding authentication method instance', function () {
+      var pid = lib.util.pid;
+      lib.util.pid = undefined;
+      var manager = auth.createManager({
+        user: user,
+        sessionCookie: sessionCookie
+      });
+      lib.util.pid = pid;
+      var authMethod = manager.getMethod(method);
+      var length = sessionCookie.length;
+      authMethod.sessionCookie.slice(0, length).should.eql(sessionCookie);
+    });
 
     it('should authenticate and connect successfully', function () {
       var manager = auth.createManager({
@@ -192,6 +224,9 @@ describe('Auth', function () {
 
     it('should not find an authentication method', function () {
       /* jshint immed:false */
+      (function () {
+        auth.createManager(null);
+      }).should.throwError();
       (function () {
         auth.createManager({
           user: user

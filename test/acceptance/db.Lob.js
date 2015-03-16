@@ -26,26 +26,60 @@ describe('db', function () {
   var transaction = client._connection._transaction;
 
   describe('IMAGES', function () {
+    this.timeout(6000);
     before(db.createImages.bind(db));
     after(db.dropImages.bind(db));
 
-    describe('direct execute of Query', function () {
-      var dirname = path.join(__dirname, '..', 'fixtures', 'img');
+    var dirname = path.join(__dirname, '..', 'fixtures', 'img');
 
-      it('should return all images via callback', function (done) {
-        var sql = 'select * from images order by NAME';
-        client.exec(sql, function (err, rows) {
-          if (err) {
-            return done(err);
-          }
-          rows.should.have.length(db.images.length);
-          rows.should.eql(db.images);
-          done();
-        });
+    it('should return all images via callback', function (done) {
+      var sql = 'select * from images order by NAME';
+      client.exec(sql, function (err, rows) {
+        if (err) {
+          return done(err);
+        }
+        rows.should.have.length(db.images.length);
+        rows.should.eql(db.images);
+        done();
       });
+    });
 
-      it('should insert a small image via prepared statement', function (
-        done) {
+    it('should insert a small image via prepared statement', function (
+      done) {
+      function prepare(cb) {
+        var sql = 'insert into images values (?, ?)';
+        client.prepare(sql, cb);
+      }
+
+      function insert(statement, cb) {
+        var params = [
+          'logo.1.png',
+          fs.createReadStream(path.join(dirname, 'logo.png'))
+        ];
+
+        statement.exec(params, cb);
+      }
+
+      function validate(rowsAffected, cb) {
+        rowsAffected.should.equal(1);
+        cb();
+      }
+      async.waterfall([prepare, insert, validate], done);
+    });
+
+    it('should insert a large image via multiple write lob requests',
+      function (done) {
+        function onnew(kind) {
+          kind.should.equal('write');
+        }
+        transaction.once('new', onnew);
+
+        function onend(success, kind) {
+          success.should.be.true;
+          kind.should.equal('write');
+        }
+        transaction.once('end', onend);
+
         function prepare(cb) {
           var sql = 'insert into images values (?, ?)';
           client.prepare(sql, cb);
@@ -53,8 +87,8 @@ describe('db', function () {
 
         function insert(statement, cb) {
           var params = [
-            'logo.1.png',
-            fs.createReadStream(path.join(dirname, 'logo.png'))
+            'sap.2.jpg',
+            fs.createReadStream(path.join(dirname, 'sap.jpg'))
           ];
 
           statement.exec(params, cb);
@@ -64,90 +98,55 @@ describe('db', function () {
           rowsAffected.should.equal(1);
           cb();
         }
+
         async.waterfall([prepare, insert, validate], done);
       });
 
-      it('should insert a large image via multiple write lob requests',
-        function (done) {
-          function onnew(kind) {
-            kind.should.equal('write');
-          }
-          transaction.once('new', onnew);
+    it('should insert multiple different images via batch',
+      function (done) {
+        function onnew(kind) {
+          kind.should.equal('write');
+        }
+        transaction.once('new', onnew);
 
-          function onend(success, kind) {
-            success.should.be.true;
-            kind.should.equal('write');
-          }
-          transaction.once('end', onend);
+        function onend(success, kind) {
+          success.should.be.true;
+          kind.should.equal('write');
+        }
+        transaction.once('end', onend);
 
-          function prepare(cb) {
-            var sql = 'insert into images values (?, ?)';
-            client.prepare(sql, cb);
-          }
+        function prepare(cb) {
+          var sql = 'insert into images values (?, ?)';
+          client.prepare(sql, cb);
+        }
 
-          function insert(statement, cb) {
-            var params = [
-              'sap.2.jpg',
+        function insert(statement, cb) {
+
+          var params = [
+            ['lobby.3.jpg',
+              fs.createReadStream(path.join(dirname, 'lobby.jpg'))
+            ],
+            ['locked.3.png',
+              fs.createReadStream(path.join(dirname, 'locked.png'))
+            ],
+            ['logo.3.png',
+              fs.createReadStream(path.join(dirname, 'logo.png'))
+            ],
+            ['sap.3.jpg',
               fs.createReadStream(path.join(dirname, 'sap.jpg'))
-            ];
+            ],
+          ];
 
-            statement.exec(params, cb);
-          }
+          statement.exec(params, cb);
+        }
 
-          function validate(rowsAffected, cb) {
-            rowsAffected.should.equal(1);
-            cb();
-          }
+        function validate(rowsAffected, cb) {
+          rowsAffected.should.eql([1, 1, 1, 1]);
+          cb();
+        }
 
-          async.waterfall([prepare, insert, validate], done);
-        });
+        async.waterfall([prepare, insert, validate], done);
+      });
 
-      it('should insert multiple different images via batch',
-        function (done) {
-          function onnew(kind) {
-            kind.should.equal('write');
-          }
-          transaction.once('new', onnew);
-
-          function onend(success, kind) {
-            success.should.be.true;
-            kind.should.equal('write');
-          }
-          transaction.once('end', onend);
-
-          function prepare(cb) {
-            var sql = 'insert into images values (?, ?)';
-            client.prepare(sql, cb);
-          }
-
-          function insert(statement, cb) {
-
-            var params = [
-              ['lobby.3.jpg',
-                fs.createReadStream(path.join(dirname, 'lobby.jpg'))
-              ],
-              ['locked.3.png',
-                fs.createReadStream(path.join(dirname, 'locked.png'))
-              ],
-              ['logo.3.png',
-                fs.createReadStream(path.join(dirname, 'logo.png'))
-              ],
-              ['sap.3.jpg',
-                fs.createReadStream(path.join(dirname, 'sap.jpg'))
-              ],
-            ];
-
-            statement.exec(params, cb);
-          }
-
-          function validate(rowsAffected, cb) {
-            rowsAffected.should.eql([1, 1, 1, 1]);
-            cb();
-          }
-
-          async.waterfall([prepare, insert, validate], done);
-        });
-
-    });
   });
 });

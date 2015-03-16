@@ -29,7 +29,10 @@ RemoteDB.prototype.createImages = function createImages(cb) {
   var values = this.images.map(function toParameters(img) {
     return [img.NAME, img.BDATA];
   });
-  this.createTable('IMAGES', ['NAME varchar(16)', 'BDATA blob'], values, cb);
+  this.createTable('IMAGES', [
+    'NAME  VARCHAR(16)',
+    'BDATA BLOB MEMORY THRESHOLD NULL'
+  ], values, cb);
 };
 
 RemoteDB.prototype.dropImages = function dropImages(cb) {
@@ -42,7 +45,10 @@ RemoteDB.prototype.createNumbers = function createNumbers(cb) {
   var values = this.numbers.map(function toParameters(num) {
     return [num.A, num.B];
   });
-  this.createTable('NUMBERS', ['a int', 'b varchar(16)'], values, cb);
+  this.createTable('NUMBERS', [
+    'A INT',
+    'B VARCHAR(16)'
+  ], values, cb);
 };
 
 RemoteDB.prototype.dropNumbers = function dropNumbers(cb) {
@@ -61,12 +67,13 @@ RemoteDB.prototype.createTable = function createTable(tablename, columns,
   }
   insertCols = insertCols.substring(1);
 
+
   function dropAndCreateTable(callback) {
     var sql = util.format('drop table %s cascade', tablename);
 
     function ondroptable() {
       // ignore err
-      var sql = util.format('create table %s (%s)', tablename, createCols);
+      var sql = util.format('create column table %s (%s)', tablename, createCols);
       self.client.exec(sql, callback);
     }
     self.client.exec(sql, ondroptable);

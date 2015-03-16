@@ -14,7 +14,7 @@
 'use strict';
 
 var EventEmitter = require('events').EventEmitter;
-var lib = require('../hdb').lib;
+var lib = require('../../lib');
 var util = lib.util;
 
 module.exports = MockConnection;
@@ -33,12 +33,16 @@ function MockConnection(settings) {
     open: false,
     connect: false,
     executeDirect: false,
+    execute: false,
+    readLob: false,
     prepare: false,
     commit: false,
     rollback: false
   };
   this.replies = {
     executeDirect: undefined,
+    execute: undefined,
+    readLob: undefined
   };
   this._settings = settings || {};
   this._hadError = false;
@@ -47,6 +51,10 @@ function MockConnection(settings) {
     rolledBack: true
   };
 }
+
+MockConnection.create = function createConnection(settings) {
+  return new MockConnection(settings);
+};
 
 MockConnection.prototype.open = function open(options, cb) {
   /* jshint expr: true */
@@ -115,6 +123,26 @@ MockConnection.prototype.executeDirect = function executeDirect(options, cb) {
   util.setImmediate(function () {
     var err = self.getError('executeDirect');
     var reply = self.getReply('executeDirect');
+    cb(err, reply);
+  });
+};
+
+MockConnection.prototype.execute = function execute(options, cb) {
+  var self = this;
+  this.options = options;
+  util.setImmediate(function () {
+    var err = self.getError('execute');
+    var reply = self.getReply('execute');
+    cb(err, reply);
+  });
+};
+
+MockConnection.prototype.readLob = function readLob(options, cb) {
+  var self = this;
+  this.options = options;
+  util.setImmediate(function () {
+    var err = self.getError('readLob');
+    var reply = self.getReply('readLob');
     cb(err, reply);
   });
 };

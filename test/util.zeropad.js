@@ -13,7 +13,7 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var util = lib.util;
 
 describe('Util', function () {

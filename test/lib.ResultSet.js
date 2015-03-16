@@ -14,7 +14,7 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var TypeCode = lib.common.TypeCode;
 var ResultSetAttributes = lib.common.ResultSetAttributes;
 var LobSourceType = lib.common.LobSourceType;
@@ -49,19 +49,23 @@ function writeLob(locatorId) {
 
 function LobStub(ld) {
   this.locatorId = ld.locatorId;
+  this.error = undefined;
 }
 
 LobStub.prototype.read = function read(cb) {
   var self = this;
   setImmediate(function () {
+    if (self.error) {
+      return cb(self.error);
+    }
     cb(null, self.locatorId);
   });
 };
 
-function ConnectionMock(options) {
-  this.id = options.id;
+function ConnectionMock(id, chunks) {
+  this.id = id;
   this.closed = false;
-  this._chunks = options.chunks;
+  this._chunks = chunks;
 }
 
 ConnectionMock.prototype.closeResultSet = function (options, cb) {
@@ -86,66 +90,89 @@ ConnectionMock.prototype.fetchNext = function fetchNext(options, cb) {
   });
 };
 
-function createResultSet(options) {
-  options.data = options.data || options.chunks.shift();
-  var connection = new ConnectionMock(options);
-  var resultSet = ResultSet.create(connection, options);
+function readSimpleStream(rs, stream, cb) {
+  var chunks = [];
+  stream.on('readable', function onreadable() {
+    var chunk = stream.read();
+    if (chunk !== null) {
+      chunks.push(chunk);
+    }
+  });
+  rs.once('error', function onerror(err) {
+    cb(err);
+  });
+  rs.once('end', function onend() {
+    cb(null, chunks);
+  });
+}
+
+function createResultSet(rsd, chunks, options) {
+  var connection = new ConnectionMock(rsd.id, chunks);
+  var resultSet = ResultSet.create(connection, rsd, options);
   resultSet.createLob = function createLob(ld) {
-    return new LobStub({
+    if (ld.locatorId[0] === 11) {
+      return ld.locatorId;
+    }
+    var lob = new LobStub({
       locatorId: ld.locatorId
     });
+    options = options || {};
+    if (options.readError && options.readError.id === ld.locatorId[0]) {
+      lob.error = options.readError;
+    }
+    return lob;
   };
   connection.should.equal(resultSet._connection);
   return resultSet;
 }
 
-function createSimpleResultSet() {
+function createSimpleResultSet(options) {
   /* jshint bitwise:false */
-  var options = {
+  var rsd = {
     id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
     metadata: [{
       dataType: TypeCode.SMALLINT,
       columnDisplayName: 'SMALLINT'
     }],
-    data: {
-      argumentCount: 1,
-      attributes: ResultSetAttributes.FIRST,
-      buffer: Buffer.concat([
-        writeInt(1),
-      ])
-    },
-    chunks: [{
-      argumentCount: 1,
-      attributes: ResultSetAttributes.NEXT,
-      buffer: Buffer.concat([
-        writeInt(2),
-      ])
-    }, {
-      argumentCount: 1,
-      attributes: ResultSetAttributes.NEXT,
-      buffer: Buffer.concat([
-        writeInt(3),
-      ])
-    }, {
-      argumentCount: 1,
-      attributes: ResultSetAttributes.NEXT,
-      buffer: Buffer.concat([
-        writeInt(4),
-      ])
-    }, {
-      argumentCount: 1,
-      attributes: ResultSetAttributes.LAST |
-        ResultSetAttributes.CLOSED,
-      buffer: Buffer.concat([
-        writeInt(5),
-      ])
-    }]
+    data: null
   };
-  return createResultSet(options);
+  var chunks = [{
+    argumentCount: 1,
+    attributes: ResultSetAttributes.FIRST,
+    buffer: Buffer.concat([
+      writeInt(1),
+    ])
+  }, {
+    argumentCount: 1,
+    attributes: ResultSetAttributes.NEXT,
+    buffer: Buffer.concat([
+      writeInt(2),
+    ])
+  }, {
+    argumentCount: 1,
+    attributes: ResultSetAttributes.NEXT,
+    buffer: Buffer.concat([
+      writeInt(3),
+    ])
+  }, {
+    argumentCount: 1,
+    attributes: ResultSetAttributes.NEXT,
+    buffer: Buffer.concat([
+      writeInt(4),
+    ])
+  }, {
+    argumentCount: 1,
+    attributes: ResultSetAttributes.LAST |
+      ResultSetAttributes.CLOSED,
+    buffer: Buffer.concat([
+      writeInt(5),
+    ])
+  }];
+  return createResultSet(rsd, chunks, options);
 }
 
-function createResultSetWithLob() {
-  var options = {
+function createResultSetWithLob(options) {
+  var rsd = {
     id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
     metadata: [{
       dataType: TypeCode.SMALLINT,
@@ -165,31 +192,32 @@ function createResultSetWithLob() {
         writeString('foo'),
         writeLob(47)
       ])
-    },
-    chunks: [{
-      argumentCount: 1,
-      attributes: ResultSetAttributes.NEXT,
-      buffer: Buffer.concat([
-        writeInt(2),
-        writeString('bar'),
-        writeLob(11)
-      ])
-    }, {
-      argumentCount: 1,
-      attributes: ResultSetAttributes.LAST,
-      buffer: Buffer.concat([
-        writeInt(3),
-        writeString('abc'),
-        writeLob(123)
-      ])
-    }]
+    }
   };
-  return createResultSet(options);
+  var chunks = [{
+    argumentCount: 1,
+    attributes: ResultSetAttributes.NEXT,
+    buffer: Buffer.concat([
+      writeInt(2),
+      writeString('bar'),
+      writeLob(11)
+    ])
+  }, {
+    argumentCount: 1,
+    attributes: ResultSetAttributes.LAST,
+    buffer: Buffer.concat([
+      writeInt(3),
+      writeString('abc'),
+      writeLob(123)
+    ])
+  }];
+
+  return createResultSet(rsd, chunks, options);
 }
 
-function createResultSetWithoutLob() {
+function createResultSetWithoutLob(options) {
   /* jshint bitwise:false */
-  var options = {
+  var rsd = {
     id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
     metadata: [{
       dataType: TypeCode.SMALLINT,
@@ -205,25 +233,25 @@ function createResultSetWithoutLob() {
         writeInt(1),
         writeString('foo')
       ])
-    },
-    chunks: [{
-      argumentCount: 1,
-      attributes: ResultSetAttributes.NEXT,
-      buffer: Buffer.concat([
-        writeInt(2),
-        writeString('bar')
-      ])
-    }, {
-      argumentCount: 1,
-      attributes: ResultSetAttributes.LAST |
-        ResultSetAttributes.CLOSED,
-      buffer: Buffer.concat([
-        writeInt(3),
-        writeString('abc')
-      ])
-    }]
+    }
   };
-  return createResultSet(options);
+  var chunks = [{
+    argumentCount: 1,
+    attributes: ResultSetAttributes.NEXT,
+    buffer: Buffer.concat([
+      writeInt(2),
+      writeString('bar')
+    ])
+  }, {
+    argumentCount: 1,
+    attributes: ResultSetAttributes.LAST |
+      ResultSetAttributes.CLOSED,
+    buffer: Buffer.concat([
+      writeInt(3),
+      writeString('abc')
+    ])
+  }];
+  return createResultSet(rsd, chunks, options);
 }
 
 describe('Lib', function () {
@@ -231,7 +259,11 @@ describe('Lib', function () {
   describe('#ResultSet', function () {
 
     it('should create a simple resultSet', function () {
-      var rs = createSimpleResultSet();
+      var rs = createSimpleResultSet({
+        rowsAsArray: true
+      });
+      // columnNameProperty
+      rs.columnNameProperty.should.be.false;
       // fetchSize
       rs.setFetchSize(128);
       rs.fetchSize.should.equal(128);
@@ -246,7 +278,7 @@ describe('Lib', function () {
       rs.setReadSize(Lob.MAX_READ_SIZE + 1);
       rs.readSize.should.equal(Lob.MAX_READ_SIZE);
       // createLob
-      var lob = ResultSet.prototype.createLob({
+      var lob = ResultSet.prototype.createLob.call({}, {
         locatorId: new Buffer([1, 0, 0, 0, 0, 0, 0, 0])
       });
       lob.should.be.instanceof(Lob);
@@ -312,15 +344,17 @@ describe('Lib', function () {
         var rows = [];
         stream.on('readable', function onreadable() {
           var row = stream.read();
-          rows.push(row);
-          if (row.SMALLINT === 2) {
-            rs.pause();
-            setTimeout(function () {
-              rs.resume();
-            }, 1);
-          }
-          if (row.SMALLINT === 3) {
-            rs.close();
+          if (row) {
+            rows.push(row);
+            if (row.SMALLINT === 2) {
+              rs.pause();
+              setTimeout(function () {
+                rs.resume();
+              }, 1);
+            }
+            if (row.SMALLINT === 3) {
+              rs.close();
+            }
           }
         });
         rs.once('end', function onend() {
@@ -373,18 +407,90 @@ describe('Lib', function () {
         objectMode: false
       });
       stream._readableState.objectMode.should.be.false;
-      var chunks = [];
-      stream.on('readable', function onreadable() {
-        chunks.push(stream.read());
-      });
-      rs.once('end', function onend() {
+      readSimpleStream(rs, stream, function (err, chunks) {
+        (!err).should.be.ok;
         Buffer.concat(chunks).should.eql(new Buffer(
           [1, 1, 0, 1, 2, 0, 1, 3, 0, 1, 4, 0, 1, 5, 0]
         ));
         rs.finished.should.be.true;
         rs.closed.should.be.true;
+        done();
       });
-      rs.once('close', function onend() {
+    });
+
+    it('should try to create a binary stream in running mode', function () {
+      var rs = createSimpleResultSet();
+      rs._running = true;
+      var stream = rs.createBinaryStream();
+      (stream === null).should.be.ok;
+    });
+
+    it('should create an array stream', function (done) {
+      var rs = createSimpleResultSet();
+      var stream = rs.createArrayStream(2);
+      readSimpleStream(rs, stream, function (err, chunks) {
+        (!err).should.be.ok;
+        chunks.should.eql([
+          [{
+            SMALLINT: 1
+          }, {
+            SMALLINT: 2
+          }],
+          [{
+            SMALLINT: 3
+          }, {
+            SMALLINT: 4
+          }]
+        ]);
+        rs.finished.should.be.true;
+        rs.closed.should.be.true;
+        done();
+      });
+    });
+
+    it('should fail closing the resultSet', function (done) {
+      var closeError = new Error('CLOSE_ERROR');
+      var rs = createSimpleResultSet();
+      var connection = rs._connection;
+      connection.closeResultSet = function closeResultSet(options, cb) {
+        ConnectionMock.prototype.closeResultSet.call(connection, options, function (err) {
+          cb(err || closeError);
+        });
+      };
+      rs.close(function (err) {
+        err.should.equal(closeError);
+        done();
+      });
+    });
+
+    it('should fail fetching data', function (done) {
+      var fetchError = new Error('FETCH_ERROR');
+      var rs = createSimpleResultSet();
+      var connection = rs._connection;
+      var count = 0;
+      connection.fetchNext = function fetchNext(options, cb) {
+        ConnectionMock.prototype.fetchNext.call(connection, options, function (err, reply) {
+          if (++count > 2) {
+            return cb(fetchError);
+          }
+          cb(err, reply);
+        });
+      };
+      rs.fetch(function (err) {
+        err.should.equal(fetchError);
+        done();
+      });
+    });
+
+    it('should fail reading lobs', function (done) {
+      var readError = {};
+      //readError = new Error('READ_ERROR');
+      readError.id = 123;
+      var rs = createResultSetWithLob({
+        readError: readError
+      });
+      rs.fetch(function (err) {
+        err.should.equal(readError);
         done();
       });
     });

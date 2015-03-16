@@ -14,17 +14,8 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('./hdb').lib;
+var lib = require('../lib');
 var Queue = lib.util.Queue;
-
-function createErrorTask(message, cb) {
-  function send(cb) {
-    setTimeout(function () {
-      cb(new Error(message));
-    }, 1);
-  }
-  return Queue.prototype.createTask(send, cb, 'error');
-}
 
 function createTask(reply, cb) {
   function send(cb) {
@@ -33,6 +24,15 @@ function createTask(reply, cb) {
     }, 1);
   }
   return Queue.prototype.createTask(send, cb, 'standard');
+}
+
+function createErrorTask(message, cb) {
+  function send(cb) {
+    setTimeout(function () {
+      cb(new Error(message));
+    }, 1);
+  }
+  return Queue.prototype.createTask(send, cb, 'error');
 }
 
 function createThrowTask(message, cb) {

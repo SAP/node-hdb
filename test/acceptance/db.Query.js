@@ -14,7 +14,7 @@
 'use strict';
 /* jshint undef:false, expr:true */
 
-var lib = require('../hdb').lib;
+var lib = require('../../lib');
 var stream = lib.util.stream;
 var Readable = stream.Readable;
 var Writable = stream.Writable;
@@ -46,7 +46,7 @@ describe('db', function () {
 
       it('should return all numbers via fetch', function (done) {
         var sql = 'select * from numbers order by A';
-        client.exec(sql, false, function (err, rs) {
+        client.execute(sql, function (err, rs) {
           if (err) {
             return done(err);
           }
@@ -62,7 +62,7 @@ describe('db', function () {
 
       it('should return all numbers via createReadStream', function (done) {
         var sql = 'select * from numbers order by A';
-        client.exec(sql, false, function onexec(err, rs) {
+        client.execute(sql, function onexec(err, rs) {
           if (err) {
             return done(err);
           }
@@ -87,7 +87,7 @@ describe('db', function () {
 
       it('should return all numbers via pipe', function (done) {
         var sql = 'select * from numbers order by A';
-        client.exec(sql, false, function onexec(err, rs) {
+        client.execute(sql, function onexec(err, rs) {
           if (err) {
             return done(err);
           }
