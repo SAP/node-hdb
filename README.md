@@ -195,7 +195,7 @@ client.exec('insert into TEST.NUMBERS values (1, \'one\')', function (err, affec
 The `exec` function is a convenient way to completely retrieve the result of a query. In this case all selected `rows` are fetched and returned in the callback. The `resultSet` is automatically closed and all `Lobs` are completely read and returned as Buffer objects. If streaming of the results is required you will have to use the `execute` function. This is described in section [Streaming results](#streaming-results).
 
 ```js
-client.exec('select A, B from TEST.NUMBERS oder by A', function(err, rows) {
+client.exec('select A, B from TEST.NUMBERS order by A', function(err, rows) {
   if (err) {
     return console.error('Error:', err);
   }
@@ -378,7 +378,7 @@ Streaming results
 If you use the `execute` function of client or statement instead of the `exec` function, a `resultSet` object is returned in the callback instead of an array of all rows. The `resultSet` object allows you to create an object based `row` stream or an array based stream of `rows` which can be piped to an writer object. Don't forget to close the `resultSet` if you use the `execute` function.
 
 ```js
-client.execute('select A, B from TEST.NUMBERS oder by A', function(err, rs) {
+client.execute('select A, B from TEST.NUMBERS order by A', function(err, rs) {
   if (err) {
     return console.error('Error:', err);
   }
