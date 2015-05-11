@@ -1,5 +1,5 @@
 node_modules
 coverage
-coverage.html
 config.json
 hdb.js
+examples/test*.js

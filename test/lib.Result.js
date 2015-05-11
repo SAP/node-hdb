@@ -41,8 +41,9 @@ function createResultSet(err, rows) {
 }
 
 function createLob(err, buffer) {
+  var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
   var lob = new Lob(null, {
-    locatorId: 1
+    locatorId: locatorId
   });
   lob.read = function read(cb) {
     process.nextTick(function () {
@@ -162,13 +163,14 @@ describe('Lib', function () {
     });
 
     it('should create a lob', function () {
+      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
       var result = createResult();
 
       result._connection._readLob = function readLob() {};
       var lob = result.createLob({
-        locatorId: 1
+        locatorId: locatorId
       });
-      lob.locatorId.should.equal(1);
+      lob.locatorId.should.equal(locatorId);
     });
 
     it('should handle a db procedure call without auto fetch',
