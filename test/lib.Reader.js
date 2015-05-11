@@ -338,7 +338,8 @@ describe('Lib', function () {
     lob.locatorId.should.eql(locatorId);
     lob.options.should.equal(LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA);
     lob.chunk.should.eql(chunk);
-    lob.size.should.equal(chunk.length);
+    lob.charLength.should.equal(0);
+    lob.byteLength.should.equal(chunk.length);
   });
 
   it('should read a CLob', function () {
@@ -351,7 +352,8 @@ describe('Lib', function () {
     lob.locatorId.should.eql(locatorId);
     lob.options.should.equal(LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA);
     lob.chunk.should.eql(chunk);
-    lob.size.should.equal(chunk.length);
+    lob.charLength.should.equal(chunk.length);
+    lob.byteLength.should.equal(chunk.length);
   });
 
 });

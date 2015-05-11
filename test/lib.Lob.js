@@ -19,6 +19,7 @@ var Lob = lib.Lob;
 var PartKind = lib.common.PartKind;
 var ReadLobReply = lib.data[PartKind.READ_LOB_REPLY];
 var LobOptions = lib.common.LobOptions;
+var LobSourceType = lib.common.LobSourceType;
 var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
 
 function createReadLobReply(chunk, isLast) {
@@ -48,6 +49,9 @@ function createLob(err, length) {
   /* jshint bitwise:false */
   var i = 0;
   var ld = createReadLobReply(new Buffer([++i]));
+  ld.type = LobSourceType.BLOB;
+  ld.charLength = 0;
+  ld.byteLength = 5;
   var options = {
     readSize: 1
   };
@@ -152,6 +156,38 @@ describe('Lib', function () {
         done();
       });
       lob.resume();
+    });
+
+    it('should create a Lob with type NCLOB', function () {
+      var chunk = new Buffer('e282ac', 'hex');
+
+      function readLob() {}
+      var lob = new Lob(readLob, {
+        type: LobSourceType.NCLOB,
+        locatorId: locatorId,
+        chunk: chunk,
+        charLength: 1,
+        byteLength: chunk.length
+      });
+      lob.length.should.equal(1);
+      lob.increaseOffset(chunk);
+      lob._offset.should.equal(2);
+    });
+
+    it('should create a Lob with type CLOB', function () {
+      var chunk = new Buffer('x', 'ascii');
+
+      function readLob() {}
+      var lob = new Lob(readLob, {
+        type: LobSourceType.CLOB,
+        locatorId: locatorId,
+        chunk: chunk,
+        charLength: 1,
+        byteLength: chunk.length
+      });
+      lob.length.should.equal(1);
+      lob.increaseOffset(chunk);
+      lob._offset.should.equal(2);
     });
 
   });
