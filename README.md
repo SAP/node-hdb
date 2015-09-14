@@ -140,7 +140,7 @@ After a successful SAML authentication the server returns the database `user` an
 
 #### Kerberos
 A Kerberos authentication provider can be used to authenticate users.
-> This mechanism is currently not implemented. Please contact me if you require Kerberos based authentication.
+> This mechanism is not implemented and I do not plan to implement a Kerberos authentication provider myself. Contributions via pull request are welcome.
 
 ### Encrypted network communication
 To establish an encrypted database connection just pass whether `key`, `cert` and `ca` or a `pfx` to createClient.
