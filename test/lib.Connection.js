@@ -100,6 +100,13 @@ describe('Lib', function () {
       connection.readyState.should.equal('closed');
     });
 
+    it('should close an already closed Connection', function () {
+      var connection = createConnection();
+      connection._state = undefined;
+      connection.close();
+      connection.readyState.should.equal('closed');
+    });
+
     it('should open and close a Connection', function (done) {
       var connection = createConnection();
       connection.open({}, function (err) {

@@ -31,7 +31,12 @@ function execute(cb) {
 }
 
 function reconnect(cb) {
-  client.set('autoReconnect', true);
+  // reconnect on close
+  client.on('close', function onclose(hadError) {
+    if (hadError) {
+      this.connect();
+    }
+  });
   // simulate a network error
   client._connection._socket.end();
   client.once('connect', function reconnected() {
