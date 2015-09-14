@@ -483,8 +483,8 @@ Also, for the examples you need a valid a ```config.json``` in the ```test/db```
 - [app2](https://github.com/SAP/node-hdb/blob/master/examples/app2.js): Fetch rows from `ResultSet`.
 - [app3](https://github.com/SAP/node-hdb/blob/master/examples/app3.js): Streaming rows `createObjectStream()`.
 - [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js): Pipe row into JSON-Transform and to `stdout`.
-- [app5](https://github.com/SAP/node-hdb/blob/master/examples/app5.js): Stream XS repository into the filesystem.
-- [app6](https://github.com/SAP/node-hdb/blob/master/examples/app6.js): Stream from the filesystem into a db table.
+- [app5](https://github.com/SAP/node-hdb/blob/master/examples/app6.js): Stream from the filesystem into a db table.
+- [app6](https://github.com/SAP/node-hdb/blob/master/examples/app5.js): Stream from a db table into the filesystem.
 - [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js): Insert a row with a large image into a db table (uses WriteLobRequest and Transaction internally).
 - [app8](https://github.com/SAP/node-hdb/blob/master/examples/app8.js): Automatic reconnect when network connection is lost.
 - [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js): Insert multiple rows with large images into a db table as one batch.

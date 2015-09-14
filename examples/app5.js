@@ -15,84 +15,78 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('../lib/util');
-var os = require('os');
+var util = require('util');
 var path = require('path');
 var async = require('async');
-var Stream = require('stream').Stream;
-var Writable = util.stream.Writable;
-var fstream = require('fstream');
+var EventEmitter = require('events').EventEmitter;
 var client = require('./client');
+var fstream = require('fstream');
+var concatStream = require('concat-stream');
 
-var fields = [
-  'PACKAGE_ID as PATH',
-  'OBJECT_NAME as NAME',
-  'OBJECT_SUFFIX as SUFFIX',
-  'CDATA',
-  'BDATA'
-];
-var tpl = 'select %s from _SYS_REPO.ACTIVE_OBJECT ' +
-  'where PACKAGE_ID %s ? order by PACKAGE_ID';
-var packageId = process.argv[2] || 'sap.hana.xs.ui.*';
-var operator = 'like';
-if (packageId.indexOf('*') === -1) {
-  operator = '=';
-} else {
-  operator = 'like';
-  packageId = packageId.replace(/\*/g, '%');
-}
-var sql = util.format(tpl, fields.join(','), operator);
-var dirname = path.join(os.tmpDir(), '_SYS_REPO');
+var home = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'];
+var dirname = process.argv[2] || path.join(home, 'tmp', 'lobs');
+var schema = client.get('user');
 
-async.waterfall([connect, prepare, execute, copyRepo], done);
+async.waterfall([connect, init, prepare, copyDir], done);
 
 function connect(cb) {
   client.connect(cb);
 }
 
+function dropTable(cb) {
+  var sql = 'drop table TEST_LOBS';
+  client.exec(sql, cb);
+}
+
+function init(cb) {
+  dropTable(function droped(err) {
+    /* jshint unused:false */
+    // ignore error
+    createTable(cb);
+  });
+}
+
+function createTable(cb) {
+  var sql = [
+    'create column table TEST_LOBS (',
+    '"NAME"    NVARCHAR(256) NOT NULL,',
+    '"DATA"    BLOB ST_MEMORY_LOB,',
+    'PRIMARY KEY ("NAME"))'
+  ].join('\n');
+  client.exec(sql, cb);
+}
+
 function prepare(cb) {
+  var sql = 'insert into TEST_LOBS values (?, ?)';
   client.prepare(sql, cb);
 }
 
-function execute(statement, cb) {
+function copyDir(statement, cb) {
   console.time('time');
-  statement.execute([packageId], cb);
-}
 
-function copyRepo(rs, cb) {
-
-  function createEntry(row) {
-    var entry = (row.BDATA || row.CDATA).createReadStream();
-    var path = row.PATH.replace(/\./g, '/');
-    var filename = row.NAME;
-    if (row.SUFFIX) {
-      filename += '.' + row.SUFFIX;
-    }
-    var props = entry.props = {
-      type: 'File',
-      path: path + '/' + filename
-    };
-    entry.path = props.path;
-    entry.type = props.type;
-    return entry;
+  function isChildFile() {
+    /* jshint validthis:true */
+    return this.parent === r && this.type === 'File' || this === r;
   }
-  var adapter = new FstreamAdapter(createEntry);
-
-  var w = new fstream.Writer({
+  var r = fstream.Reader({
     path: dirname,
-    type: 'Directory'
+    filter: isChildFile
   });
 
+  function getParams(props, data) {
+    return [props.basename, data];
+  }
+  var adapter = new FstreamAdapter(statement, getParams);
+
   function finish(err) {
-    /* jshint validthis:true */
-    w.removeListener('error', finish);
-    w.removeListener('end', finish);
+    adapter.removeListener('error', finish);
+    adapter.removeListener('close', finish);
     cb(err);
   }
-  w.once('error', finish);
-  w.once('end', finish);
+  adapter.once('error', finish);
+  adapter.once('close', finish);
 
-  rs.createObjectStream().pipe(adapter).pipe(w);
+  r.pipe(adapter);
 }
 
 function done(err) {
@@ -100,55 +94,57 @@ function done(err) {
   if (err) {
     console.error('Error', err);
   } else {
-    console.log('Copied package %s to dir %s"', packageId, dirname);
+    console.log('Copied dir %s to table "%s"."TEST_LOBS"', dirname, schema);
   }
   client.end();
 }
 
-util.inherits(FstreamAdapter, Writable);
+util.inherits(FstreamAdapter, EventEmitter);
 
-function FstreamAdapter(createEntry) {
-  Writable.call(this, {
-    objectMode: true,
-    highWaterMark: 128
-  });
-  this._done = undefined;
-  this._destination = undefined;
-  this._createEntry = createEntry;
+function FstreamAdapter(statement, createParams) {
+  EventEmitter.call(this);
+  this._end = false;
+  this._busy = false;
+  this._statement = statement;
+  this._createParams = createParams;
 }
 
-Object.defineProperty(FstreamAdapter.prototype, 'readable', {
-  get: function getReadable() {
-    return !!this._done;
-  }
-});
+FstreamAdapter.prototype.execStatement = function execStatement(entry, data) {
+  var self = this;
+  var params = this._createParams(entry.props, data);
 
-FstreamAdapter.prototype._write = function _write(row, encoding, done) {
-  var entry = this._createEntry(row);
-  var notBusy = this._destination.add(entry);
-  if (notBusy !== false) {
-    return done();
+  function handleResult(err) {
+    self._busy = false;
+    if (err) {
+      return self.emit('error', err);
+    }
+    if (self._end) {
+      return self.emit('close');
+    }
+    entry.resume();
   }
-  if (this._done) {
-    throw new Error('Do not call _write before previous _write has been done');
-  }
-  this._done = done;
+  this._statement.exec(params, handleResult);
 };
 
-FstreamAdapter.prototype.pause = function pause() {};
-
-FstreamAdapter.prototype.resume = function resume() {
-  if (this._done) {
-    var done = this._done;
-    this._done = undefined;
-    done();
+FstreamAdapter.prototype.add = function add(entry) {
+  var self = this;
+  if (this._end) {
+    return;
   }
+
+  function handleData(data) {
+    entry.pause();
+    self._busy = true;
+    self.execStatement(entry, data);
+  }
+  entry.pipe(concatStream(handleData));
+  return true;
 };
 
-FstreamAdapter.prototype.pipe = function pipe(dest) {
-  this._destination = dest;
-  this.once('finish', function onfinish() {
-    dest.end();
-  });
-  return Stream.prototype.pipe.call(this, dest);
+FstreamAdapter.prototype.end = function end() {
+  this._end = true;
+  this.emit('end');
+  if (!this._busy) {
+    this.emit('close');
+  }
 };
