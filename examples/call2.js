@@ -28,17 +28,14 @@ function init(cb) {
     // ignore error
     var sql = [
       'CREATE PROCEDURE PROC_READ_OBJECT (',
-      '  in package_id nvarchar(255),',
-      '  in object_name nvarchar(255),',
-      '  in object_suffix nvarchar(255),',
-      '  out cdata nclob, out bdata blob)',
+      '  in name nvarchar(255),',
+      '  out data blob)',
       'LANGUAGE SQLSCRIPT AS',
-      'CURSOR c_cursor (a nvarchar(255), b nvarchar(255), c nvarchar(255)) FOR',
-      '   SELECT CDATA, BDATA FROM _SYS_REPO.ACTIVE_OBJECT',
-      '   WHERE package_id = :a and object_name = :b and object_suffix = :c;',
+      'CURSOR c_cursor (name nvarchar(255)) FOR',
+      '   SELECT DATA FROM TEST_LOBS WHERE name = :name;',
       'BEGIN',
-      '  OPEN c_cursor(:package_id, :object_name, :object_suffix);',
-      '  FETCH c_cursor INTO cdata, bdata;',
+      '  OPEN c_cursor(:name);',
+      '  FETCH c_cursor INTO data;',
       '  CLOSE c_cursor;',
       'END;'
     ].join('\n');
@@ -47,15 +44,13 @@ function init(cb) {
 }
 
 function prepare(cb) {
-  var sql = 'call PROC_READ_OBJECT(?, ?, ?, ?, ?)';
+  var sql = 'call PROC_READ_OBJECT(?, ?)';
   client.prepare(sql, cb);
 }
 
 function callProc(statement, cb) {
   var values = {
-    PACKAGE_ID: 'sap.ui5.1.resources',
-    OBJECT_NAME: 'jquery-1.7.1',
-    OBJECT_SUFFIX: 'js'
+    NAME: 'hello.txt'
   };
   statement.exec(values, function onexec(err, parameters) {
     statement.drop();
@@ -68,5 +63,5 @@ function done(err, parameters) {
   if (err) {
     return console.error('error', err);
   }
-  console.log(parameters.CDATA.toString('utf8'));
+  console.log(parameters.DATA.toString('ascii'));
 }

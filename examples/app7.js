@@ -63,11 +63,20 @@ function prepare(cb) {
 
 function insert(statement, cb) {
   console.time('time');
-  var params = [1, 'SAP AG'];
-  params.push(fs.createReadStream(path.join(dirname, 'sap.jpg')));
-  params.push(fs.createReadStream(path.join(dirname, 'logo.png')));
-  params.push(new Buffer('SAP headquarters located in Walldorf, Germany',
-    'ascii'));
+  var params = [
+    [
+      1, 'SAP AG',
+      fs.createReadStream(path.join(dirname, 'sap.jpg')),
+      fs.createReadStream(path.join(dirname, 'logo.png')),
+      new Buffer('SAP headquarters located in Walldorf, Germany', 'ascii')
+    ],
+    [
+      2, 'SAP lobby',
+      fs.createReadStream(path.join(dirname, 'lobby.jpg')),
+      fs.createReadStream(path.join(dirname, 'locked.png')),
+      new Buffer('SAP lobby in Walldorf, Germany', 'ascii')
+    ]
+  ];
 
   statement.exec(params, function statementExecuted(err, rowsAffected) {
     /* jshint unused:false */

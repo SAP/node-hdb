@@ -129,9 +129,7 @@ describe('hdb', function () {
     });
 
     it('should automatically reconnect after network error', function (done) {
-      var client = new TestClient({
-        autoReconnect: true
-      });
+      var client = new TestClient();
       var connection = client._connection;
       var errorCount = 0;
       var closeCount = 0;
@@ -158,7 +156,7 @@ describe('hdb', function () {
         closeCount += 1;
         if (closeCount === 1) {
           hadError.should.be.true;
-          return;
+          return this.connect();
         }
         cleanup();
         hadError.should.be.false;
@@ -172,7 +170,7 @@ describe('hdb', function () {
           connection.destroy(new Error('reconnect'));
           return;
         }
-        client.close();
+        this.close();
       }
       client.on('connect', onconnect);
       client.connect();

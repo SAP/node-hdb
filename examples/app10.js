@@ -50,7 +50,7 @@ function insert(cb) {
   async.series([
     function (done) {
       client.prepare('insert into #x values (?,?)', function (err, stmnt) {
-        statement = stmnt
+        statement = stmnt;
         done(err);
       });
     },
@@ -69,7 +69,7 @@ function insert(cb) {
     },
     function (done) {
       client.prepare('insert into #y values (?,?)', function (err, stmnt) {
-        statement = stmnt
+        statement = stmnt;
         done(err);
       });
     },
@@ -105,6 +105,6 @@ function select(cb) {
   });
 }
 
-function done(err, rows) {
+function done() {
   client.end();
 }
