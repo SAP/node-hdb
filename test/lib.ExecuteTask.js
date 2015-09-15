@@ -93,6 +93,31 @@ describe('Lib', function () {
       }).run(next);
     });
 
+    it('should run a large batch task', function (next) {
+      var values = [];
+      var rowsAffected = [];
+      for (var i = 1; i <= 10000; i++) {
+        values.push([i]);
+        rowsAffected.push(1);
+      }
+      createExecuteTask({
+        parameters: {
+          types: [TypeCode.INT],
+          values: values
+        },
+        availableSize: Math.pow(2, 16),
+        replies: [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            rowsAffected: rowsAffected
+          }]
+        }]
+      }, function done(err, reply) {
+        (!err).should.be.ok;
+        reply.rowsAffected.should.eql(rowsAffected);
+      }).run(next);
+    });
+
     it(
       'should run a batch task with STRING type exceeding remainingSize',
       function (next) {
