@@ -19,6 +19,23 @@ var path = require('path');
 var async = require('async');
 var db = require('../db')();
 
+if (!Buffer.prototype.equals) {
+  Buffer.prototype.equals = function (buffer) {
+    if (!Buffer.isBuffer(buffer)) {
+      return false;
+    }
+    if (this.length !== buffer.length) {
+      return false;
+    }
+    for (var i = 0; i < this.length; i++) {
+      if (this[i] !== buffer[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+}
+
 describe('db', function () {
   before(db.init.bind(db));
   after(db.end.bind(db));
@@ -32,14 +49,17 @@ describe('db', function () {
     var dirname = path.join(__dirname, '..', 'fixtures', 'img');
 
     it('should return all images via callback', function (done) {
-      this.timeout(10000);
+      this.timeout(3000);
       var sql = 'select * from images order by NAME';
       client.exec(sql, function (err, rows) {
         if (err) {
           return done(err);
         }
         rows.should.have.length(db.images.length);
-        rows.should.eql(db.images);
+        for (var i = 0; i < rows.length; i++) {
+          rows[i].NAME.should.equal(db.images[i].NAME);
+          rows[i].BDATA.equals(db.images[i].BDATA).should.be.ok;
+        }
         done();
       });
     });
