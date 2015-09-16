@@ -284,6 +284,31 @@ describe('Lib', function () {
       lob.should.be.instanceof(Lob);
     });
 
+    it('should fetch all rows of a simple resultSet with metadata', function () {
+      var rs = createSimpleResultSet({
+        rowsWithMetadata: true
+      });
+      // columnNameProperty
+      rs._settings.rowsWithMetadata.should.be.true;
+      rs.fetch(function (err, rows) {
+        rows.should.eql([{
+          SMALLINT: 1,
+        }, {
+          SMALLINT: 2,
+        }, {
+          SMALLINT: 3,
+        }, {
+          SMALLINT: 4,
+        }, {
+          SMALLINT: 5,
+        }]);
+        rows.metadata.should.eql([{
+          dataType: 2,
+          columnDisplayName: 'SMALLINT'
+        }]);
+      });
+    });
+
     it(
       'should fetch all rows with a LOB and resultSet already closed',
       function (
