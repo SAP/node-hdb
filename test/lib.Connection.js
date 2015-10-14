@@ -21,6 +21,7 @@ var Connection = lib.Connection;
 var MessageType = lib.common.MessageType;
 var FunctionCode = lib.common.FunctionCode;
 var SegmentKind = lib.common.SegmentKind;
+var ErrorLevel = lib.common.ErrorLevel;
 var PartKind = lib.common.PartKind;
 
 function connect(options, connectListener) {
@@ -379,6 +380,26 @@ describe('Lib', function () {
         done();
       });
       queue.resume();
+    });
+
+    it('should receive a warning', function () {
+      var connection = createConnection();
+      var replySegment = {
+        kind: SegmentKind.ERROR,
+        error: new Error('WARNING')
+      };
+      replySegment.error.level = ErrorLevel.WARNING;
+      connection._parseReplySegment = function parseReplySegment() {
+        return replySegment;
+      };
+      connection.receive(new Buffer(0), function (err, reply) {
+        (!!err).should.be.not.ok;
+        reply.should.equal(replySegment);
+      });
+      connection.once('warning', function onwarning(warning) {
+        warning.should.equal(replySegment.error);
+        done();
+      })
     });
 
   });
