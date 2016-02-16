@@ -22,6 +22,34 @@ describe('db', function () {
   after(db.end.bind(db));
   var client = db.client;
 
+  describe('execute of a Statement', function() {
+
+    it('should not modify the given parameters', function (done) {
+      var statement;
+      async.series([
+        function prepare(cb) {
+          var sql = 'insert into NUMBERS values (?, ?)';
+          client.prepare(sql, function (err, ps) {
+            statement = ps;
+            cb(err);
+          });
+        },
+        function insert(cb) {
+          var values = [[1, 15], [2, 16]];
+          statement.exec(values, function (err) {
+            values.length.should.equal(2);
+            values[0][0].should.equal(1);
+            values[0][1].should.equal(15);
+            values[1][0].should.equal(2);
+            values[1][1].should.equal(16);
+            cb();
+          });
+        }
+      ], done);
+    });
+
+  });
+
   describe('NUMBERS', function () {
     before(db.createNumbers.bind(db));
     after(db.dropNumbers.bind(db));
