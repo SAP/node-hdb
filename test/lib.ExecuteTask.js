@@ -53,6 +53,7 @@ describe('Lib', function () {
         },
         replies: []
       });
+      task.parameterValues.should.not.equal(values);
       task.parameterValues.should.eql(values);
     });
 

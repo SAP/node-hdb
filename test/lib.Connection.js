@@ -66,9 +66,18 @@ describe('Lib', function () {
       connection._settings.should.eql({});
     });
 
+    it('should create a connection with a custom clientId', function () {
+      var clientId = 'myClientId';
+      var connection = new Connection({
+        clientId: clientId
+      });
+      connection.clientId.should.equal(clientId);
+    });
+
     it('should create a connection', function () {
       var connection = createConnection();
       var state = connection._state;
+      connection.clientId.should.equal(util.cid);
       connection.setAutoCommit(true);
       connection.autoCommit = true;
       connection.autoCommit.should.be.true;

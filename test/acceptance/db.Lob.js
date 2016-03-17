@@ -43,13 +43,13 @@ describe('db', function () {
   var transaction = client._connection._transaction;
 
   describe('IMAGES', function () {
+    this.timeout(5000);
     before(db.createImages.bind(db));
     after(db.dropImages.bind(db));
 
     var dirname = path.join(__dirname, '..', 'fixtures', 'img');
 
     it('should return all images via callback', function (done) {
-      this.timeout(3000);
       var sql = 'select * from images order by NAME';
       client.exec(sql, function (err, rows) {
         if (err) {

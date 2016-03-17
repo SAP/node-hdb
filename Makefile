@@ -1,8 +1,8 @@
 REPORTER = spec
 
-test: 
+test:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
-		-R $(REPORTER) -b	--recursive 
+		-R $(REPORTER) -b	--recursive
 
 test-unit:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
@@ -12,7 +12,7 @@ test-acceptance:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
 		-R $(REPORTER) -b	test/acceptance/*.js
 
-test-mock: 
+test-mock:
 	@HDB_MOCK=1 $(MAKE) -s test
 
 test-lcov:
@@ -36,4 +36,4 @@ clean:
 chromify:
 	@browserify -r buffer -r ./lib:hdb -o ./hdb.js
 
-.PHONY: test clean 
+.PHONY: test clean
