@@ -63,5 +63,5 @@ function done(err, parameters) {
   if (err) {
     return console.error('error', err);
   }
-  console.log(parameters.DATA.toString('ascii'));
+  console.log(parameters.DATA);
 }
