@@ -63,6 +63,26 @@ describe('Lib', function () {
       });
     });
 
+    it('should create an evil parse function with special characters', function () {
+      var parser = lib.Parser.create([{
+        dataType: TypeCode.SMALLINT,
+        tableName: '[{,}]',
+        fraction: 1,
+        columnDisplayName: '"\'\/:\'"'
+      }]);
+      parser.honest = false;
+      var parseRow = parser.createParseRowFunction({
+        nestTables: true
+      });
+      parseRow.name.should.not.be.ok;
+      var row = parseRow.call(reader);
+      row.should.eql({
+        '[{,}]': {
+          '"\'\/:\'"': 42
+        }
+      });
+    });
+
     it('should create a honest parse function', function () {
       var parser = lib.Parser.create(metadata);
       parser.honest = true;
