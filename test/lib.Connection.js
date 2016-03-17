@@ -147,6 +147,20 @@ describe('Lib', function () {
       });
     });
 
+
+    it('should fail to open a Connection with an initialization timeout', function (done) {
+      var connection = createConnection({
+        initializationTimeout: 20
+      });
+      connection.open({
+        delay: 30
+      }, function (err) {
+        err.code.should.equal('EHDBTIMEOUT');
+        connection._socket.readable.should.be.false;
+        done();
+      });
+    });
+
     it('should fail to open a Connection with a socket error', function (done) {
       var connection = createConnection();
       connection.open({

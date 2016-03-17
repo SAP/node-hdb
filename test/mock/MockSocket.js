@@ -24,6 +24,7 @@ function MockSocket(options) {
   this.initialized = false;
   this.writable = true;
   this.readable = true;
+  this.delay = options.delay || 1;
   this.invalidInitializationReply = !!options.invalidInitializationReply;
   this.initializationErrorCode = options.initializationErrorCode;
   var chunk;
@@ -58,14 +59,14 @@ MockSocket.prototype.write = function write() {
     data = undefined;
   }
   var self = this;
-  util.setImmediate(function () {
+  setTimeout(function () {
     if (!self.invalidInitializationReply &&
       !self.initializationErrorCode &&
       !self.initialized) {
       self.initialized = true;
     }
     self.emit(event, data);
-  });
+  }, this.delay);
 };
 
 Object.defineProperty(MockSocket.prototype, 'readyState', {
