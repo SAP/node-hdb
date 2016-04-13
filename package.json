@@ -27,13 +27,14 @@
   "engines": {
     "node": ">= 0.10"
   },
-  "dependencies": {},
+  "dependencies": {
+    "debuglog": "^1.0.1"
+  },
   "devDependencies": {
     "async": "^1.4.2",
     "chrome-net": "^3.0.1",
     "concat-stream": "^1.5.0",
     "coveralls": "^2.11.4",
-    "debuglog": "^1.0.1",
     "fstream": "^1.0.8",
     "generic-pool": "^2.2.0",
     "istanbul": "^0.3.20",
