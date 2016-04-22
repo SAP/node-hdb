@@ -350,6 +350,25 @@ statement.drop(function(err){
 ```
 The callback is optional in this case.
 
+### Using Datetime types
+
+If you want to use datetime types in a prepared statement, 
+be aware that strings like `'14.04.2016 12:41:11.215'` are not 
+processed by the SAP HANA Database but by the node-hdb module.
+Therefore you must use the exact required format that would be returned 
+by a selection made with this module.
+The formats are:
+```js
+TIME: '13:32:20'
+DATE: '2016-04-14'
+TIMESTAMP: '2016-04-14T13:32:20.737'
+SECONDDATE: '2016-04-14T13:32:20'
+```
+
+Another possibility is to use the functions
+`TO_DATE`, `TO_DATS`, `TO_TIME` and `TO_TIMESTAMP` in your
+SQL statement to convert your string to a valid datetime type.
+
 Bulk Insert
 ---------------
 
