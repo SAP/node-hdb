@@ -466,7 +466,7 @@ Streaming Large Objects
 
 ### Read Streams
 
-Reading large object as stream can be done if you use the `execute` method of client or statement. In this case for all LOB columns a [Lob](https://github.wdf.sap.corp/d021332/node-hdb/blob/master/lib/protocol/Lob.js#L74-L89) object is returned. You can call `createReadStream` or `read` in order create a readable stream or to read the LOB completely.
+Reading large object as stream can be done if you use the `execute` method of client or statement. In this case for all LOB columns a [Lob](https://github.com/SAP/node-hdb/blob/master/lib/protocol/Lob.js#L74-L89) object is returned. You can call `createReadStream` or `read` in order create a readable stream or to read the LOB completely.
 
 ### Write Streams
 
