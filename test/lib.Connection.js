@@ -66,6 +66,23 @@ describe('Lib', function () {
       connection._settings.should.eql({});
     });
 
+    it('should create client info without options', function() {
+      var connection = new Connection();
+      connection.getClientInfo().getUpdatedProperties().should.eql([]);
+    });
+
+    it('should sent client info parts for execute requests', function(done) {
+      var connection = createConnection();
+      connection.open({}, function() {
+        connection.getClientInfo().setProperty('LOCALE', 'en_US');
+        connection.getClientInfo().shouldSend(MessageType.EXECUTE).should.eql(true);
+        connection.send(new lib.request.Segment(MessageType.EXECUTE), null);
+        connection.getClientInfo().shouldSend(MessageType.EXECUTE).should.eql(false);
+        connection.getClientInfo().getProperty('LOCALE').should.eql('en_US');
+        done();
+      });
+    });
+
     it('should create a connection with a custom clientId', function () {
       var clientId = 'myClientId';
       var connection = new Connection({

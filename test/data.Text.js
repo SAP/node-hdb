@@ -17,6 +17,7 @@ var lib = require('../lib');
 var PartKind = lib.common.PartKind;
 var Command = lib.data[PartKind.COMMAND];
 var ClientId = lib.data[PartKind.CLIENT_ID];
+var ClientInfo = lib.data[PartKind.CLIENT_INFO];
 
 describe('Data', function () {
 
@@ -66,4 +67,40 @@ describe('Data', function () {
 
   });
 
+  describe('#TextList', function () {
+
+    var textList = ['a', 'b'];
+    var clientInfoPart = {
+      argumentCount: 2,
+      buffer: new Buffer([1, textList[0].charCodeAt(), 1, textList[1].charCodeAt()])
+    };
+
+    var largeTextList = [
+      Array(256).join('a'),
+      Array(256).join('b')
+    ];
+    var largeClientInfoPart = {
+      argumentCount: 2,
+      buffer: Buffer.concat([
+        new Buffer([0xf6, 0xff, 0]),
+        new Buffer(largeTextList[0], 'utf-8'),
+        new Buffer([0xf6, 0xff, 0]),
+        new Buffer(largeTextList[1], 'utf-8')
+      ])
+    };
+
+    it('should write a ClientInfo part', function () {
+      ClientInfo.write({}, textList).should.eql(clientInfoPart);
+      ClientInfo.write.call(textList).should.eql(clientInfoPart);
+    });
+
+    it('should write a large ClientInfo part', function () {
+      ClientInfo.write({}, largeTextList).should.eql(largeClientInfoPart);
+      ClientInfo.write.call(largeTextList).should.eql(largeClientInfoPart);
+    });
+
+    it('should get the byteLength of a TextList part', function () {
+      ClientInfo.getByteLength(textList).should.equal(4);
+    });
+  });
 });
