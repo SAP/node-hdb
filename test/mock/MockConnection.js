@@ -169,7 +169,7 @@ MockConnection.prototype.connect = function connect(options, cb) {
 MockConnection.prototype.disconnect = function disconnect(cb) {
   this.readyState = 'disconnecting';
   util.setImmediate(function () {
-    this.readyState = 'disconnected';
+    this.readyState = 'closed';
     cb();
   });
 };
