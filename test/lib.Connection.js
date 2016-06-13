@@ -171,6 +171,24 @@ describe('Lib', function () {
       });
     });
 
+    it('should destroy socket after disconnect', function (done) {
+      var connection = createConnection();
+      connection.enqueue = function enqueue(msg, cb) {
+        msg.type.should.equal(MessageType.DISCONNECT);
+        setImmediate(function () {
+          cb();
+        });
+      };
+      connection.open({}, function (err) {
+        (!!err).should.be.not.ok;
+        connection._socket.readyState.should.equal('open');
+        connection.disconnect(function () {
+          connection.readyState.should.equal('closed');
+          done();
+        });
+      });
+    });
+
     it('should destroy itself on transaction error', function (done) {
       var connection = createConnection();
       connection.open({}, function (err) {
@@ -266,6 +284,7 @@ describe('Lib', function () {
         name: 'thirdTask',
         run: function () {}
       });
+      connection.close();
       var taskNames = connection._queue.queue.map(function taskName(task) {
         return task.name;
       });
