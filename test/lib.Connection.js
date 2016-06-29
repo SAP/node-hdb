@@ -66,6 +66,23 @@ describe('Lib', function () {
       connection._settings.should.eql({});
     });
 
+    it('should create client info without options', function() {
+      var connection = new Connection();
+      connection.getClientInfo().getUpdatedProperties().should.eql([]);
+    });
+
+    it('should sent client info parts for execute requests', function(done) {
+      var connection = createConnection();
+      connection.open({}, function() {
+        connection.getClientInfo().setProperty('LOCALE', 'en_US');
+        connection.getClientInfo().shouldSend(MessageType.EXECUTE).should.eql(true);
+        connection.send(new lib.request.Segment(MessageType.EXECUTE), null);
+        connection.getClientInfo().shouldSend(MessageType.EXECUTE).should.eql(false);
+        connection.getClientInfo().getProperty('LOCALE').should.eql('en_US');
+        done();
+      });
+    });
+
     it('should create a connection with a custom clientId', function () {
       var clientId = 'myClientId';
       var connection = new Connection({
@@ -171,6 +188,24 @@ describe('Lib', function () {
       });
     });
 
+    it('should destroy socket after disconnect', function (done) {
+      var connection = createConnection();
+      connection.enqueue = function enqueue(msg, cb) {
+        msg.type.should.equal(MessageType.DISCONNECT);
+        setImmediate(function () {
+          cb();
+        });
+      };
+      connection.open({}, function (err) {
+        (!!err).should.be.not.ok;
+        connection._socket.readyState.should.equal('open');
+        connection.disconnect(function () {
+          connection.readyState.should.equal('closed');
+          done();
+        });
+      });
+    });
+
     it('should destroy itself on transaction error', function (done) {
       var connection = createConnection();
       connection.open({}, function (err) {
@@ -266,6 +301,7 @@ describe('Lib', function () {
         name: 'thirdTask',
         run: function () {}
       });
+      connection.close();
       var taskNames = connection._queue.queue.map(function taskName(task) {
         return task.name;
       });

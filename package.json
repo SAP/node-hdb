@@ -1,11 +1,12 @@
 {
-  "author": {
-    "name": "Holger Koser",
-    "email": "holger.koser@sap.com"
-  },
+  "author": "Koser, Holger <holger.koser@sap.com>",
+  "contributors": [
+    "Vachkov, Georgi <georgi.vachkov@sap.com>",
+    "Penev, Alexander <alexander.penev@sap.com>"
+  ]
   "name": "hdb",
   "description": "SAP HANA Database Client for Node",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/SAP/node-hdb.git"
@@ -25,7 +26,7 @@
     "./lib/protocol/tcp.js": "./chrome/sockets/tcp.js"
   },
   "engines": {
-    "node": ">= 0.10"
+    "node": ">= 0.12"
   },
   "dependencies": {},
   "devDependencies": {
@@ -33,7 +34,6 @@
     "chrome-net": "^3.0.1",
     "concat-stream": "^1.5.0",
     "coveralls": "^2.11.4",
-    "debuglog": "^1.0.1",
     "fstream": "^1.0.8",
     "generic-pool": "^2.2.0",
     "istanbul": "^0.3.20",

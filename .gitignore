@@ -4,3 +4,4 @@ config.json
 hdb.js
 examples/test*.js
 npm-debug.log
+tmp
