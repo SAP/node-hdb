@@ -28,7 +28,9 @@
   "engines": {
     "node": ">= 0.12"
   },
-  "dependencies": {},
+  "dependencies": {
+    "debuglog": "^1.0.1"
+  },
   "devDependencies": {
     "async": "^1.4.2",
     "chrome-net": "^3.0.1",
