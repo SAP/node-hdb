@@ -112,6 +112,34 @@ client.connect(function (err) {
 ```
 If user and password are specified they will override the defaults of the client. It is possible to disconnect and reconnect with a different user on the same client instance and the same network connection.
 
+The client also supports HANA systems installed in multiple-container (MDC) mode. In this case a single HANA system may contain several isolated tenant databases.
+A database is identified by its name. One of the databases in an MDC setup is the system database which is used for central system administration.
+One can connect to a specific tenant database directly via its host and SQL port (as shown in the example above) or via the system database which may lookup the exact host and port of a particular database by a given name.
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  host         : 'hostname', // system database host
+  port         : 30013,      // system database port
+  databaseName : 'DB1',      // name of a particular tenant database
+  user         : 'user',     // user for the tenant database
+  password     : 'secret'    // password for the user specified
+});
+```
+
+The client also accepts an instance number instead of the port of the system database:
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  host           : 'hostname', // system database host
+  instanceNumber : '00',       // instance number of the HANA system
+  databaseName   : 'DB1',      // name of a particular tenant database
+  user           : 'user',     // user for the tenant database
+  password       : 'secret'    // password for the user specified
+});
+```
+
 ### Authentication mechanisms
 Details about the different authentication method can be found in the [SAP HANA Security Guide](http://help.sap.com/hana/SAP_HANA_Security_Guide_en.pdf).
 
@@ -155,6 +183,9 @@ var client = hdb.createClient({
   ...
 });
 ```
+
+**Note** for MDC use cases: The system database and the target tenant database may be configured to work with different certificates.
+If so, make sure to include all the necessary TLS-related properties for both the databases in the client's options.
 
 Direct Statement Execution
 --------------------------
@@ -352,10 +383,10 @@ The callback is optional in this case.
 
 ### Using Datetime types
 
-If you want to use datetime types in a prepared statement, 
-be aware that strings like `'14.04.2016 12:41:11.215'` are not 
+If you want to use datetime types in a prepared statement,
+be aware that strings like `'14.04.2016 12:41:11.215'` are not
 processed by the SAP HANA Database but by the node-hdb module.
-Therefore you must use the exact required format that would be returned 
+Therefore you must use the exact required format that would be returned
 by a selection made with this module.
 The formats are:
 ```js

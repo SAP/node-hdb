@@ -37,12 +37,14 @@ function MockConnection(settings) {
     readLob: false,
     prepare: false,
     commit: false,
-    rollback: false
+    rollback: false,
+    dbConnectInfo: false
   };
   this.replies = {
     executeDirect: undefined,
     execute: undefined,
-    readLob: undefined
+    readLob: undefined,
+    dbConnectInfo: undefined
   };
   this._settings = settings || {};
   this._hadError = false;
@@ -193,3 +195,12 @@ MockConnection.prototype.rollback = function rollback(cb) {
     });
   });
 };
+
+MockConnection.prototype.fetchDbConnectInfo = function fetchDbConnectInfo(options, cb) {
+  var self = this;
+  util.setImmediate(function () {
+    var err = self.getError('dbConnectInfo');
+    var reply = self.getReply('dbConnectInfo');
+    cb(err, reply);
+  });
+}

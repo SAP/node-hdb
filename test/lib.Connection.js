@@ -310,6 +310,57 @@ describe('Lib', function () {
       connection.execute({}, cb);
     });
 
+    describe('DB_CONNECT_INFO', function () {
+      var DATA = require('./mock/data/dbConnectInfo');
+
+      function prepareConnection(segmentData) {
+        var connection = createConnection();
+
+        connection.send = function (msg, cb) {
+          var segment = new lib.reply.Segment(segmentData.kind, segmentData.functionCode);
+          var part = segmentData.parts[0];
+          segment.push(new lib.reply.Part(part.kind, part.attributes, part.argumentCount, part.buffer));
+          cb(null, segment.getReply());
+        };
+
+        return connection;
+      }
+
+      it('should fetch DB_CONNECT_INFO (not connected)', function (done) {
+        var connection = prepareConnection(DATA.NOT_CONNECTED);
+
+        connection.fetchDbConnectInfo({}, function (err, info) {
+          info.isConnected.should.equal(false);
+          info.host.should.equal('12.34.56.123');
+          info.port.should.equal(31144);
+          done();
+        });
+      });
+
+      it('should fetch DB_CONNECT_INFO (connected)', function (done) {
+        var connection = prepareConnection(DATA.CONNECTED);
+
+        connection.fetchDbConnectInfo({}, function (err, info) {
+          info.isConnected.should.equal(true);
+          (!!info.host).should.be.not.ok;
+          (!!info.port).should.be.not.ok;
+          done();
+        });
+      });
+
+      it('fetch DB_CONNECT_INFO with an error', function (done) {
+        var connection = createConnection();
+        connection.send = function (msg, cb) {
+          cb(new Error('Request was not successful'));
+        };
+
+        connection.fetchDbConnectInfo({}, function (err, info) {
+          err.message.should.equal('Request was not successful');
+          done();
+        });
+      });
+    });
+
     it('should connect to the database', function (done) {
       var connection = createConnection();
       var settings = connection._settings;
