@@ -3,7 +3,7 @@
   "contributors": [
     "Vachkov, Georgi <georgi.vachkov@sap.com>",
     "Penev, Alexander <alexander.penev@sap.com>"
-  ]
+  ],
   "name": "hdb",
   "description": "SAP HANA Database Client for Node",
   "version": "0.6.0",
