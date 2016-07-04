@@ -367,5 +367,253 @@ describe('hdb', function () {
       });
     });
 
+    describe('MultiDB support', function () {
+      var DB_CONNECT_INFO = {
+        CONNECTED: { isConnected: true },
+        NOT_CONNECTED: { isConnected: false, host: '127.0.0.1', port: 30041 }
+      };
+
+      function prepare(clientOptions) {
+        var options = clientOptions || { host: 'localhost', port: 30013, databaseName: 'DB0' };
+        var client = new TestClient(options);
+
+        var tempConn = mock.createConnection();
+        client._createConnection = function () {
+          return tempConn;
+        };
+
+        return { client: client, tempConn: tempConn };
+      }
+
+      it('should accept an integer as instance number', function (done) {
+        var obj = prepare({
+          host: 'localhost',
+          port: undefined,
+          instanceNumber: 2,
+          databaseName: 'DB0'
+        });
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
+
+        tempConn.open = function (options, cb) {
+          options.port.should.equal(30213);
+          cb();
+        };
+        client.connect(done);
+      });
+
+      it('should accept a string as instance number', function (done) {
+        var obj = prepare({
+          host: 'localhost',
+          port: undefined,
+          instanceNumber: '00',
+          databaseName: 'DB0'
+        });
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
+
+        tempConn.open = function (options, cb) {
+          options.port.should.equal(30013);
+          cb();
+        };
+        client.connect(done);
+      });
+
+      it('should report an error if instance number string is not valid', function (done) {
+        var client = new TestClient({
+          host: 'localhost',
+          port: undefined,
+          instanceNumber: [],
+          databaseName: 'DB0'
+        });
+
+        client.connect(function (err) {
+          err.message.should.be.equal('Instance Number is not valid');
+          done();
+        });
+      });
+
+      it('should emit error if error event has occurred on the temporary connection', function (done) {
+        var obj = prepare();
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.errors.open = true;
+
+        client.on('error', function (err) {
+          err.message.should.equal('open');
+          done();
+        });
+
+        client.connect();
+      });
+
+      it('should close the temporary connection in case of error during opening it', function (done) {
+        var obj = prepare();
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.errors.open = true;
+
+        var tempConnClosed = false;
+        var errorEmitted = false;
+
+        tempConn.on('close', function () {
+          tempConnClosed = true;
+        });
+        client.on('error', function (err) {
+          errorEmitted = true;
+        });
+
+        client.connect(function (err) {
+          err.message.should.equal('open');
+          tempConnClosed.should.equal(true);
+          errorEmitted.should.equal(true);
+          done();
+        });
+      });
+
+      it('should close the temporary connection in case fetching DB_CONNECT_INFO fails', function (done) {
+        var obj = prepare();
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.errors.dbConnectInfo = true;
+
+        var tempConnClosed = false;
+
+        tempConn.on('close', function () {
+          tempConnClosed = true;
+        });
+
+        client.connect(function (err) {
+          err.message.should.equal('dbConnectInfo');
+          tempConnClosed.should.equal(true);
+          done();
+        });
+      });
+
+      it('should reuse the temporary connection if the client has connected to the target tenant-db', function (done) {
+        var obj = prepare({
+          host: 'localhost',
+          port: 30041,
+          databaseName: 'DB0'
+        });
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.CONNECTED;
+
+        tempConn.open = function (options, cb) {
+          options.host.should.equal('localhost');
+          options.port.should.equal(30041);
+          cb();
+        };
+
+        client._connection.open = function () {
+          done(new Error('Open method of the current client connection should not be invoked'));
+        };
+
+
+        var currentClientConnectionClosed = false;
+        var standardConnectionListenersAdded = false;
+
+        client._connection.close = function () {
+          client._connection.should.not.equal(tempConn);
+          currentClientConnectionClosed = true;
+          standardConnectionListenersAdded.should.equal(false);
+        };
+        client._addListeners = function () {
+          currentClientConnectionClosed.should.equal(true);
+          standardConnectionListenersAdded = true;
+        };
+
+        client.connect(function (err) {
+          client._connection.should.equal(tempConn);
+          standardConnectionListenersAdded.should.equal(true);
+          done(err);
+        });
+      });
+
+      it('should open a connection to the target tenant-db', function (done) {
+        var obj = prepare();
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
+
+        tempConn.open = function (options, cb) {
+          options.host.should.equal('localhost');
+          options.port.should.equal(30013);
+          cb();
+        };
+
+        client._connection.open = function (options, cb) {
+          options.host.should.equal('127.0.0.1');
+          options.port.should.equal(30041);
+          cb();
+        };
+
+        var tempConnClosed = false;
+
+        tempConn.on('close', function () {
+          tempConnClosed = true;
+        });
+
+        client.connect(function (err) {
+          tempConnClosed.should.equal(true);
+          client._connection.should.not.equal(tempConn);
+          done(err);
+        });
+
+      });
+
+      it('should use the same set of certificates for both connection to system-db and tenant-db', function (done) {
+        var certificates = ['certificate for system-db', 'certificate for tenant-db'];
+        var obj = prepare({
+          host: 'localhost',
+          port: 30013,
+          databaseName: 'DB0',
+          ca: certificates
+        });
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
+
+        tempConn.open = function (options, cb) {
+          options.ca.should.deepEqual(certificates);
+          cb();
+        };
+
+        client._connection.open = function (options, cb) {
+          options.ca.should.deepEqual(certificates);
+          cb();
+        };
+
+        client.connect(done);
+      });
+
+      it('should be possible to overwrite MultiDB settings in the connect method', function (done) {
+        var obj = prepare({
+          host: 'localhost',
+          port: undefined,
+          instanceNumber: 0,
+          databaseName: 'DB0'
+        });
+        var client = obj.client;
+        var tempConn = obj.tempConn;
+
+        tempConn.open = function (options, cb) {
+          options.port.should.equal(31113);
+          cb();
+        };
+
+        tempConn.fetchDbConnectInfo = function (options, cb) {
+          options.databaseName.should.equal('DB1');
+          cb(null, DB_CONNECT_INFO.NOT_CONNECTED);
+        };
+
+        client.connect({ instanceNumber: 11, databaseName: 'DB1' }, done);
+      });
+
+    });
+
   });
 });
