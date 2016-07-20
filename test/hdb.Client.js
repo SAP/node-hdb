@@ -85,13 +85,10 @@ describe('hdb', function () {
     it('should not connect because of network error', function (done) {
       var client = new TestClient();
       client._connection.errors.open = true;
-      var openError = null;
-      client.on('error', function (err) {
-        err.message.should.equal('open');
-        openError = err;
-      });
+
       client.connect(function (err) {
-        err.should.equal(openError);
+        err.message.should.equal('Could not connect to any host: [ localhost:30015 - open ]');
+        err.code.should.equal('EHDBOPENCONN');
         done();
       });
     });
@@ -199,6 +196,7 @@ describe('hdb', function () {
     // destroy
     it('should destroy a client without error', function (done) {
       var client = new TestClient();
+      client._addListeners(client._connection);
       client.once('close', function (hadError) {
         hadError.should.be.false;
         done();
@@ -208,6 +206,7 @@ describe('hdb', function () {
 
     it('should destroy a client with error', function (done) {
       var client = new TestClient();
+      client._addListeners(client._connection);
       client.once('error', function (err) {
         err.message.should.equal('destroy');
       });
@@ -367,57 +366,101 @@ describe('hdb', function () {
       });
     });
 
-    describe('MultiDB support', function () {
+    describe('#connecting to a host from list', function () {
+
+      function connectClient(client, hostToErrMapping, cb) {
+        var connOpenCount = 0;
+        client._connection.open = function (options, cb) {
+          ++connOpenCount;
+          options.should.be.an.Object;
+          options.should.have.property('host');
+          options.should.have.property('port');
+          util.setImmediate(function () {
+            cb(hostToErrMapping[connOpenCount]);
+          });
+        };
+
+        client.connect(function (err) {
+          cb({ err: err, connOpenCount: connOpenCount });
+        });
+      }
+
+      it('should connect to the first host from the list', function (done) {
+        var client = new TestClient({
+          hosts: [{ host: 'host.1', port: 30215 }, { host: 'host.2', port: 30215 }]
+        });
+        var hostToErrMapping = { '1': null, '2': null };
+
+        connectClient(client, hostToErrMapping, function (result) {
+          should(result.err).be.equal(null);
+          result.connOpenCount.should.equal(1);
+          done();
+        });
+      });
+
+      it('should connect to the last host from the list', function (done) {
+        var client = new TestClient({
+          hosts: [{ host: 'host.1', port: 30215 }, { host: 'host.2', port: 30215 }]
+        });
+        var hostToErrMapping = { '1': new Error('Connection refused'), '2': null };
+
+        connectClient(client, hostToErrMapping, function (result) {
+          should(result.err).be.equal(null);
+          result.connOpenCount.should.equal(2);
+          done();
+        });
+      });
+
+      it('should not connect to any of the given hosts', function (done) {
+        var client = new TestClient({
+          hosts: [{ host: 'host.1', port: 30215 }, { host: 'host.2', port: 30215 }]
+        });
+        var hostToErrMapping = { '1': new Error('Connection refused to host #1'), '2': new Error('Connection refused to host #2') };
+
+        connectClient(client, hostToErrMapping, function (result) {
+          result.err.message.should.equal('Could not connect to any host: [ host.1:30215 - Connection refused to host #1 ] [ host.2:30215 - Connection refused to host #2 ]');
+          result.connOpenCount.should.equal(2);
+          done();
+        });
+      });
+
+    });
+
+    describe('#MultiDB support', function () {
       var DB_CONNECT_INFO = {
         CONNECTED: { isConnected: true },
         NOT_CONNECTED: { isConnected: false, host: '127.0.0.1', port: 30041 }
       };
 
-      function prepare(clientOptions) {
-        var options = clientOptions || { host: 'localhost', port: 30013, databaseName: 'DB0' };
-        var client = new TestClient(options);
-
-        var tempConn = mock.createConnection();
-        client._createConnection = function () {
-          return tempConn;
-        };
-
-        return { client: client, tempConn: tempConn };
-      }
-
       it('should accept an integer as instance number', function (done) {
-        var obj = prepare({
+        var client = new TestClient({
           host: 'localhost',
-          port: undefined,
-          instanceNumber: 2,
+          port: undefined, instanceNumber: 2,
           databaseName: 'DB0'
         });
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
 
-        tempConn.open = function (options, cb) {
+        client._connection.replies.dbConnectInfo = DB_CONNECT_INFO.CONNECTED;
+        client._connection.open = function (options, cb) {
           options.port.should.equal(30213);
           cb();
         };
+
         client.connect(done);
       });
 
       it('should accept a string as instance number', function (done) {
-        var obj = prepare({
+       var client = new TestClient({
           host: 'localhost',
-          port: undefined,
-          instanceNumber: '00',
+          port: undefined, instanceNumber: '00',
           databaseName: 'DB0'
         });
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
 
-        tempConn.open = function (options, cb) {
+        client._connection.replies.dbConnectInfo = DB_CONNECT_INFO.CONNECTED;
+        client._connection.open = function (options, cb) {
           options.port.should.equal(30013);
           cb();
         };
+
         client.connect(done);
       });
 
@@ -430,136 +473,136 @@ describe('hdb', function () {
         });
 
         client.connect(function (err) {
-          err.message.should.be.equal('Instance Number is not valid');
+          err.message.should.be.equal('Could not connect to any host: [ localhost:NaN - Instance Number is not valid ]');
           done();
         });
       });
 
-      it('should emit error if error event has occurred on the temporary connection', function (done) {
-        var obj = prepare();
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.errors.open = true;
+      it('should report an error if error event has occurred during fetching DB_CONNECT_INFO', function (done) {
+        var client = new TestClient({
+          host: 'localhost',
+          port: 30013,
+          databaseName: 'DB0'
+        });
 
-        client.on('error', function (err) {
-          err.message.should.equal('open');
+        client._connection.fetchDbConnectInfo = function () {
+          client._connection.emit('error', new Error('Network error emitted'));
+        };
+
+        client.connect(function (err) {
+          err.message.should.equal('Could not connect to any host: [ localhost:30013 - Network error emitted ]');
           done();
         });
-
-        client.connect();
       });
 
-      it('should close the temporary connection in case of error during opening it', function (done) {
-        var obj = prepare();
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.errors.open = true;
-
-        var tempConnClosed = false;
-        var errorEmitted = false;
-
-        tempConn.on('close', function () {
-          tempConnClosed = true;
+      it('should close the connection to system-db in case of error during opening it', function (done) {
+        var client = new TestClient({
+          host: 'localhost',
+          port: 30013,
+          databaseName: 'DB0'
         });
-        client.on('error', function (err) {
-          errorEmitted = true;
+        client._connection.errors.open = true;
+
+        var connClosed = false;
+
+        client._connection.on('close', function () {
+          connClosed = true;
         });
 
         client.connect(function (err) {
-          err.message.should.equal('open');
-          tempConnClosed.should.equal(true);
-          errorEmitted.should.equal(true);
+          err.message.should.equal('Could not connect to any host: [ localhost:30013 - open ]');
+          connClosed.should.equal(true);
           done();
         });
       });
 
-      it('should close the temporary connection in case fetching DB_CONNECT_INFO fails', function (done) {
-        var obj = prepare();
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.errors.dbConnectInfo = true;
+      it('should close the connection to system-db in case fetching DB_CONNECT_INFO fails', function (done) {
+        var client = new TestClient({
+          host: 'localhost',
+          port: 30013,
+          databaseName: 'DB0'
+        });
+        client._connection.errors.dbConnectInfo = true;
 
-        var tempConnClosed = false;
+        var connClosed = false;
 
-        tempConn.on('close', function () {
-          tempConnClosed = true;
+        client._connection.on('close', function () {
+          connClosed = true;
         });
 
         client.connect(function (err) {
-          err.message.should.equal('dbConnectInfo');
-          tempConnClosed.should.equal(true);
+          err.message.should.equal('Could not connect to any host: [ localhost:30013 - dbConnectInfo ]');
+          connClosed.should.equal(true);
           done();
         });
       });
 
-      it('should reuse the temporary connection if the client has connected to the target tenant-db', function (done) {
-        var obj = prepare({
+      it('should not open a second connection if already connected to the target tenant-db', function (done) {
+        var client = new TestClient({
           host: 'localhost',
           port: 30041,
           databaseName: 'DB0'
         });
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.CONNECTED;
+        client._connection.replies.dbConnectInfo = DB_CONNECT_INFO.CONNECTED;
 
-        tempConn.open = function (options, cb) {
+        var tenantDbConnOpened = false;
+        client._connection.open = function (options, cb) {
           options.host.should.equal('localhost');
           options.port.should.equal(30041);
+          tenantDbConnOpened = true;
           cb();
         };
 
-        client._connection.open = function () {
-          done(new Error('Open method of the current client connection should not be invoked'));
-        };
-
-
-        var currentClientConnectionClosed = false;
         var standardConnectionListenersAdded = false;
 
-        client._connection.close = function () {
-          client._connection.should.not.equal(tempConn);
-          currentClientConnectionClosed = true;
-          standardConnectionListenersAdded.should.equal(false);
-        };
-        client._addListeners = function () {
-          currentClientConnectionClosed.should.equal(true);
+        client._addListeners = function (conn) {
+          conn.should.equal(client._connection);
           standardConnectionListenersAdded = true;
         };
 
         client.connect(function (err) {
-          client._connection.should.equal(tempConn);
           standardConnectionListenersAdded.should.equal(true);
+          tenantDbConnOpened.should.equal(true);
           done(err);
         });
       });
 
-      it('should open a connection to the target tenant-db', function (done) {
-        var obj = prepare();
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
+      it('should open a connection to the target tenant-db (through call to system-db first)', function (done) {
+        var client = new TestClient({ host: 'localhost', port: 30013, databaseName: 'DB0' });
+        client._connection.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
 
-        tempConn.open = function (options, cb) {
-          options.host.should.equal('localhost');
-          options.port.should.equal(30013);
-          cb();
-        };
+        var connOpenCount = 0;
+
+        var systemDbConnOpened = false;
+        var systemDbConnClosed = false;
+        var tenantDbConnOpened = false;
 
         client._connection.open = function (options, cb) {
-          options.host.should.equal('127.0.0.1');
-          options.port.should.equal(30041);
-          cb();
+          ++connOpenCount
+          if (connOpenCount === 1) {
+            options.host.should.equal('localhost');
+            options.port.should.equal(30013);
+            systemDbConnOpened = true;
+            cb();
+          } else if (connOpenCount === 2) {
+            options.host.should.equal('127.0.0.1');
+            options.port.should.equal(30041);
+            tenantDbConnOpened = true;
+            cb();
+          } else {
+            cb(new Error('Test error. Open method called on the connection ' + connOpenCount + ' times.'));
+          }
         };
 
-        var tempConnClosed = false;
-
-        tempConn.on('close', function () {
-          tempConnClosed = true;
-        });
+        client._connection._closeSilently = function () {
+          connOpenCount.should.equal(1);
+          systemDbConnClosed = true;
+        };
 
         client.connect(function (err) {
-          tempConnClosed.should.equal(true);
-          client._connection.should.not.equal(tempConn);
+          systemDbConnOpened.should.equal(true);
+          systemDbConnClosed.should.equal(true);
+          tenantDbConnOpened.should.equal(true);
           done(err);
         });
 
@@ -567,50 +610,60 @@ describe('hdb', function () {
 
       it('should use the same set of certificates for both connection to system-db and tenant-db', function (done) {
         var certificates = ['certificate for system-db', 'certificate for tenant-db'];
-        var obj = prepare({
+        var client = new TestClient({
           host: 'localhost',
           port: 30013,
           databaseName: 'DB0',
           ca: certificates
         });
-        var client = obj.client;
-        var tempConn = obj.tempConn;
-        tempConn.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
+        client._connection.replies.dbConnectInfo = DB_CONNECT_INFO.NOT_CONNECTED;
 
-        tempConn.open = function (options, cb) {
-          options.ca.should.deepEqual(certificates);
-          cb();
-        };
+        var connOpenCount = 0;
 
         client._connection.open = function (options, cb) {
+          ++connOpenCount
           options.ca.should.deepEqual(certificates);
           cb();
         };
 
-        client.connect(done);
+        client.connect(function (err) {
+          connOpenCount.should.equal(2);
+          done(err);
+        });
       });
 
       it('should be possible to overwrite MultiDB settings in the connect method', function (done) {
-        var obj = prepare({
+        var client = new TestClient({
           host: 'localhost',
-          port: undefined,
-          instanceNumber: 0,
+          port: undefined, instanceNumber: 0,
           databaseName: 'DB0'
         });
-        var client = obj.client;
-        var tempConn = obj.tempConn;
 
-        tempConn.open = function (options, cb) {
+        client._connection.open = function (options, cb) {
           options.port.should.equal(31113);
           cb();
         };
 
-        tempConn.fetchDbConnectInfo = function (options, cb) {
+        client._connection.fetchDbConnectInfo = function (options, cb) {
           options.databaseName.should.equal('DB1');
-          cb(null, DB_CONNECT_INFO.NOT_CONNECTED);
+          cb(null, DB_CONNECT_INFO.CONNECTED);
         };
 
         client.connect({ instanceNumber: 11, databaseName: 'DB1' }, done);
+      });
+
+      it('should display correct port number when hosts and instanceNumber are provided', function (done) {
+        var client = new TestClient({
+          hosts: [{ host: 'host.1' }],
+          instanceNumber: 4,
+          databaseName: 'DB0'
+        });
+        client._connection.errors.open = true;
+
+        client.connect(function (err) {
+          err.message.should.equal('Could not connect to any host: [ host.1:30413 - open ]');
+          done();
+        });
       });
 
     });

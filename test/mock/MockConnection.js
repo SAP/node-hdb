@@ -67,9 +67,7 @@ MockConnection.prototype.open = function open(options, cb) {
   this.readyState.should.equal('new');
   util.setImmediate(function () {
     var err = self.getError('open');
-    if (err) {
-      self.emit('error', err);
-    } else {
+    if (!err) {
       self.emit('open');
     }
     cb(err);
@@ -97,6 +95,10 @@ MockConnection.prototype.destroy = function destroy(err) {
   util.setImmediate(function () {
     self.close();
   });
+};
+
+MockConnection.prototype._closeSilently = function _closeSilently() {
+  this.readyState = 'closed';
 };
 
 MockConnection.prototype.close = function close() {

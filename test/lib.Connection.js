@@ -134,6 +134,38 @@ describe('Lib', function () {
       connection.readyState.should.equal('closed');
     });
 
+    it('#_closeSilently - should do nothing if there is no socket', function () {
+      var connection = createConnection();
+      connection.readyState.should.equal('new');
+      connection._closeSilently();
+      connection.readyState.should.equal('new');
+    });
+
+    it('#_closeSilently - should close the socket of a connection, but keep the state', function () {
+      var connection = createConnection();
+      var listenersRemoved = false;
+      var socketDestroyed = false;
+      connection._socket = {
+        readyState: 'open',
+        destroy: function () {
+          socketDestroyed = true;
+        },
+        removeAllListeners: function (eventName) {
+          eventName.should.equal('close');
+          listenersRemoved = true;
+        }
+      };
+
+      connection.on('close', function () {
+        throw new Error('Close vent should not have been emitted');
+      });
+
+      connection._closeSilently();
+      connection._state.should.be.instanceof(Object);
+      listenersRemoved.should.equal(true);
+      socketDestroyed.should.equal(true);
+    });
+
     it('should open and close a Connection', function (done) {
       var connection = createConnection();
       connection.open({}, function (err) {
