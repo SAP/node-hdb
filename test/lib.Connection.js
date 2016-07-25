@@ -66,14 +66,14 @@ describe('Lib', function () {
       connection._settings.should.eql({});
     });
 
-    it('should create client info without options', function() {
+    it('should create client info without options', function () {
       var connection = new Connection();
       connection.getClientInfo().getUpdatedProperties().should.eql([]);
     });
 
-    it('should sent client info parts for execute requests', function(done) {
+    it('should sent client info parts for execute requests', function (done) {
       var connection = createConnection();
-      connection.open({}, function() {
+      connection.open({}, function () {
         connection.getClientInfo().setProperty('LOCALE', 'en_US');
         connection.getClientInfo().shouldSend(MessageType.EXECUTE).should.eql(true);
         connection.send(new lib.request.Segment(MessageType.EXECUTE), null);
@@ -171,10 +171,8 @@ describe('Lib', function () {
       connection.open({}, function (err) {
         (!!err).should.be.not.ok;
         connection._socket.readyState.should.equal('open');
-        connection.protocolVersion.should.eql({
-          major: 4,
-          minor: 1
-        });
+        connection.protocolVersion.major.should.equal(4);
+        connection.protocolVersion.minor.should.equal(1);
         connection.readyState.should.equal('disconnected');
         connection.close();
       });
