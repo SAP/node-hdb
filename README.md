@@ -140,6 +140,19 @@ var client = hdb.createClient({
 });
 ```
 
+Multiple hosts can be provided to the client as well:
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  hosts : [ { host: 'host1', port: 30015 }, { host: 'host2', port: 30015 } ],
+  user     : 'user',
+  password : 'secret'
+});
+```
+
+This is suitable for Multiple-host HANA systems which are distributed over several hosts. The client will establish a connection to the first available host from the list.
+
 ### Authentication mechanisms
 Details about the different authentication method can be found in the [SAP HANA Security Guide](http://help.sap.com/hana/SAP_HANA_Security_Guide_en.pdf).
 
