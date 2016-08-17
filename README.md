@@ -318,7 +318,7 @@ Prepared Statement Execution
 The client returns a `statement` object which can be executed multiple times.
 
 ```js
-client.prepare('call * from DUMMY where X = ?', function (err, statement){
+client.prepare('select * from DUMMY where DUMMY = ?', function (err, statement){
   if (err) {
     return console.error('Error:', err);
   }
@@ -332,7 +332,7 @@ client.prepare('call * from DUMMY where X = ?', function (err, statement){
 The execution of a prepared statement is similar to the direct statement execution on the client. The difference is that the first parameter of `exec` function is an array with positional `parameters`. In case of named parameters it can also be an `parameters` object.
 
 ```js
-statement.exec([1], function (err, rows) {
+statement.exec(['X'], function (err, rows) {
   if (err) {
     return console.error('Error:', err);
   }
