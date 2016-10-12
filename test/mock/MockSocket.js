@@ -85,7 +85,6 @@ Object.defineProperty(MockSocket.prototype, 'readyState', {
 
 MockSocket.prototype.end = function end() {
   this.writable = false;
-  this.emit('end');
 };
 
 MockSocket.prototype.destroy = function destroy(err) {
