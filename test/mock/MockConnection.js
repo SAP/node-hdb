@@ -29,6 +29,12 @@ function MockConnection(settings) {
   this.autoCommit = true;
   this.readyState = 'new';
   this.options = null;
+  this.events = {
+    connect: {
+      error: false,
+      close: false
+    }
+  };
   this.errors = {
     open: false,
     connect: false,
@@ -79,6 +85,10 @@ MockConnection.prototype.getError = function getError(id) {
     return new Error(id);
   }
   return null;
+};
+
+MockConnection.prototype.shouldEmit = function shouldEmit(id, event) {
+  return this.events[id][event];
 };
 
 MockConnection.prototype.getReply = function getReply(id) {
@@ -159,6 +169,12 @@ MockConnection.prototype.connect = function connect(options, cb) {
   options.should.have.property('user');
   options.should.have.property('password');
   this.readyState = 'connecting';
+  if (this.shouldEmit('connect', 'error')) {
+    return this.emit('error', new Error('Unexpected connect error'));
+  }
+  if (this.shouldEmit('connect', 'close')) {
+    return this.emit('close');
+  }
   util.setImmediate(function () {
     var err = self.getError('connect');
     if (err) {

@@ -93,6 +93,35 @@ describe('hdb', function () {
       });
     });
 
+    it('should not propagate socket error event during connection process', function (done) {
+      var client = new TestClient();
+      client._connection.events.connect.error = true;
+
+      client.on('error', function (err) {
+        done(err);
+      });
+
+      client.connect(function (err) {
+        err.message.should.equal('Unexpected connect error');
+        done();
+      });
+    });
+
+    it('should not propagate socket close event during connection process', function (done) {
+      var client = new TestClient();
+      client._connection.events.connect.close = true;
+
+      client.on('close', function () {
+        done(new Error("'close' event should not be emitted"));
+      });
+
+      client.connect(function (err) {
+        err.message.should.equal('Connection closed unexpectedly');
+        err.code.should.equal('EHDBCLOSE');
+        done();
+      });
+    });
+
     it('should connect with saml assertion', function (done) {
       var client = new TestClient({
         assertion: 'assertion'
