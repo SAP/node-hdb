@@ -93,6 +93,34 @@ describe('hdb', function () {
       });
     });
 
+    it('should report error if server gently closes the connection (with a FIN packet)', function (done) {
+      var client = new lib.Client();
+      client._connection = createConn();
+      client._connection._createAuthenticationManager = function () {
+        return { initialData: function () { return 'some data'; } };
+      };
+
+      function createConn() {
+        var connection = new lib.Connection();
+        connection._connect = function (options, connectListener) {
+          var socket = mock.createSocket(options);
+          util.setImmediate(connectListener);
+          return socket;
+        };
+        return connection;
+      };
+
+      client.on('error', function (err) {
+        done(err);
+      });
+
+      client.connect(function (err) {
+        err.message.should.equal('Connection closed by server');
+        err.code.should.equal('EHDBCLOSE');
+        done();
+      });
+    });
+
     it('should connect with saml assertion', function (done) {
       var client = new TestClient({
         assertion: 'assertion'
