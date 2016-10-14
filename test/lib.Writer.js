@@ -19,9 +19,54 @@ var TypeCode = lib.common.TypeCode;
 var Writer = lib.Writer;
 var EventEmitter = require('events').EventEmitter;
 
+var Lob = lib.Lob;
+var PartKind = lib.common.PartKind;
+var ReadLobReply = lib.data[PartKind.READ_LOB_REPLY];
+var LobOptions = lib.common.LobOptions;
+var LobSourceType = lib.common.LobSourceType;
+var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+
 var data = require('./fixtures/parametersData');
 var lorem = require('./fixtures/lorem');
 var SIZE = data.MAX_PART_SIZE;
+
+function createReadLobReply(chunk) {
+  /* jshint bitwise:false */
+  var buffer;
+  buffer = new Buffer(chunk.length + 16);
+  buffer[8] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
+  buffer.writeInt32LE(chunk.length, 9);
+  chunk.copy(buffer, 16);
+  locatorId.copy(buffer, 0);
+  return new ReadLobReply.read({
+    argumentCount: 1,
+    buffer: buffer
+  });
+}
+
+function createLob(err, buf) {
+  /* jshint bitwise:false */
+  var i = 0;
+  var ld = createReadLobReply(buf);
+  ld.type = LobSourceType.BLOB;
+  ld.charLength = 0;
+  ld.byteLength = 5;
+  var options = {
+    readSize: 1
+  };
+
+  function readLob(options, cb) {
+    setTimeout(function () {
+      if (err) {
+        return cb(err);
+      }
+      cb(null, {
+        readLobReply: createReadLobReply(buf)
+      });
+    }, 1);
+  }
+  return new Lob(readLob, ld, options);
+}
 
 describe('Lib', function () {
 
@@ -128,6 +173,10 @@ describe('Lib', function () {
       var buf = new Buffer([0x48, 0x4B]);
       // write buffer
       writer.setValues([buf]);
+      writer.length.should.equal(10);
+      writer._lobs[0].read().should.eql(buf);
+      // write Lob
+      writer.setValues([createLob(null, buf)]);
       writer.length.should.equal(10);
       writer._lobs[0].read().should.eql(buf);
       // write Readable
