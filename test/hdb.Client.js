@@ -513,12 +513,12 @@ describe('hdb', function () {
           databaseName: 'DB0'
         });
 
-        client._connection.fetchDbConnectInfo = function () {
-          client._connection.emit('error', new Error('Network error emitted'));
+        client._connection.fetchDbConnectInfo = function (options, cb) {
+          cb(new Error('Network error'));
         };
 
         client.connect(function (err) {
-          err.message.should.equal('Could not connect to any host: [ localhost:30013 - Network error emitted ]');
+          err.message.should.equal('Could not connect to any host: [ localhost:30013 - Network error ]');
           done();
         });
       });
