@@ -24,6 +24,7 @@ Table of contents
 * [Streaming results](#streaming-results)
 * [Transaction handling](#transaction-handling)
 * [Streaming Large Objects](#streaming-large-objects)
+* [CESU-8 encoding support](#cesu-8-encoding-support)
 * [Running tests](#running-tests)
 * [Running examples](#running-examples)
 * [Todo](#todo)
@@ -517,6 +518,31 @@ Reading large object as stream can be done if you use the `execute` method of cl
 Writing large objects is automatically done. You just have to pass instance of [`Readable`](http://nodejs.org/api/stream.html#stream_class_stream_readable_1) or a Buffer object as parameter.
 
 Take a look at the example [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js) for further details.
+
+CESU-8 encoding support
+-------------
+
+SAP HANA server connectivity protocol uses [CESU-8](https://en.wikipedia.org/wiki/CESU-8) encoding. Node.js does not suport CESU-8 natively which means that the driver needs to convert all text to CESU-8 format in the javascript layer including SQL statements. 
+Node.js has built-in support for UTF-8, so using UTF-8 in the HDB drivers leads to performance gains.
+In cases when non-[BMP](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane) characters are present you should use the following option to convert all text to CESU-8.
+
+`createClient` accepts the parameter `useCesu8` to enable CESU-8 support. Here is how to provide the configuration:
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  host     : 'hostname',
+  port     : 30015,
+  user     : 'user',
+  password : 'secret',
+  useCesu8 : true
+});
+
+```
+
+This setting is per client and cannot be changed later.
+
+__Note:__ Using CESU-8 brings performance penalties proportionate to the text size that has to be converted.
 
 Running tests
 -------------

@@ -125,3 +125,34 @@ exports['select * from dummy where dummy = ?'] = {
       '02090100ffffffff1000000008000000', 'hex')
   }]
 };
+
+exports['call concat_strings_proc (?, ?, ?, ?)'] = {
+  kind: SegmentKind.REPLY,
+  functionCode: FunctionCode.DB_PROCEDURE_CALL,
+  parts: [
+    {
+      kind: PartKind.STATEMENT_CONTEXT,
+      argumentCount: 2,
+      attributes: 0,
+      buffer: new Buffer(
+        '012144000100000020292029010000000000000000001b1cea7f0000994e8400' +
+        '00000000e91600000000000000000000000000000000000000000000ffffffff' +
+        '00000000000000000204bb02000000000000', 'hex')
+    },
+    {
+      kind: PartKind.STATEMENT_ID,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        'e5b25188195d0500', 'hex')
+    },
+    {
+      kind: PartKind.PARAMETER_METADATA,
+      argumentCount: 3,
+      attributes: 0,
+      buffer: new Buffer(
+        '020b0100000000000a00000000000000020b0100020000000a00000000000000' +
+        '020b0400040000003200000000000000014101420143', 'hex')
+    }
+  ]
+};

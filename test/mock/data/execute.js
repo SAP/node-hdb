@@ -221,3 +221,77 @@ exports['0700000000000000'] = {
     }]
   }
 };
+
+exports['e5b25188195d0500'] = {
+  '1e06eda0bcedbda81e06eda0bcedbda9': {
+    kind: SegmentKind.REPLY,
+    functionCode: FunctionCode.DB_PROCEDURE_CALL_WITH_RESULT,
+    parts: [
+      {
+        kind: PartKind.ROWS_AFFECTED,
+        argumentCount: 1,
+        attributes: 0,
+        buffer: new Buffer(
+          '00000000', 'hex')
+      },
+      {
+        kind: PartKind.TRANSACTION_FLAGS,
+        argumentCount: 2,
+        attributes: 0,
+        buffer: new Buffer(
+          '071c00041c01', 'hex')
+      },
+      {
+        kind: PartKind.STATEMENT_CONTEXT,
+        argumentCount: 2,
+        attributes: 0,
+        buffer: new Buffer(
+          '012144000200000064656366070000000000000000002f646563666c8dd58300' +
+          '00000000e91600000000000000000000000000000000000000000000ffffffff' +
+          '000000000000000002047510000000000000', 'hex')
+      },
+      {
+        kind: PartKind.OUTPUT_PARAMETERS,
+        argumentCount: 1,
+        attributes: 0,
+        buffer: new Buffer(
+          '0ceda0bcedbda8eda0bcedbda9', 'hex')
+      },
+      {
+        kind: PartKind.RESULT_SET_METADATA,
+        argumentCount: 2,
+        attributes: 0,
+        buffer: new Buffer(
+          '020b00000a00000000000000ffffffff3d0000003d000000020b000032000000' +
+          '40000000ffffffff7d0000007d0000003c5f5359535f5353325f544d505f5441' +
+          '424c455f3136313032305f455f35383532464338323830323233423141453230' +
+          '304639433746383231453034430249443c5f5359535f5353325f544d505f5441' +
+          '424c455f3136313032305f455f35383532464338323830323233423141453230' +
+          '3046394337463832314530344303434154', 'hex')
+      },
+      {
+        kind: PartKind.RESULT_SET_ID,
+        argumentCount: 1,
+        attributes: 0,
+        buffer: new Buffer(
+          '5f09f99527580500', 'hex')
+      },
+      {
+        kind: PartKind.STATEMENT_CONTEXT,
+        argumentCount: 2,
+        attributes: 0,
+        buffer: new Buffer(
+          '012144000200000064656366070000000000000000002f646563666c8dd58300' +
+          '00000000e91600000000000000000000000000000000000000000000ffffffff' +
+          '00000000000000000204ba11000000000000', 'hex')
+      },
+      {
+        kind: PartKind.RESULT_SET,
+        argumentCount: 1,
+        attributes: 17,
+        buffer: new Buffer(
+          '06eda0bcedbda80ceda0bcedbda8eda0bcedbda9', 'hex')
+      }
+    ]
+  }
+};

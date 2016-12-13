@@ -104,7 +104,7 @@ describe('Lib', function () {
       var parseError = new Error('PARSE_ERROR');
       var rst = new ResultSetTransform(function parseRow() {
         throw parseError;
-      }, null, {
+      }, {}, {
         arrayMode: false
       });
       rst.on('error', function (err) {

@@ -46,9 +46,10 @@ describe('Lib', function () {
   describe('#Parser', function () {
 
     it('should create a parser via constructor', function () {
-      var parser = new lib.Parser(metadata);
+      var parser = new lib.Parser(metadata, null, true);
       parser.honest.should.be.false;
       parser.metadata.should.have.length(3);
+      parser.useCesu8.should.be.true;
     });
 
     it('should create an evil parse function', function () {

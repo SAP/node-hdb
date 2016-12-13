@@ -162,13 +162,17 @@ describe('Lib', function () {
       var chunk = new Buffer('e282ac', 'hex');
 
       function readLob() {}
-      var lob = new Lob(readLob, {
-        type: LobSourceType.NCLOB,
-        locatorId: locatorId,
-        chunk: chunk,
-        charLength: 1,
-        byteLength: chunk.length
-      });
+      var lob = new Lob(readLob, createLobDescriptor(LobSourceType.NCLOB, chunk, 1));
+      lob.length.should.equal(1);
+      lob.increaseOffset(chunk);
+      lob._offset.should.equal(2);
+    });
+
+    it('should create a Lob with type NCLOB containing CESU-8 symbols', function () {
+      var chunk = new Buffer('eda0bcedbda8', 'hex'); // 🍨
+
+      function readLob() {}
+      var lob = new Lob(readLob, createLobDescriptor(LobSourceType.NCLOB, chunk, 1), { useCesu8: true });
       lob.length.should.equal(1);
       lob.increaseOffset(chunk);
       lob._offset.should.equal(2);
@@ -178,17 +182,21 @@ describe('Lib', function () {
       var chunk = new Buffer('x', 'ascii');
 
       function readLob() {}
-      var lob = new Lob(readLob, {
-        type: LobSourceType.CLOB,
-        locatorId: locatorId,
-        chunk: chunk,
-        charLength: 1,
-        byteLength: chunk.length
-      });
+      var lob = new Lob(readLob, createLobDescriptor(LobSourceType.CLOB, chunk, 1));
       lob.length.should.equal(1);
       lob.increaseOffset(chunk);
       lob._offset.should.equal(2);
     });
+
+    function createLobDescriptor(type, chunk, charLength) {
+      return {
+        type: type,
+        locatorId: locatorId,
+        chunk: chunk,
+        charLength: charLength,
+        byteLength: chunk.length
+      }
+    }
 
   });
 });

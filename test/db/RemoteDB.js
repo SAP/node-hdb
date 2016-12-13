@@ -127,3 +127,20 @@ RemoteDB.prototype.dropReadNumbersProc = function dropReadNumbersProc(cb) {
   var sql = 'drop procedure READ_NUMBERS_BETWEEN cascade';
   this.client.exec(sql, cb);
 };
+
+RemoteDB.prototype.createConcatStringsProc = function createConcatStringsProc(cb) {
+  var sql = [
+    'create procedure CONCAT_STRINGS_PROC (in a nvarchar(10), in b nvarchar(10), out c nvarchar(50), out e table (id nvarchar(10), cat nvarchar(50)) )',
+    'language sqlscript as',
+    'begin',
+    '  c := concat(:a, :b);',
+    '  e = select a as ID, c as CAT from dummy;',
+    'end;'
+  ].join('\n');
+  this.client.exec(sql, cb);
+}
+
+RemoteDB.prototype.dropConcatStringsProc = function dropConcatStringsProc(cb) {
+  var sql = 'drop procedure CONCAT_STRINGS_PROC cascade';
+  this.client.exec(sql, cb);
+};

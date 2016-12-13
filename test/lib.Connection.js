@@ -91,6 +91,15 @@ describe('Lib', function () {
       connection.clientId.should.equal(clientId);
     });
 
+    it('should create a connection with a useCesu8 set correctly', function () {
+      var connection = new Connection({ useCesu8: true });
+      connection.useCesu8.should.be.true;
+      connection = new Connection({ useCesu8: false });
+      connection.useCesu8.should.be.false;
+      connection = new Connection({ useCesu8: null });
+      connection.useCesu8.should.be.false;
+    });
+
     it('should create a connection', function () {
       var connection = createConnection();
       var state = connection._state;
