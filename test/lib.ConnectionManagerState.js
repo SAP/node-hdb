@@ -175,7 +175,7 @@ describe('Lib', function () {
 
       it('should set the encryption options properly', function () {
         var correspondingProperty = 'encryption';
-        var optionsList = ['pfx', 'key', 'cert', 'ca', 'passphrase', 'rejectUnauthorized', 'secureProtocol'];
+        var optionsList = ['pfx', 'key', 'cert', 'ca', 'passphrase', 'rejectUnauthorized', 'secureProtocol', 'checkServerIdentity'];
         var returnedValue = { ca: 'CA certificate' };
         var whichCall = 1;
 

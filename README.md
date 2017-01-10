@@ -200,6 +200,9 @@ var client = hdb.createClient({
 **Note** for MDC use cases: The system database and the target tenant database may be configured to work with different certificates.
 If so, make sure to include all the necessary TLS-related properties for both the databases in the client's options.
 
+In case you need custom logic to validate the server's hostname against the certificate, you can assign a callback function to the `checkServerIdentity` property, alongside the other connection options. The callback is
+supplied to the `tls.connect` funciton of the [TLS](https://nodejs.org/api/tls.html#connect) API and should conform to the signature described there.
+
 Direct Statement Execution
 --------------------------
 
