@@ -6,4 +6,4 @@ cache:
 node_js:
   - "0.12"
   - "4"
-  - "6.3" # bug #8127 in node 6 breaks the tests
+  - "6"
