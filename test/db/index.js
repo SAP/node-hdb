@@ -17,6 +17,14 @@ var fs = require('fs');
 var path = require('path');
 var LocalDB = require('./LocalDB');
 var RemoteDB = require('./RemoteDB');
+var libUtil = require('../../lib/util');
+
+var localOptions = {
+  host: 'localhost',
+  port: 30015,
+  user: 'TEST_USER',
+  password: 'abcd1234'
+};
 
 var options;
 try {
@@ -25,9 +33,13 @@ try {
   options = null;
 }
 
-module.exports = function create() {
+function getOptions(testOptions) {
+  return libUtil.extend(options || localOptions, testOptions);
+}
+
+module.exports = function create(testOptions) {
   if (!options || process.env.HDB_MOCK) {
-    return new LocalDB();
+    return new LocalDB(getOptions(testOptions));
   }
-  return new RemoteDB(options);
+  return new RemoteDB(getOptions(testOptions));
 };

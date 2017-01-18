@@ -28,7 +28,9 @@
   "engines": {
     "node": ">= 0.12"
   },
-  "dependencies": {},
+  "dependencies": {
+    "iconv-lite": "^0.4.15"
+  },
   "devDependencies": {
     "async": "^2.0.1",
     "chrome-net": "^3.3.0",

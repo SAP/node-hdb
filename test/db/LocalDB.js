@@ -21,13 +21,8 @@ module.exports = LocalDB;
 
 util.inherits(LocalDB, TestDB);
 
-function LocalDB() {
-  TestDB.call(this, {
-    host: 'localhost',
-    port: 30015,
-    user: 'TEST_USER',
-    password: 'abcd1234'
-  });
+function LocalDB(options) {
+  TestDB.call(this, options);
   this.server = mock.createServer();
 }
 

@@ -51,6 +51,18 @@ describe('Lib', function () {
       });
     });
 
+    it('should write a string in cesu-8 encoding when useCesu8 is enabled', function (done) {
+      var test = data.EMOJI;
+      var writer = Writer.create(test, true);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should write binary types', function (done) {
       var test = data.BINARY;
       var writer = Writer.create(test);

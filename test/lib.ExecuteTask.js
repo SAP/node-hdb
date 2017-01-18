@@ -57,6 +57,11 @@ describe('Lib', function () {
       task.parameterValues.should.eql(values);
     });
 
+    it('should create task having Writer configured with useCesu8', function () {
+      var task = createExecuteTask({ parameters: { types: [], values: [] } });
+      task.writer._useCesu8.should.be.true;
+    });
+
     it('should run a task with invalid functionCode', function (next) {
       createExecuteTask({
         functionCode: FunctionCode.NIL,
@@ -310,6 +315,7 @@ function createExecuteTask(options, cb) {
 function Connection(size, replies) {
   this.size = size;
   this.replies = replies || [];
+  this.useCesu8 = true;
 }
 
 Connection.prototype.send = function (msg, cb) {

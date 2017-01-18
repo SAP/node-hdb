@@ -43,6 +43,11 @@ describe('Req', function () {
       segment.parts.should.have.length(3);
     });
 
+    it('should create a new Segment with set useCesu8', function () {
+      var segment = new Segment(MessageType.NIL, 0, 0, true);
+      segment.useCesu8.should.be.true;
+    });
+
   });
 
 });

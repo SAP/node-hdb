@@ -217,3 +217,23 @@ exports.LOGO = {
     logo
   ]
 };
+
+exports.EMOJI = {
+  part: {
+    argumentCount: 2,
+    buffer: Buffer.concat([ 
+      new Buffer([0x1e, 0x6]),
+      new Buffer([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]), // cesu-8 encoded 🍨
+      new Buffer([0x1a, 0x6, 0x6, 0x0, 0x0, 0x0, 0x13, 0x0, 0x0, 0x0]),
+      new Buffer([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa9])  // cesu-8 encoded 🍩
+    ])
+  },
+  types: [
+    TypeCode.NSTRING,
+    TypeCode.NCLOB
+  ],
+  values: [
+    '🍨',
+    '🍩'
+  ]
+};

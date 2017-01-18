@@ -197,11 +197,19 @@ describe('Lib', function () {
       reader.hasMore().should.equal(false);
     });
 
-    it('should read a String', function () {
+    it('should read a String in utf-8 encoding', function () {
       var buffer = new Buffer([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
       var reader = new lib.Reader(buffer);
       should(reader.readString() === null).ok;
       reader.readString().should.equal('𤭢');
+      reader.hasMore().should.equal(false);
+    });
+
+    it('should read a String in cesu-8 encoding', function () {
+      var buffer = new Buffer([0xff, 6, 0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]);
+      var reader = new lib.Reader(buffer, null, true);
+      should(reader.readString() === null).ok;
+      reader.readString().should.equal('🍨');
       reader.hasMore().should.equal(false);
     });
 

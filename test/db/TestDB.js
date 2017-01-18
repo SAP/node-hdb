@@ -72,6 +72,15 @@ TestDB.prototype.dropReadNumbersProc = function dropReadNumbersProc(cb) {
   doNothing(cb);
 };
 
+TestDB.prototype.createConcatStringsProc = function createConcatStringsProc(cb) {
+  doNothing(cb);
+};
+
+TestDB.prototype.dropConcatStringsProc = function dropConcatStringsProc(cb) {
+  doNothing(cb);
+};
+
+
 function doNothing(done) {
   process.nextTick(done);
 }
