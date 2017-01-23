@@ -132,6 +132,20 @@ describe('Lib', function () {
       });
     });
 
+    it('should return rowsAffected on insert error', function (done) {
+      var result = createResult();
+      var insError = new Error('insert error');
+      var reply = {
+        functionCode: FunctionCode.INSERT,
+        rowsAffected: [1, 1, -3]
+      };
+      result.handle(insError, reply, function (err, rowsAffected) {
+        err.should.be.instanceof(Error);
+        rowsAffected.should.eql([1, 1, -3]);
+        done();
+      });
+    });
+
     it('should handle a query with error', function (done) {
       var result = createResult();
       var reply = {
