@@ -91,15 +91,6 @@ describe('Lib', function () {
       connection.clientId.should.equal(clientId);
     });
 
-    it('should create a connection with a useCesu8 set correctly', function () {
-      var connection = new Connection({ useCesu8: true });
-      connection.useCesu8.should.be.true;
-      connection = new Connection({ useCesu8: false });
-      connection.useCesu8.should.be.false;
-      connection = new Connection({ useCesu8: null });
-      connection.useCesu8.should.be.false;
-    });
-
     it('should create a connection', function () {
       var connection = createConnection();
       var state = connection._state;
@@ -549,6 +540,49 @@ describe('Lib', function () {
         warning.should.equal(replySegment.error);
         done();
       })
+    });
+
+    context('cesu-8 support', function() {
+
+      it('should create a connection with a useCesu8 set correctly', function () {
+        var connection = new Connection({ useCesu8: true });
+        connection.useCesu8.should.eql(true);
+        connection = new Connection({ useCesu8: false });
+        connection.useCesu8.should.eql(false);
+      });
+
+      function cesuTestConnection(options, done) {
+        var connection = createConnection(options);
+        connection.enqueue = function(statement, cb) {
+          statement.useCesu8.should.eql(true);
+          done();
+        };
+        return connection;
+      }
+
+      it('should prepare statement with cesu-8 support', function(done) {
+        cesuTestConnection({ useCesu8: true }, done).prepare();
+      });
+
+      it('should fetchNext with cesu-8 support', function(done) {
+        cesuTestConnection({ useCesu8: true }, done).fetchNext({});
+      });
+
+      it('should dropStatement with cesu-8 support', function(done) {
+        cesuTestConnection({ useCesu8: true }, done).dropStatement({});
+      });
+
+      it('should authenticate with cesu-8 support', function(done) {
+        var connection = createConnection({ useCesu8: true });
+        connection.send = function(statement, cb) {
+          statement.useCesu8.should.eql(true);
+          done();
+        };
+        connection.connect({user: 'user', password: 'pass'}, function(err) {
+          if (err) { throw err; }
+        });
+      });
+
     });
 
   });

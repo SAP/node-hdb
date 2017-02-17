@@ -15,7 +15,7 @@
 /* jshint undef:false, expr:true */
 
 var async = require('async');
-var db = require('../db')({ useCesu8: true });
+var db = require('../db')();
 
 describe('db', function () {
   before(db.init.bind(db));

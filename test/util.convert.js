@@ -25,23 +25,23 @@ describe('Util', function () {
     var outOfBomCesuBuffer = new Buffer([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa9]);
     var outOfBomUtf8Buffer = new Buffer([0xf0, 0x9f, 0x8d, 0xa9]);
 
-    it('should encode in cesu8 if strictEncodig is true', function() {
+    it('should encode in cesu8 if useCesu8 is true', function() {
       util.convert.encode(outOfBom, true).should.eql(outOfBomCesuBuffer);
     });
 
-    it('should encode in utf-8 if strictEncodig is false', function() {
+    it('should encode in utf-8 if useCesu8 is false', function() {
       util.convert.encode(outOfBom, false).should.eql(outOfBomUtf8Buffer);
     });
 
-    it('should decode from utf-8 if strictEncodig is false', function () {
+    it('should decode from utf-8 if useCesu8 is false', function () {
       util.convert.decode(outOfBomUtf8Buffer, false).should.eql(outOfBom);      
     });
 
-    it('should decode from cesu-8 if strictEncodig is true', function () {
+    it('should decode from cesu-8 if useCesu8 is true', function () {
       util.convert.decode(outOfBomCesuBuffer, true).should.eql(outOfBom);
     });
 
-    it('should count cesu8 charactes in cesu8 enoded buffer', function() {
+    it('should count cesu8 charactes in cesu8 encoded buffer', function() {
       util.convert.lengthInCesu8(outOfBomCesuBuffer).should.equal(1);
     });
 
