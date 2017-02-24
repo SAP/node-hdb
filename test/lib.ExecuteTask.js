@@ -287,6 +287,17 @@ describe('Lib', function () {
       });
     });
 
+    it('should provide cesu-8 configuration in execute', function(done) {
+      var task = createExecuteTask();
+      task.connection.send = function(statement, cb) {
+        statement.useCesu8.should.eql(true);
+        done();
+      }
+      task.sendExecute(function(err) {
+        if (err) { throw err; }
+      });
+    });
+
   });
 });
 

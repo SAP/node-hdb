@@ -42,6 +42,16 @@ describe('hdb', function () {
 
   describe('#Client', function () {
 
+    it('should initialize useCesu8 to "true" by default', function() {
+      new TestClient()._connection._settings.useCesu8.should.eql(true);
+      new TestClient({ useCesu8: ''})._connection._settings.useCesu8.should.eql(true);
+    });
+
+    it('should initialize useCesu8 to accordign to provided options', function() {
+      new TestClient({ useCesu8: true})._connection._settings.useCesu8.should.eql(true);
+      new TestClient({ useCesu8: false})._connection._settings.useCesu8.should.eql(false);
+    });
+
     it('should create, connect and close a client', function (done) {
       var client = new TestClient();
       var connection = client._connection;

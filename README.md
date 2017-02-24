@@ -525,11 +525,12 @@ Take a look at the example [app7](https://github.com/SAP/node-hdb/blob/master/ex
 CESU-8 encoding support
 -------------
 
-SAP HANA server connectivity protocol uses [CESU-8](https://en.wikipedia.org/wiki/CESU-8) encoding. Node.js does not suport CESU-8 natively which means that the driver needs to convert all text to CESU-8 format in the javascript layer including SQL statements. 
-Node.js has built-in support for UTF-8, so using UTF-8 in the HDB drivers leads to performance gains.
-In cases when non-[BMP](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane) characters are present you should use the following option to convert all text to CESU-8.
+SAP HANA server connectivity protocol uses [CESU-8](https://en.wikipedia.org/wiki/CESU-8) encoding. Node.js does not suport CESU-8 natively and the driver by default converts all text to CESU-8 format in the javascript layer including SQL statements.
 
-`createClient` accepts the parameter `useCesu8` to enable CESU-8 support. Here is how to provide the configuration:
+Due to the fact that Node.js has built-in support for UTF-8, using UTF-8 in the HDB drivers can lead to performance gains especially for large text data.
+If you are sure that your data contains only [BMP](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane) characters, you can disable CESU-8 conversion by setting a flag in the client configuration.
+
+`createClient` accepts the parameter `useCesu8` to disable CESU-8 support. Here is how to provide the configuration:
 
 ```js
 var hdb    = require('hdb');
@@ -538,7 +539,7 @@ var client = hdb.createClient({
   port     : 30015,
   user     : 'user',
   password : 'secret',
-  useCesu8 : true
+  useCesu8 : false
 });
 
 ```
