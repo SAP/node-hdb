@@ -324,6 +324,9 @@ describe('Lib', function () {
 
     it('should enqueue a mesage', function () {
       var connection = createConnection();
+      connection._socket = {
+        readyState: 'open'
+      };
       connection._queue.pause();
       connection.enqueue(function firstTask() {});
       connection.enqueue(new lib.request.Segment(MessageType.EXECUTE));
@@ -336,6 +339,15 @@ describe('Lib', function () {
         return task.name;
       });
       taskNames.should.eql(['firstTask', 'EXECUTE', 'thirdTask']);
+    });
+
+    it('should report error in enqueue when connection is invalid', function (done) {
+      var connection = createConnection();
+      connection._queue.pause();
+      connection.enqueue(function firstTask() { }, function (err) {
+        err.code.should.equal('EHDBCLOSE');
+        done();
+      });
     });
 
     it('should rollback a transaction', function () {
