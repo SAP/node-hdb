@@ -338,6 +338,35 @@ describe('Lib', function () {
       });
 
     it(
+      'should fetch all rows with a LOB and rowsAsArray set',
+      function (
+        done) {
+        var rs = createResultSetWithLob();
+        rs._settings.rowsAsArray = true;
+        rs.fetch(function (err, rows) {
+          if (err) {
+            return done(err);
+          }
+          rows.should.eql([[
+            1,
+            'foo',
+            new Buffer([47, 0, 0, 0, 0, 0, 0, 0])
+          ], [
+            2,
+            'bar',
+            new Buffer([11, 0, 0, 0, 0, 0, 0, 0])
+          ], [
+            3,
+            'abc',
+            new Buffer([123, 0, 0, 0, 0, 0, 0, 0])
+          ]]);
+          rs.finished.should.be.true;
+          rs.closed.should.be.true;
+          done();
+        });
+      });
+
+    it(
       'should fetch all rows without a LOB and resultSet already closed',
       function (done) {
         var rs = createResultSetWithoutLob();
