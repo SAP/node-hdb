@@ -12,7 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
-/*jshint expr:true*/
+/* jshint expr:true */
 
 var lib = require('../lib');
 

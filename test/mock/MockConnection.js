@@ -205,4 +205,4 @@ MockConnection.prototype.fetchDbConnectInfo = function fetchDbConnectInfo(option
     var reply = self.getReply('dbConnectInfo');
     cb(err, reply);
   });
-}
+};

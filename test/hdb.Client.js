@@ -12,7 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
-/*jshint expr:true*/
+/* jshint expr:true */
 
 var should = require('should');
 var lib = require('../lib');
@@ -118,7 +118,7 @@ describe('hdb', function () {
           return socket;
         };
         return connection;
-      };
+      }
 
       client.on('error', function (err) {
         done(err);
@@ -487,7 +487,7 @@ describe('hdb', function () {
       });
 
       it('should accept a string as instance number', function (done) {
-       var client = new TestClient({
+        var client = new TestClient({
           host: 'localhost',
           port: undefined, instanceNumber: '00',
           databaseName: 'DB0'
@@ -616,7 +616,7 @@ describe('hdb', function () {
         var tenantDbConnOpened = false;
 
         client._connection.open = function (options, cb) {
-          ++connOpenCount
+          ++connOpenCount;
           if (connOpenCount === 1) {
             options.host.should.equal('localhost');
             options.port.should.equal(30013);
@@ -659,7 +659,7 @@ describe('hdb', function () {
         var connOpenCount = 0;
 
         client._connection.open = function (options, cb) {
-          ++connOpenCount
+          ++connOpenCount;
           options.ca.should.deepEqual(certificates);
           cb();
         };

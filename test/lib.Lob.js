@@ -195,7 +195,7 @@ describe('Lib', function () {
         chunk: chunk,
         charLength: charLength,
         byteLength: chunk.length
-      }
+      };
     }
 
   });

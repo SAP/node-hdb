@@ -12,7 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
-/*jshint expr:true*/
+/* jshint expr:true */
 
 var should = require('should');
 var lib = require('../lib');
@@ -29,16 +29,16 @@ function createLobBuffer(locatorId, chunk, encoding) {
   /* jshint bitwise:false */
   var buffer, sourceType;
   switch (encoding) {
-  case 'utf8':
-  case 'utf-8':
-    sourceType = LobSourceType.NCLOB;
-    break;
-  case 'ascii':
-    sourceType = LobSourceType.CLOB;
-    break;
-  default:
-    sourceType = LobSourceType.BLOB;
-    break;
+    case 'utf8':
+    case 'utf-8':
+      sourceType = LobSourceType.NCLOB;
+      break;
+    case 'ascii':
+      sourceType = LobSourceType.CLOB;
+      break;
+    default:
+      sourceType = LobSourceType.BLOB;
+      break;
   }
   if (!chunk || !chunk.length) {
     buffer = new Buffer(2);
