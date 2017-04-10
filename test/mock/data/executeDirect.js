@@ -91,38 +91,38 @@ exports['select * from numbers order by a'] = {
 exports['select * from read_numbers_between_view with parameters (' +
   '\'placeholder\' = (\'$$a$$\', \'3\'),' +
   '\'placeholder\' = (\'$$b$$\', \'5\'))'] = {
-  kind: SegmentKind.REPLY,
-  functionCode: FunctionCode.SELECT,
-  parts: [{
-    kind: PartKind.RESULT_SET_METADATA,
-    argumentCount: 2,
-    attributes: 0,
-    buffer: new Buffer(
-      '020300000a00000000000000ffffffff1a0000001a0000000209000010000000' +
-      '1c000000ffffffff360000003600000019524541445f4e554d424552535f4245' +
-      '545745454e5f56494557014119524541445f4e554d424552535f424554574545' +
-      '4e5f564945570142', 'hex')
-  }, {
-    kind: PartKind.RESULT_SET_ID,
-    argumentCount: 1,
-    attributes: 0,
-    buffer: new Buffer(
-      '0300000000000000', 'hex')
-  }, {
-    kind: PartKind.STATEMENT_CONTEXT,
-    argumentCount: 2,
-    attributes: 0,
-    buffer: new Buffer(
-      '0121080002000000000000000204cb17000000000000', 'hex')
-  }, {
-    kind: PartKind.RESULT_SET,
-    argumentCount: 3,
-    attributes: 17,
-    buffer: new Buffer(
-      '0103000000057468726565010400000004666f757201050000000466697665', 'hex'
-    )
-  }]
-};
+    kind: SegmentKind.REPLY,
+    functionCode: FunctionCode.SELECT,
+    parts: [{
+      kind: PartKind.RESULT_SET_METADATA,
+      argumentCount: 2,
+      attributes: 0,
+      buffer: new Buffer(
+        '020300000a00000000000000ffffffff1a0000001a0000000209000010000000' +
+        '1c000000ffffffff360000003600000019524541445f4e554d424552535f4245' +
+        '545745454e5f56494557014119524541445f4e554d424552535f424554574545' +
+        '4e5f564945570142', 'hex')
+    }, {
+      kind: PartKind.RESULT_SET_ID,
+      argumentCount: 1,
+      attributes: 0,
+      buffer: new Buffer(
+        '0300000000000000', 'hex')
+    }, {
+      kind: PartKind.STATEMENT_CONTEXT,
+      argumentCount: 2,
+      attributes: 0,
+      buffer: new Buffer(
+        '0121080002000000000000000204cb17000000000000', 'hex')
+    }, {
+      kind: PartKind.RESULT_SET,
+      argumentCount: 3,
+      attributes: 17,
+      buffer: new Buffer(
+        '0103000000057468726565010400000004666f757201050000000466697665', 'hex'
+      )
+    }]
+  };
 
 exports['select * from images order by name'] = {
   kind: SegmentKind.REPLY,

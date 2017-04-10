@@ -98,44 +98,44 @@ function handleMessage(msg, context) {
   /* jshint validthis:true */
   var segment;
   switch (msg.type) {
-  case MessageType.AUTHENTICATE:
-    segment = handleAuthenticate(msg);
-    break;
-  case MessageType.CONNECT:
-    segment = handleConnect(msg);
-    break;
-  case MessageType.DISCONNECT:
-    segment = handleDisconnect(msg);
-    break;
-  case MessageType.EXECUTE_DIRECT:
-    segment = handleExecuteDirect(msg, context);
-    break;
-  case MessageType.FETCH_NEXT:
-    segment = handleFetchNext(msg, context);
-    break;
-  case MessageType.PREPARE:
-    segment = handlePrepare(msg, context);
-    break;
-  case MessageType.EXECUTE:
-    segment = handleExecute(msg, context);
-    break;
-  case MessageType.READ_LOB:
-    segment = handleReadLob(msg, context);
-    break;
-  case MessageType.WRITE_LOB:
-    segment = handleWriteLob(msg, context);
-    break;
-  case MessageType.DROP_STATEMENT_ID:
-    segment = handleDropStatementID(msg);
-    break;
-  case MessageType.CLOSE_RESULT_SET:
-    segment = handleCloseResultSet(msg);
-    break;
-  case MessageType.COMMIT:
-    segment = handleCommit(msg);
-    break;
-  default:
-    throw new Error('Message type ' + msg.type + ' not supported');
+    case MessageType.AUTHENTICATE:
+      segment = handleAuthenticate(msg);
+      break;
+    case MessageType.CONNECT:
+      segment = handleConnect(msg);
+      break;
+    case MessageType.DISCONNECT:
+      segment = handleDisconnect(msg);
+      break;
+    case MessageType.EXECUTE_DIRECT:
+      segment = handleExecuteDirect(msg, context);
+      break;
+    case MessageType.FETCH_NEXT:
+      segment = handleFetchNext(msg, context);
+      break;
+    case MessageType.PREPARE:
+      segment = handlePrepare(msg, context);
+      break;
+    case MessageType.EXECUTE:
+      segment = handleExecute(msg, context);
+      break;
+    case MessageType.READ_LOB:
+      segment = handleReadLob(msg, context);
+      break;
+    case MessageType.WRITE_LOB:
+      segment = handleWriteLob(msg, context);
+      break;
+    case MessageType.DROP_STATEMENT_ID:
+      segment = handleDropStatementID(msg);
+      break;
+    case MessageType.CLOSE_RESULT_SET:
+      segment = handleCloseResultSet(msg);
+      break;
+    case MessageType.COMMIT:
+      segment = handleCommit(msg);
+      break;
+    default:
+      throw new Error('Message type ' + msg.type + ' not supported');
   }
   writeReply.call(this, context, segment.toBuffer());
 }
@@ -262,13 +262,13 @@ function getStatementData(statementId, paramsPart) {
   var key;
   var start, end;
   switch (statementId) {
-  case '0300000000000000':
-    start = 2;
-    end = start + buffer[1];
-    key = buffer.slice(start, end).toString('ascii');
-    break;
-  default:
-    key = buffer.toString('hex');
+    case '0300000000000000':
+      start = 2;
+      end = start + buffer[1];
+      key = buffer.slice(start, end).toString('ascii');
+      break;
+    default:
+      key = buffer.toString('hex');
   }
   return statement[key];
 }

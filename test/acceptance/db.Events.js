@@ -40,7 +40,7 @@ describe('db', function () {
     it('should invoke pending callback', function (done) {
       client.close();
 
-      client.exec('SELECT * FROM DUMMY', function (err, rs) {
+      client.exec('SELECT * FROM DUMMY', function (err) {
         err.should.be.an.instanceOf(Error);
         done();
       });

@@ -152,51 +152,51 @@ describe('db', function () {
     });
   });
 
-  describe('CESU8', function() {
+  describe('CESU8', function () {
     before(db.createConcatStringsProc.bind(db));
     after(db.dropConcatStringsProc.bind(db));
 
-    it('should return concatenated params and table with colums same as the params', function(done) {
-        var sql = 'call CONCAT_STRINGS_PROC (?, ?, ?, ?)';
-        var statement;
-        async.series([
-          function prepareStatement(callback) {
-            client.prepare(sql, function (err, ps) {
-              statement = ps;
-              var metadata = statement.parameterMetadata;
-              metadata.should.have.length(3);
-              function checkParam(p, name, ioType) {
-                p.should.have.property('name', name);
-                p.should.have.property('mode', 2);
-                p.should.have.property('dataType', 11);
-                p.should.have.property('ioType', ioType);
-              }
-              checkParam(metadata[0], 'A', 1);
-              checkParam(metadata[1], 'B', 1);
-              checkParam(metadata[2], 'C', 4);
+    it('should return concatenated params and table with colums same as the params', function (done) {
+      var sql = 'call CONCAT_STRINGS_PROC (?, ?, ?, ?)';
+      var statement;
+      async.series([
+        function prepareStatement(callback) {
+          client.prepare(sql, function (err, ps) {
+            statement = ps;
+            var metadata = statement.parameterMetadata;
+            metadata.should.have.length(3);
+            function checkParam(p, name, ioType) {
+              p.should.have.property('name', name);
+              p.should.have.property('mode', 2);
+              p.should.have.property('dataType', 11);
+              p.should.have.property('ioType', ioType);
+            }
+            checkParam(metadata[0], 'A', 1);
+            checkParam(metadata[1], 'B', 1);
+            checkParam(metadata[2], 'C', 4);
 
-              callback();
-            });
-          },
-          function concatCesu8Strings(callback) {
-            statement.exec({ A: '🍨', B: '🍩' }, function (err, parameters, rows) {
-              if (err) {
-                return callback(err);
-              }
-              Object.keys(parameters).should.have.length(1);
-              parameters.C.should.equal('🍨🍩');
+            callback();
+          });
+        },
+        function concatCesu8Strings(callback) {
+          statement.exec({ A: '🍨', B: '🍩' }, function (err, parameters, rows) {
+            if (err) {
+              return callback(err);
+            }
+            Object.keys(parameters).should.have.length(1);
+            parameters.C.should.equal('🍨🍩');
 
-              rows.should.have.length(1);
-              rows[0].ID.should.eql('🍨');
-              rows[0].CAT.should.eql('🍨🍩');
+            rows.should.have.length(1);
+            rows[0].ID.should.eql('🍨');
+            rows[0].CAT.should.eql('🍨🍩');
 
-              callback();
-            });
-          },
-          function dropStatement(callback) {
-            statement.drop(callback);
-          }
-        ], done);
+            callback();
+          });
+        },
+        function dropStatement(callback) {
+          statement.drop(callback);
+        }
+      ], done);
 
     });
   });

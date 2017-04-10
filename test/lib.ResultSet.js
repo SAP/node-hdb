@@ -538,7 +538,7 @@ describe('Lib', function () {
 
     it('should fail reading lobs', function (done) {
       var readError = {};
-      //readError = new Error('READ_ERROR');
+      // readError = new Error('READ_ERROR');
       readError.id = 123;
       var rs = createResultSetWithLob({
         readError: readError

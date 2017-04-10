@@ -12,7 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
-/*jshint expr:true*/
+/* jshint expr:true */
 
 var State = require('../lib/protocol/ConnectionManagerState');
 
@@ -161,7 +161,7 @@ describe('Lib', function () {
         var state = new State({});
 
         var timesCalled = 0;
-        state._combineOptions = function (arrNames, newOptions) {
+        state._combineOptions = function (arrNames) {
           ++timesCalled;
           if (timesCalled === whichCall) {
             arrNames.should.deepEqual(expectedOptionsList);

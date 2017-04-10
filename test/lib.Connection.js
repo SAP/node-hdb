@@ -12,7 +12,7 @@
 // either express or implied. See the License for the specific
 // language governing permissions and limitations under the License.
 'use strict';
-/*jshint expr:true*/
+/* jshint expr:true */
 
 var lib = require('../lib');
 var mock = require('./mock');
@@ -432,7 +432,7 @@ describe('Lib', function () {
           cb(new Error('Request was not successful'));
         };
 
-        connection.fetchDbConnectInfo({}, function (err, info) {
+        connection.fetchDbConnectInfo({}, function (err) {
           err.message.should.equal('Request was not successful');
           done();
         });
@@ -565,7 +565,7 @@ describe('Lib', function () {
 
       function cesuTestConnection(options, done) {
         var connection = createConnection(options);
-        connection.enqueue = function(statement, cb) {
+        connection.enqueue = function(statement) {
           statement.useCesu8.should.eql(true);
           done();
         };
@@ -586,7 +586,7 @@ describe('Lib', function () {
 
       it('should authenticate with cesu-8 support', function(done) {
         var connection = createConnection({ useCesu8: true });
-        connection.send = function(statement, cb) {
+        connection.send = function(statement) {
           statement.useCesu8.should.eql(true);
           done();
         };
