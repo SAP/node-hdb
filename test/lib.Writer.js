@@ -209,6 +209,13 @@ describe('Lib', function () {
       writer.setValues([value]);
       writer.length.should.equal(length + 6);
       writer._buffers[0][1].should.equal(247);
+      // unicode char
+      value = 'ä';
+      length = value.length;
+      writer.setValues([value]);
+      writer.length.should.equal(4); 
+      writer._buffers[0][2].should.equal(0xC3);
+      writer._buffers[0][3].should.equal(0xA4);
     });
 
     it('should set a BINARY value', function () {
