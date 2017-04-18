@@ -184,16 +184,25 @@ describe('Lib', function () {
       connection.readyState.should.equal('opening');
     });
 
-    it('should fail to open a Connection with an invalid reply', function (done) {
+    it('should fail to open a Connection with an invalid reply (too short)', function (done) {
       var connection = createConnection();
       connection.open({
-        invalidInitializationReply: true
+        invalidInitializationReplyLength: 7
       }, function (err) {
         err.code.should.equal('EHDBINIT');
         done();
       });
     });
 
+    it('should fail to open a Connection with an invalid reply (too long)', function (done) {
+      var connection = createConnection();
+      connection.open({
+        invalidInitializationReplyLength: 9
+      }, function (err) {
+        err.code.should.equal('EHDBINIT');
+        done();
+      });
+    });
 
     it('should fail to open a Connection with an initialization timeout', function (done) {
       var connection = createConnection({

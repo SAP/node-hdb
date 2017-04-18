@@ -25,11 +25,11 @@ function MockSocket(options) {
   this.writable = true;
   this.readable = true;
   this.delay = options.delay || 1;
-  this.invalidInitializationReply = !!options.invalidInitializationReply;
+  this.invalidInitializationReplyLength = options.invalidInitializationReplyLength;
   this.initializationErrorCode = options.initializationErrorCode;
   var chunk;
-  if (this.invalidInitializationReply) {
-    chunk = new Buffer(5);
+  if (this.invalidInitializationReplyLength) {
+    chunk = new Buffer(this.invalidInitializationReplyLength);
   } else if (this.initializationErrorCode) {
     chunk = this.initializationErrorCode;
   } else {
@@ -60,7 +60,7 @@ MockSocket.prototype.write = function write() {
   }
   var self = this;
   setTimeout(function () {
-    if (!self.invalidInitializationReply &&
+    if (!self.invalidInitializationReplyLength &&
       !self.initializationErrorCode &&
       !self.initialized) {
       self.initialized = true;
