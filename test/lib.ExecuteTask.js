@@ -238,7 +238,7 @@ describe('Lib', function () {
         throw invalidValuesError;
       };
       task.getParameters(64, function (err) {
-        err.should.equal(invalidValuesError);
+        err.message.should.equal('Cannon set parameter at row: 1. ' + invalidValuesError.message);
         done();
       });
     });

@@ -156,7 +156,7 @@ describe('db', function () {
     before(db.createConcatStringsProc.bind(db));
     after(db.dropConcatStringsProc.bind(db));
 
-    it('should return concatenated params and table with colums same as the params', function (done) {
+    it('should return concatenated params and table with columns same as the params', function (done) {
       var sql = 'call CONCAT_STRINGS_PROC (?, ?, ?, ?)';
       var statement;
       async.series([

@@ -29,17 +29,17 @@
     "node": ">= 0.12"
   },
   "dependencies": {
-    "iconv-lite": "^0.4.15"
+    "iconv-lite": "^0.4.18"
   },
   "devDependencies": {
-    "async": "^2.0.1",
+    "async": "^2.4.1",
     "chrome-net": "^3.3.0",
     "concat-stream": "^1.5.1",
-    "coveralls": "^2.11.11",
-    "fstream": "^1.0.10",
+    "coveralls": "^2.13.1",
+    "fstream": "^1.0.11",
     "generic-pool": "^2.4.2",
     "istanbul": "^0.4.4",
-    "mocha": "^2.5.3",
+    "mocha": "^3.4.2",
     "should": "^10.0.0"
   },
   "optionalDependencies": {}
