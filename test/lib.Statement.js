@@ -77,10 +77,50 @@ describe('Lib', function () {
       });
     });
 
-    it('should execute a statement with empty parameter values', function (
+    it('should generate an error on statements with empty parameter values', function (
       done) {
       var statement = createStatement();
       var values = [];
+      statement.execute(values, function (err) {
+        err.should.be.instanceof(Error);
+        done();
+      });
+    });
+
+    it('should generate an error on statements with unbound input parameters (array)', function (
+      done) {
+      var statement = createStatement();
+      var values = { 'bad': 1 };
+      statement.execute(values, function (err) {
+        err.should.be.instanceof(Error);
+        done();
+      });
+    });
+
+    it('should generate an error on statements with unbound input parameters (object)', function (
+      done) {
+      var statement = createStatement({
+        parameterMetadata: [{
+          dataType: TypeCode.TINYINT,
+          ioType: IoType.INPUT,
+          name: 'A'
+        }, {
+          dataType: TypeCode.SMALLINT,
+          ioType: IoType.OUTPUT,
+          name: 'B'
+        }, {
+          dataType: TypeCode.INT,
+          ioType: IoType.IN_OUT,
+          name: 'C'
+        }, {
+          dataType: TypeCode.BIGINT,
+          ioType: IoType.INPUT,
+          name: 'D'
+        }]
+      });
+
+      var statement = createStatement();
+      var values = [1, 2];
       statement.execute(values, function (err) {
         err.should.be.instanceof(Error);
         done();
@@ -181,14 +221,20 @@ describe('Lib', function () {
           dataType: TypeCode.BIGINT,
           ioType: IoType.INPUT,
           name: 'D'
+        }, {
+          dataType: TypeCode.BIGINT,
+          ioType: IoType.INPUT,
+          name: 'E'
         }]
       });
       statement._normalizeInputParameters({
         A: 1,
-        C: 3
+        C: 3,
+        D: null,
+        E: undefined
       }).should.eql({
-        types: [TypeCode.TINYINT, TypeCode.INT, TypeCode.BIGINT],
-        values: [1, 3, null]
+        types: [TypeCode.TINYINT, TypeCode.INT, TypeCode.BIGINT, TypeCode.BIGINT],
+        values: [1, 3, null, undefined]
       });
     });
 
@@ -199,9 +245,8 @@ describe('Lib', function () {
       statement._normalizeInputParameters().should.equal(EMPTY_BUFFER);
     });
 
-    it('should raise an error for empty parameters values', function () {
-      Statement.prototype._normalizeInputParameters.bind(createStatement(), [])
-        .should.throw();
+    it('should return undefined for non-bound parameters', function () {
+      (Statement.prototype._normalizeInputParameters.bind(createStatement(), [])() === undefined).should.be.true;
     });
 
   });
