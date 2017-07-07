@@ -367,6 +367,11 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
     });
 
+    it('should raise wrong input type error for BIGINT', function () {
+      var writer = new Writer([TypeCode.BIGINT]);
+      Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
+    });
+
     it('should raise wrong input type error for REAL', function () {
       var writer = new Writer([TypeCode.REAL]);
       Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
