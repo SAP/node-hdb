@@ -352,6 +352,11 @@ describe('Lib', function () {
         });
       });
 
+    it('should raise wrong input type error for TINYINT', function () {
+      var writer = new Writer([TypeCode.TINYINT]);
+      Writer.prototype.setValues.bind(writer, 'w').should.throw();
+    });
+
     it('should raise wrong input type error for SMALLINT', function () {
       var writer = new Writer([TypeCode.SMALLINT]);
       Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
