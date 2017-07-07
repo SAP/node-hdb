@@ -352,6 +352,26 @@ describe('Lib', function () {
         });
       });
 
+    it('should raise wrong input type error for SMALLINT', function () {
+      var writer = new Writer([TypeCode.SMALLINT]);
+      Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
+    });
+
+    it('should raise wrong input type error for INT', function () {
+      var writer = new Writer([TypeCode.INT]);
+      Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
+    });
+
+    it('should raise wrong input type error for REAL', function () {
+      var writer = new Writer([TypeCode.REAL]);
+      Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
+    });
+
+    it('should raise wrong input type error for DOUBLE', function () {
+      var writer = new Writer([TypeCode.DOUBLE]);
+      Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
+    });
+
     it('should raise wrong input type error for BINARY', function () {
       var writer = new Writer([TypeCode.BINARY]);
       Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
