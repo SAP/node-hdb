@@ -352,9 +352,11 @@ describe('Lib', function () {
         });
       });
 
-    it('should raise wrong input type error for BINARY', function () {
-      var writer = new Writer([TypeCode.BINARY]);
-      Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
+    ['TINYINT', 'SMALLINT', 'INT', 'BIGINT', 'REAL', 'DOUBLE', 'BINARY'].forEach(function (type) {
+      it('should raise wrong input type error for ' + type, function () {
+        var writer = new Writer([TypeCode[type]]);
+        Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
+      });
     });
 
     it('should raise wrong input type error for LOB', function () {
