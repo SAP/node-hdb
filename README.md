@@ -383,7 +383,7 @@ client.prepare('call PROC_DUMMY (?, ?, ?, ?, ?)', function(err, statement){
   });
 });
 ```
-`Note:` Default values for stored procedures are not supported.
+**Note:** Default values for stored procedures are not supported.
 
 ### Drop Statement
 
