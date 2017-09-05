@@ -103,6 +103,26 @@ describe('hdb', function () {
       });
     });
 
+    it('should emit an error if there is an error listener attached', function (done) {
+      var client = new TestClient();
+      client._connection = createConn();
+      function createConn() {
+        var connection = new lib.Connection();
+        connection._connect = function (options, connectListener) {
+          var socket = mock.createSocket(options);
+          util.setImmediate(connectListener);
+          return socket;
+        };
+        return connection;
+      }
+
+      client.connect(function (err) {
+        client._connection._socket.emit('error');
+        client.on('error', done.bind());
+        client._connection._socket.emit('error');
+      });
+    });
+
     it('should report error if server gently closes the connection (with a FIN packet)', function (done) {
       var client = new lib.Client();
       client._connection = createConn();
