@@ -81,7 +81,7 @@ client.connect(function (err) {
 Establish a database connection
 -------------------------------
 
-The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for following connect calls on the created client instance. In case of network connection errors like a connection timeout or a database restart you should always register an error event handler in order to be able to handle this kind of problems.
+The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for following connect calls on the created client instance. In case of network connection errors like a connection timeout or a database restart you should register an error event handler in order to be able to handle this kind of problems. If there are no error event handlers, errors will not be emitted.
 
 ```js
 var hdb    = require('hdb');
