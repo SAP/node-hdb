@@ -182,10 +182,10 @@ describe('Lib', function () {
           }]
         }, {
           type: MessageType.WRITE_LOB,
-          args: [null]
+          args: [null, {}]
         }, {
           type: MessageType.COMMIT,
-          args: [null]
+          args: [null, {}]
         }]
       }, function done(err, reply) {
         (!err).should.be.ok;

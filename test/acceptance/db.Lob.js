@@ -16,6 +16,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var util = require('util');
 var async = require('async');
 var db = require('../db')();
 
@@ -37,13 +38,15 @@ if (!Buffer.prototype.equals) {
 }
 
 describe('db', function () {
+  this.timeout(5000);
+
   before(db.init.bind(db));
   after(db.end.bind(db));
+
   var client = db.client;
   var transaction = client._connection._transaction;
 
   describe('IMAGES', function () {
-    this.timeout(5000);
     before(db.createImages.bind(db));
     after(db.dropImages.bind(db));
 
@@ -167,6 +170,43 @@ describe('db', function () {
 
         async.waterfall([prepare, insert, validate], done);
       });
+  });
 
+  describe('HASH_BLOB', function() {
+    var statement;
+
+    before(function (done) {
+      async.series([
+        db.createHashBlobProc.bind(db),
+        client.prepare.bind(client, 'call HASH_BLOB (?)'),
+      ], function(err, results) {
+        statement = results[1];
+        done(err);
+      });
+    });
+
+    after(db.dropHashBlobProc.bind(db));
+
+    // call the procedure with images of different sizes
+    var images = require('../fixtures/images');
+    images.forEach(function(image) {
+      var title = util.format('should call the procedure with %s (%dB) and get its hash in a result set',
+        image.NAME, image.BDATA.length);
+      it(title, function(done) {
+        var params = [ image.BDATA ];
+        statement.exec(params, function(err, outParams, rows) {
+          if (err) {
+            return done(err);
+          }
+          arguments.should.have.length(3);
+          rows.should.have.length(1);
+          rows[0].should.eql({
+            ALGO: 'MD5',
+            DIGEST: image.MD5.toUpperCase()
+          });
+          done();
+        });
+      });
+    });
   });
 });

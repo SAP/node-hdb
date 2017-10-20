@@ -15,8 +15,9 @@
 
 var fs = require('fs');
 var path = require('path');
+var crypto = require('crypto');
 
-module.exports = [{
+var images = [{
   NAME: 'lobby.jpg',
   BDATA: fs.readFileSync(path.join(__dirname, 'img', 'lobby.jpg'))
 }, {
@@ -29,3 +30,11 @@ module.exports = [{
   NAME: 'sap.jpg',
   BDATA: fs.readFileSync(path.join(__dirname, 'img', 'sap.jpg'))
 }];
+
+images.forEach(function(img) {
+  var hash = crypto.createHash('md5');
+  hash.update(img.BDATA);
+  img.MD5 = hash.digest('hex');
+});
+
+module.exports = images;
