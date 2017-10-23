@@ -17,8 +17,12 @@
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
+var crypto = require('crypto');
 var async = require('async');
 var db = require('../db')();
+var RemoteDB = require('../db/RemoteDB');
+
+var describeRemoteDB = db instanceof RemoteDB ? describe : describe.skip;
 
 if (!Buffer.prototype.equals) {
   Buffer.prototype.equals = function (buffer) {
@@ -38,7 +42,7 @@ if (!Buffer.prototype.equals) {
 }
 
 describe('db', function () {
-  this.timeout(5000);
+  this.timeout(50000);
 
   before(db.init.bind(db));
   after(db.end.bind(db));
@@ -172,7 +176,7 @@ describe('db', function () {
       });
   });
 
-  describe('HASH_BLOB', function() {
+  describeRemoteDB('HASH_BLOB', function() {
     var statement;
 
     before(function (done) {
@@ -202,7 +206,7 @@ describe('db', function () {
           rows.should.have.length(1);
           rows[0].should.eql({
             ALGO: 'MD5',
-            DIGEST: image.MD5.toUpperCase()
+            DIGEST: MD5(image.BDATA)
           });
           done();
         });
@@ -210,3 +214,9 @@ describe('db', function () {
     });
   });
 });
+
+function MD5(data) {
+  var hash = crypto.createHash('md5');
+  hash.update(data);
+  return hash.digest('hex').toUpperCase();
+}
