@@ -39,7 +39,9 @@ describe('db', function () {
               metadata.should.have.length(1);
               var p = metadata[0];
               p.should.have.property('mode', 2);
-              p.should.have.property('dataType', 9);
+              // on HANA SP12 dataType = 9 (VARCHAR1)
+              // on HANA2 dataType = 29 (STRING)
+              p.should.have.property('dataType').which.is.oneOf(9, 29);
               p.should.have.property('ioType', 1);
               callback(null, statement);
             });
