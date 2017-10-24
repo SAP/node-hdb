@@ -21,7 +21,7 @@ var path = require('path');
 var async = require('async');
 var client = require('./client');
 var schema = client.get('user');
-var tmpdir = os.tmpDir();
+var tmpdir = os.tmpdir();
 var dirname = path.join(__dirname, '..', 'test', 'fixtures', 'img');
 
 async.waterfall([connect, init, prepare, insert, select, fetch, write], done);
