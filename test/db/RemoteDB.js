@@ -154,7 +154,8 @@ RemoteDB.prototype.createHashBlobProc = function createHashBlobProc(cb) {
     'end'
   ].join('\n');
   var self = this;
-  self.client.exec('drop procedure HASH_BLOB cascade', function() {
+  self.dropHashBlobProc(function() {
+    // ignore any error as the procedure may not exists yet
     self.client.exec(create, cb);
   });
 }
