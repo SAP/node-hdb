@@ -25,7 +25,7 @@ var fstream = require('fstream');
 var client = require('./client');
 
 var sql = 'select NAME, DATA from TEST_LOBS';
-var dirname = path.join(os.tmpDir(), process.argv[2] || '.');
+var dirname = path.join(os.tmpdir(), process.argv[2] || '.');
 
 async.waterfall([connect, prepare, execute, copyRepo], done);
 
