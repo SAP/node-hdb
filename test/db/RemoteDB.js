@@ -144,3 +144,22 @@ RemoteDB.prototype.dropConcatStringsProc = function dropConcatStringsProc(cb) {
   var sql = 'drop procedure CONCAT_STRINGS_PROC cascade';
   this.client.exec(sql, cb);
 };
+
+RemoteDB.prototype.createHashBlobProc = function createHashBlobProc(cb) {
+  var create = [
+    'create procedure HASH_BLOB (in image BLOB)',
+    'language sqlscript reads sql data as',
+    'begin',
+    '  select \'MD5\' as ALGO, TO_VARCHAR(HASH_MD5(TO_VARBINARY(image))) as DIGEST from dummy;',
+    'end'
+  ].join('\n');
+  var self = this;
+  self.dropHashBlobProc(function() {
+    // ignore any error as the procedure may not exist yet
+    self.client.exec(create, cb);
+  });
+}
+
+RemoteDB.prototype.dropHashBlobProc = function dropHashBlobProc(cb) {
+  this.client.exec('drop procedure HASH_BLOB cascade', cb);
+};

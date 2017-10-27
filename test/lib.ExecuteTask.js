@@ -182,10 +182,10 @@ describe('Lib', function () {
           }]
         }, {
           type: MessageType.WRITE_LOB,
-          args: [null]
+          args: [null, {}]
         }, {
           type: MessageType.COMMIT,
-          args: [null]
+          args: [null, {}]
         }]
       }, function done(err, reply) {
         (!err).should.be.ok;
@@ -218,7 +218,7 @@ describe('Lib', function () {
       }).run(next);
     });
 
-    it('should push a reply', function () {
+    it('should accumulate rows affected', function () {
       var task = createExecuteTask();
       task.pushReply({});
       task.pushReply({
@@ -229,6 +229,19 @@ describe('Lib', function () {
         rowsAffected: [1, 1]
       });
       task.reply.rowsAffected.should.eql([1, 1, 1]);
+    });
+
+    it('should accumulate result sets', function () {
+      var task = createExecuteTask();
+      task.pushReply({});
+      task.pushReply({
+        resultSets: [{}]
+      });
+      task.reply.resultSets.should.have.length(1);
+      task.pushReply({
+        resultSets: [{}, {}]
+      });
+      task.reply.resultSets.should.have.length(3);
     });
 
     it('should getParameters with invalid values error', function (done) {

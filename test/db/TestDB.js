@@ -80,6 +80,14 @@ TestDB.prototype.dropConcatStringsProc = function dropConcatStringsProc(cb) {
   doNothing(cb);
 };
 
+TestDB.prototype.createHashBlobProc = function createHashBlobProc(cb) {
+  doNothing(cb);
+};
+
+TestDB.prototype.dropHashBlobProc = function dropHashBlobProc(cb) {
+  doNothing(cb);
+};
+
 
 function doNothing(done) {
   process.nextTick(done);
