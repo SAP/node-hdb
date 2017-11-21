@@ -406,19 +406,32 @@ describe('Lib', function () {
         return connection;
       }
 
-      it('should fetch DB_CONNECT_INFO with an error', function (done) {
+      it('should fetch DB_CONNECT_INFO with an error (no state)', function (done) {
         var connection = prepareConnection(DATA.NOT_CONNECTED);
-        connection._socket = undefined;
-
+        connection._state = undefined;
         connection.fetchDbConnectInfo({}, function (err, info) {
           err.code.should.equal('EHDBCLOSE')
           done();
         });
       });
 
+      it('fetch DB_CONNECT_INFO with an error (send error)', function (done) {
+        var connection = createConnection();
+        connection._socket = {
+          readyState: 'open'
+        };
+        connection.send = function (msg, cb) {
+          cb(new Error('Request was not successful'));
+        };
+
+        connection.fetchDbConnectInfo({}, function (err) {
+          err.message.should.equal('Request was not successful');
+          done();
+        });
+      });
+
       it('should fetch DB_CONNECT_INFO (connected)', function (done) {
         var connection = prepareConnection(DATA.CONNECTED);
-        connection._queue.resume();
         connection.fetchDbConnectInfo({}, function (err, info) {
           info.isConnected.should.equal(true);
           (!!info.host).should.be.not.ok;
