@@ -716,6 +716,7 @@ describe('hdb', function () {
           instanceNumber: 4,
           databaseName: 'DB0'
         });
+        client._settings.port = undefined;
         client._connection.errors.open = true;
 
         client.connect(function (err) {
