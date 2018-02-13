@@ -251,7 +251,7 @@ describe('Lib', function () {
         throw invalidValuesError;
       };
       task.getParameters(64, function (err) {
-        err.message.should.equal('Cannon set parameter at row: 1. ' + invalidValuesError.message);
+        err.message.should.equal('Cannot set parameter at row: 1. ' + invalidValuesError.message);
         done();
       });
     });
