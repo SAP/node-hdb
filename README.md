@@ -1,5 +1,16 @@
+:heavy_exclamation_mark: Notice  :heavy_exclamation_mark:
+====================================
+
+__Only critical fixes will be provided in hdb. Please continue using the new hana-client  ([documentation](https://help.sap.com/viewer/0eec0d68141541d1b07893a39944924e/2.0.02/en-US/58c18548dab04a438a0f9c44be82b6cd.html)).__
+
+```shell
+npm config set @sap:registry https://npm.sap.com
+npm install @sap/hana-client
+```
+
 SAP HANA Database Client for Node
 ====================================
+
 
 A JavaScript client for Node implementing the
 [SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_SQL_Command_Network_Protocol_Reference_en.pdf).
