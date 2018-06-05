@@ -713,10 +713,10 @@ describe('hdb', function () {
       it('should display correct port number when hosts and instanceNumber are provided', function (done) {
         var client = new TestClient({
           hosts: [{ host: 'host.1' }],
+          port: undefined,
           instanceNumber: 4,
           databaseName: 'DB0'
         });
-        client._settings.port = undefined;
         client._connection.errors.open = true;
 
         client.connect(function (err) {
