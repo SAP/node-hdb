@@ -135,6 +135,20 @@ describe('Lib', function () {
       });
     });
 
+    it('should propertly round DATETIME ms value', function() {
+      var writer = new Writer([TypeCode.TIMESTAMP]);
+      var dt = '2018-05-17T12:38:02.002Z';
+      writer.setValues([dt]);
+      writer._buffers[0][7].should.equal(210);
+    });
+
+    it('should propertly round TIME ms value', function() {
+      var writer = new Writer([TypeCode.TIME]);
+      var dt = '12:38:02.002Z';
+      writer.setValues([dt]);
+      writer._buffers[0][3].should.equal(210);
+    });
+
     it('should set a BLOB value', function () {
       var writer = new Writer([TypeCode.BLOB]);
       var buf = new Buffer([0x48, 0x4B]);
