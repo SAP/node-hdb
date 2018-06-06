@@ -209,8 +209,7 @@ var client = hdb.createClient({
 });
 ```
 
-If HANA server is using a certificate signed by a public Certificate Authority
-which Node.js trusts, only the `useTLS` option can be provided.
+Use the `useTLS` option if you would like to connect to HANA using Node.js's trusted certificates.
 
 ```js
 var client = hdb.createClient({
