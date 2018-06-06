@@ -151,6 +151,82 @@ describe('hdb', function () {
       });
     });
 
+    describe('#secure connection', function () {
+      var tcp = require('../lib/protocol/tcp');
+      var originalCreateSocket = tcp.createSocket;
+      var originalCreateSecureSocket = tcp.createSecureSocket;
+
+      var socketStub;
+      var createSocketCalled;
+      var createSecureSocketCalled;
+
+      var createSocketStub = function () {
+        createSocketCalled = true;
+        return socketStub;
+      };
+      var createSecureSocketStub = function () {
+        createSecureSocketCalled = true;
+        return socketStub;
+      };
+
+      function assertSecureConnection() {
+        should(createSocketCalled).be.false();
+        should(createSecureSocketCalled).be.true();
+      }
+
+      function assertPlainConnection() {
+        should(createSocketCalled).be.true();
+        should(createSecureSocketCalled).be.false();
+      }
+
+      beforeEach(function () {
+        createSocketCalled = false;
+        createSecureSocketCalled = false;
+        socketStub = new mock.createSocket({});
+        socketStub.setNoDelay = function () {
+          process.nextTick(function () {
+            socketStub.write();
+          });
+        };
+        tcp.createSocket = createSocketStub;
+        tcp.createSecureSocket = createSecureSocketStub;
+      });
+
+      afterEach(function () {
+        tcp.createSocket = originalCreateSocket;
+        tcp.createSecureSocket = originalCreateSecureSocket;
+      });
+
+      it('should connect using plain connection if useTLS is not specified', function (done) {
+        var client = new lib.Client();
+        client.connect(function (err) {
+          assertPlainConnection();
+          done();
+        });
+      });
+
+      it('should connect using plain connection if useTLS is not true', function (done) {
+        var client = new lib.Client({
+          useTLS: false
+        });
+        client.connect(function (err) {
+          assertPlainConnection();
+          done();
+        });
+      });
+
+      it('should connect using TLS if useTLS is true', function (done) {
+        var client = new lib.Client({
+          useTLS: true
+        });
+        client.connect(function (err) {
+          assertSecureConnection();
+          done();
+        });
+      });
+
+    });
+
     it('should connect with saml assertion', function (done) {
       var client = new TestClient({
         assertion: 'assertion'

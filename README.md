@@ -209,6 +209,18 @@ var client = hdb.createClient({
 });
 ```
 
+If HANA server is using a certificate signed by a public Certificate Authority
+which Node.js trusts, only the `useTLS` option can be provided.
+
+```js
+var client = hdb.createClient({
+  host : 'hostname',
+  port : 30015,
+  useTLS: true,
+  ...
+});
+```
+
 **Note** for MDC use cases: The system database and the target tenant database may be configured to work with different certificates.
 If so, make sure to include all the necessary TLS-related properties for both the databases in the client's options.
 
