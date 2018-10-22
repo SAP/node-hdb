@@ -244,6 +244,15 @@ describe('Lib', function () {
       task.reply.resultSets.should.have.length(3);
     });
 
+    it('should be able to handle outputParameters from subsequent replies', function () {
+      var task = createExecuteTask();
+      task.pushReply({});
+      task.pushReply({
+        outputParameters: 5
+      });
+      task.reply.outputParameters.should.eql(5);
+    });
+
     it('should getParameters with invalid values error', function (done) {
       var task = createExecuteTask();
       var invalidValuesError = new Error('invalid values error');
