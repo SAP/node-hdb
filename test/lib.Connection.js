@@ -307,17 +307,17 @@ describe('Lib', function () {
         }
         return reply;
       };
-      connection.receive(new Buffer('noError'), function (err, reply) {
+      connection.receive(Buffer.from('noError'), function (err, reply) {
         (!!err).should.be.not.ok;
         reply.should.equal(replies.noError);
       });
-      connection.receive(new Buffer('errorSegment'), function (err) {
+      connection.receive(Buffer.from('errorSegment'), function (err) {
         err.should.equal(replies.errorSegment.error);
       });
-      connection.receive(new Buffer('parseError'), function (err) {
+      connection.receive(Buffer.from('parseError'), function (err) {
         err.should.equal(replies.parseError);
       });
-      connection.receive(new Buffer('transactionError'), function (err) {
+      connection.receive(Buffer.from('transactionError'), function (err) {
         err.code.should.equal('EHDBTX');
       });
     });
@@ -546,7 +546,7 @@ describe('Lib', function () {
       connection._parseReplySegment = function parseReplySegment() {
         return replySegment;
       };
-      connection.receive(new Buffer(0), function (err, reply) {
+      connection.receive(Buffer.allocUnsafe(0), function (err, reply) {
         (!!err).should.be.not.ok;
         reply.should.equal(replySegment);
       });

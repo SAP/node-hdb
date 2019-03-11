@@ -22,16 +22,16 @@ describe('Data', function () {
   describe('#Parameters', function () {
 
     it('should write multiple parameters values', function () {
-      var value = [new Buffer([1]), new Buffer([2])];
+      var value = [Buffer.from([1]), Buffer.from([2])];
       var part = Parameters.write({}, value);
       part.argumentCount.should.equal(2);
       Parameters.getArgumentCount(value).should.equal(2);
-      part.buffer.should.eql(new Buffer([1, 2]));
+      part.buffer.should.eql(Buffer.from([1, 2]));
       Parameters.getByteLength(value).should.equal(2);
     });
 
     it('should write one parameters value', function () {
-      var value = new Buffer([1]);
+      var value = Buffer.from([1]);
       Parameters.getArgumentCount(value).should.equal(1);
       Parameters.getByteLength(value).should.equal(1);
       Parameters.write({}, value).should.eql({

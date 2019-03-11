@@ -26,13 +26,13 @@ exports['0100000000000000'] = {
       kind: PartKind.RESULT_SET_ID,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0100000001000000', 'hex')
     }, {
       kind: PartKind.RESULT_SET,
       argumentCount: 7,
       attributes: 17,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '010d00000008746869727465656e010e00000008666f75727465656e010f0000' +
         '00076669667465656e0110000000077369787465656e01110000000973657665' +
         '6e7465656e011200000008656967687465656e0113000000086e696e65746565' +
@@ -46,13 +46,13 @@ exports['0100000000000000'] = {
       kind: PartKind.RESULT_SET_ID,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0100000002000000', 'hex')
     }, {
       kind: PartKind.RESULT_SET,
       argumentCount: 9,
       attributes: 17,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0101000000036f6e6501150000000a7477656e74792d6f6e65011f0000000a74' +
         '68697274792d6f6e6501290000000a666f757274792d6f6e6501330000000966' +
         '696674792d6f6e65013d0000000973697874792d6f6e6501470000000b736576' +
@@ -70,7 +70,7 @@ exports['0200000000000000'] = {
       kind: PartKind.RESULT_SET_METADATA,
       argumentCount: 2,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '020300000a00000000000000ffffffff26000000260000000209000011000000' +
         '28000000ffffffff4e0000004e000000254e554d535f35323732463941423846' +
         '464336314532453130303030303030413434323139430141254e554d535f3532' +
@@ -80,13 +80,13 @@ exports['0200000000000000'] = {
       kind: PartKind.RESULT_SET_ID,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0200000001000000', 'hex')
     }, {
       kind: PartKind.RESULT_SET,
       argumentCount: 3,
       attributes: 17,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0103000000057468726565010400000004666f757201050000000466697665',
         'hex')
     }]
@@ -98,7 +98,7 @@ exports['0200000000000000'] = {
       kind: PartKind.RESULT_SET_METADATA,
       argumentCount: 2,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '020300000a00000000000000ffffffff26000000260000000209000011000000' +
         '28000000ffffffff4e0000004e000000254e554d535f35323732463941433846' +
         '464336314532453130303030303030413434323139430141254e554d535f3532' +
@@ -108,13 +108,13 @@ exports['0200000000000000'] = {
       kind: PartKind.RESULT_SET_ID,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0200000002000000', 'hex')
     }, {
       kind: PartKind.RESULT_SET,
       argumentCount: 0,
       attributes: 25,
-      buffer: new Buffer(0)
+      buffer: Buffer.allocUnsafe(0)
     }]
   }
 };
@@ -127,13 +127,13 @@ exports['0300000000000000'] = {
       kind: PartKind.ROWS_AFFECTED,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '01000000', 'hex')
     }, {
       kind: PartKind.TRANSACTION_FLAGS,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '011c01', 'hex')
     }]
   },
@@ -144,19 +144,19 @@ exports['0300000000000000'] = {
       kind: PartKind.ROWS_AFFECTED,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '01000000', 'hex')
     }, {
       kind: PartKind.WRITE_LOB_REPLY,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0300000000000000', 'hex')
     }, {
       kind: PartKind.TRANSACTION_FLAGS,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '041c01', 'hex')
     }]
   },
@@ -167,19 +167,19 @@ exports['0300000000000000'] = {
       kind: PartKind.ROWS_AFFECTED,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '01000000', 'hex')
     }, {
       kind: PartKind.WRITE_LOB_REPLY,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0300000000000000', 'hex')
     }, {
       kind: PartKind.TRANSACTION_FLAGS,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '041c01', 'hex')
     }]
   },
@@ -190,13 +190,13 @@ exports['0300000000000000'] = {
       kind: PartKind.ROWS_AFFECTED,
       argumentCount: 3,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '010000000100000001000000', 'hex')
     }, {
       kind: PartKind.WRITE_LOB_REPLY,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0300000000000000', 'hex')
     }]
   }
@@ -210,13 +210,13 @@ exports['0700000000000000'] = {
       kind: PartKind.RESULT_SET_ID,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0700000001000000', 'hex')
     }, {
       kind: PartKind.RESULT_SET,
       argumentCount: 1,
       attributes: 17,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0158', 'hex')
     }]
   }
@@ -231,21 +231,21 @@ exports['e5b25188195d0500'] = {
         kind: PartKind.ROWS_AFFECTED,
         argumentCount: 1,
         attributes: 0,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '00000000', 'hex')
       },
       {
         kind: PartKind.TRANSACTION_FLAGS,
         argumentCount: 2,
         attributes: 0,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '071c00041c01', 'hex')
       },
       {
         kind: PartKind.STATEMENT_CONTEXT,
         argumentCount: 2,
         attributes: 0,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '012144000200000064656366070000000000000000002f646563666c8dd58300' +
           '00000000e91600000000000000000000000000000000000000000000ffffffff' +
           '000000000000000002047510000000000000', 'hex')
@@ -254,14 +254,14 @@ exports['e5b25188195d0500'] = {
         kind: PartKind.OUTPUT_PARAMETERS,
         argumentCount: 1,
         attributes: 0,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '0ceda0bcedbda8eda0bcedbda9', 'hex')
       },
       {
         kind: PartKind.RESULT_SET_METADATA,
         argumentCount: 2,
         attributes: 0,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '020b00000a00000000000000ffffffff3d0000003d000000020b000032000000' +
           '40000000ffffffff7d0000007d0000003c5f5359535f5353325f544d505f5441' +
           '424c455f3136313032305f455f35383532464338323830323233423141453230' +
@@ -273,14 +273,14 @@ exports['e5b25188195d0500'] = {
         kind: PartKind.RESULT_SET_ID,
         argumentCount: 1,
         attributes: 0,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '5f09f99527580500', 'hex')
       },
       {
         kind: PartKind.STATEMENT_CONTEXT,
         argumentCount: 2,
         attributes: 0,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '012144000200000064656366070000000000000000002f646563666c8dd58300' +
           '00000000e91600000000000000000000000000000000000000000000ffffffff' +
           '00000000000000000204ba11000000000000', 'hex')
@@ -289,7 +289,7 @@ exports['e5b25188195d0500'] = {
         kind: PartKind.RESULT_SET,
         argumentCount: 1,
         attributes: 17,
-        buffer: new Buffer(
+        buffer: Buffer.from(
           '06eda0bcedbda80ceda0bcedbda8eda0bcedbda9', 'hex')
       }
     ]

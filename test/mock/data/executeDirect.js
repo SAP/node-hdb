@@ -31,20 +31,20 @@ exports['select * from dummy'] = {
     kind: PartKind.RESULT_SET_METADATA,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '020800000100000000000000ffffffff06000000060000000544554d4d590544' +
       '554d4d59', 'hex')
   }, {
     kind: PartKind.RESULT_SET_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0100000000000000', 'hex')
   }, {
     kind: PartKind.RESULT_SET,
     argumentCount: 1,
     attributes: 17,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0158', 'hex')
   }]
 };
@@ -56,7 +56,7 @@ exports['select * from numbers order by a'] = {
     kind: PartKind.RESULT_SET_METADATA,
     argumentCount: 2,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '020300000a00000000000000ffffffff08000000080000000209000010000000' +
       '0a000000ffffffff1200000012000000074e554d424552530141074e554d4245' +
       '52530142', 'hex')
@@ -64,13 +64,13 @@ exports['select * from numbers order by a'] = {
     kind: PartKind.RESULT_SET_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0200000000000000', 'hex')
   }, {
     kind: PartKind.RESULT_SET,
     argumentCount: 32,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0100000000047a65726f0101000000036f6e6501020000000374776f01030000' +
       '00057468726565010400000004666f7572010500000004666976650106000000' +
       '03736978010700000005736576656e0108000000056569676874010900000004' +
@@ -97,7 +97,7 @@ exports['select * from read_numbers_between_view with parameters (' +
       kind: PartKind.RESULT_SET_METADATA,
       argumentCount: 2,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '020300000a00000000000000ffffffff1a0000001a0000000209000010000000' +
         '1c000000ffffffff360000003600000019524541445f4e554d424552535f4245' +
         '545745454e5f56494557014119524541445f4e554d424552535f424554574545' +
@@ -106,19 +106,19 @@ exports['select * from read_numbers_between_view with parameters (' +
       kind: PartKind.RESULT_SET_ID,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0300000000000000', 'hex')
     }, {
       kind: PartKind.STATEMENT_CONTEXT,
       argumentCount: 2,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0121080002000000000000000204cb17000000000000', 'hex')
     }, {
       kind: PartKind.RESULT_SET,
       argumentCount: 3,
       attributes: 17,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '0103000000057468726565010400000004666f757201050000000466697665', 'hex'
       )
     }]
@@ -131,7 +131,7 @@ exports['select * from images order by name'] = {
     kind: PartKind.RESULT_SET_METADATA,
     argumentCount: 2,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '020900001000000000000000ffffffff0700000007000000021b0000ffff0000' +
       '0c000000ffffffff130000001300000006494d41474553044e414d4506494d41' +
       '474553054244415441', 'hex')
@@ -139,7 +139,7 @@ exports['select * from images order by name'] = {
     kind: PartKind.RESULT_SET_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0400000000000000', 'hex')
   }, {
     kind: PartKind.RESULT_SET,
@@ -155,12 +155,12 @@ exports['select * from images order by name'] = {
 function getImageBuffer(i, length) {
   /* jshint bitwise:false */
   length = length || 1024;
-  var name = new Buffer(' ' + IMAGES[i].NAME, 'ascii');
+  var name = Buffer.from(' ' + IMAGES[i].NAME, 'ascii');
   name[0] = name.length - 1;
   var bdata = IMAGES[i].BDATA;
   var chunkLength = Math.min(length, bdata.length);
   var chunk = bdata.slice(0, chunkLength);
-  var buffer = new Buffer(32);
+  var buffer = Buffer.allocUnsafe(32);
   buffer[0] = LobSourceType.BLOB;
   if (chunk.length === bdata.length) {
     buffer[1] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;

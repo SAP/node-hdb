@@ -23,7 +23,7 @@ var ResultSet = lib.ResultSet;
 var Lob = lib.Lob;
 
 function writeInt(i) {
-  var buffer = new Buffer(3);
+  var buffer = Buffer.allocUnsafe(3);
   buffer[0] = 1;
   buffer.writeInt16LE(i, 1);
   return buffer;
@@ -31,7 +31,7 @@ function writeInt(i) {
 
 function writeString(str) {
   var length = Buffer.byteLength(str);
-  var buffer = new Buffer(length + 1);
+  var buffer = Buffer.allocUnsafe(length + 1);
   buffer[0] = length;
   buffer.write(str, 1);
   return buffer;
@@ -39,7 +39,7 @@ function writeString(str) {
 
 function writeLob(locatorId) {
   /* jshint bitwise:false */
-  var buffer = new Buffer(32);
+  var buffer = Buffer.allocUnsafe(32);
   buffer.fill(0);
   buffer[0] = LobSourceType.NCLOB;
   buffer[1] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
@@ -129,7 +129,7 @@ function createResultSet(rsd, chunks, options) {
 function createSimpleResultSet(options) {
   /* jshint bitwise:false */
   var rsd = {
-    id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
+    id: Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]),
     metadata: [{
       dataType: TypeCode.SMALLINT,
       columnDisplayName: 'SMALLINT'
@@ -173,7 +173,7 @@ function createSimpleResultSet(options) {
 
 function createResultSetWithLob(options) {
   var rsd = {
-    id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
+    id: Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]),
     metadata: [{
       dataType: TypeCode.SMALLINT,
       columnDisplayName: 'SMALLINT'
@@ -218,7 +218,7 @@ function createResultSetWithLob(options) {
 function createResultSetWithoutLob(options) {
   /* jshint bitwise:false */
   var rsd = {
-    id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
+    id: Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]),
     metadata: [{
       dataType: TypeCode.SMALLINT,
       columnDisplayName: 'SMALLINT'
@@ -279,7 +279,7 @@ describe('Lib', function () {
       rs.readSize.should.equal(Lob.MAX_READ_SIZE);
       // createLob
       var lob = ResultSet.prototype.createLob.call({}, {
-        locatorId: new Buffer([1, 0, 0, 0, 0, 0, 0, 0])
+        locatorId: Buffer.from([1, 0, 0, 0, 0, 0, 0, 0])
       });
       lob.should.be.instanceof(Lob);
     });
@@ -321,15 +321,15 @@ describe('Lib', function () {
           rows.should.eql([{
             SMALLINT: 1,
             NVARCHAR: 'foo',
-            NCLOB: new Buffer([47, 0, 0, 0, 0, 0, 0, 0])
+            NCLOB: Buffer.from([47, 0, 0, 0, 0, 0, 0, 0])
           }, {
             SMALLINT: 2,
             NVARCHAR: 'bar',
-            NCLOB: new Buffer([11, 0, 0, 0, 0, 0, 0, 0])
+            NCLOB: Buffer.from([11, 0, 0, 0, 0, 0, 0, 0])
           }, {
             SMALLINT: 3,
             NVARCHAR: 'abc',
-            NCLOB: new Buffer([123, 0, 0, 0, 0, 0, 0, 0])
+            NCLOB: Buffer.from([123, 0, 0, 0, 0, 0, 0, 0])
           }]);
           rs.finished.should.be.true;
           rs.closed.should.be.true;
@@ -350,15 +350,15 @@ describe('Lib', function () {
           rows.should.eql([[
             1,
             'foo',
-            new Buffer([47, 0, 0, 0, 0, 0, 0, 0])
+            Buffer.from([47, 0, 0, 0, 0, 0, 0, 0])
           ], [
             2,
             'bar',
-            new Buffer([11, 0, 0, 0, 0, 0, 0, 0])
+            Buffer.from([11, 0, 0, 0, 0, 0, 0, 0])
           ], [
             3,
             'abc',
-            new Buffer([123, 0, 0, 0, 0, 0, 0, 0])
+            Buffer.from([123, 0, 0, 0, 0, 0, 0, 0])
           ]]);
           rs.finished.should.be.true;
           rs.closed.should.be.true;
@@ -463,7 +463,7 @@ describe('Lib', function () {
       stream._readableState.objectMode.should.be.false;
       readSimpleStream(rs, stream, function (err, chunks) {
         (!err).should.be.ok;
-        Buffer.concat(chunks).should.eql(new Buffer(
+        Buffer.concat(chunks).should.eql(Buffer.from(
           [1, 1, 0, 1, 2, 0, 1, 3, 0, 1, 4, 0, 1, 5, 0]
         ));
         rs.finished.should.be.true;

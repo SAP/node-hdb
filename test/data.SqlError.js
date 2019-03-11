@@ -21,7 +21,7 @@ var SqlError = lib.data[PartKind.ERROR];
 
 function serializeError(error) {
   var length = Buffer.byteLength(error.message);
-  var buffer = new Buffer(18 + length);
+  var buffer = Buffer.allocUnsafe(18 + length);
   buffer.writeInt32LE(error.code, 0);
   buffer.writeInt32LE(error.position, 4);
   buffer.writeInt32LE(length, 8);

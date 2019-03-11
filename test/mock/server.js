@@ -146,11 +146,11 @@ function handleAuthenticate(msg) {
   var fields = Fields.read(msgPart);
   var user = fields[0];
   var algorithm = fields[1].toString('ascii');
-  var salt = new Buffer([
+  var salt = Buffer.from([
     0x80, 0x96, 0x4f, 0xa8, 0x54, 0x28, 0xae, 0x3a,
     0x81, 0xac, 0xd3, 0xe6, 0x86, 0xa2, 0x79, 0x33
   ]);
-  var serverChallenge = new Buffer([
+  var serverChallenge = Buffer.from([
     0x41, 0x06, 0x51, 0x50, 0x11, 0x7e, 0x45, 0x5f,
     0xec, 0x2f, 0x03, 0xf6, 0xf4, 0x7c, 0x19, 0xd4,
     0x05, 0xad, 0xe5, 0x0d, 0xd6, 0x57, 0x31, 0xdc,
@@ -319,7 +319,7 @@ function handleCommit(msg) {
   var segment = new Segment(SegmentKind.REPLY, FunctionCode.COMMIT);
   var part = new Part(PartKind.TRANSACTION_FLAGS);
   part.argumentCount = 1;
-  part.buffer = new Buffer('011c01', 'hex');
+  part.buffer = Buffer.from('011c01', 'hex');
   segment.push(part);
   return segment;
 }
@@ -338,7 +338,7 @@ function readMessage(buffer, offset) {
       kind: buffer[offset + 0],
       attributes: buffer[offset + 1],
       argumentCount: buffer.readInt16LE(offset + 2),
-      buffer: new Buffer(length)
+      buffer: Buffer.allocUnsafe(length)
     };
     offset += 16;
     buffer.copy(part.buffer, 0, offset, offset + length);
@@ -350,7 +350,7 @@ function readMessage(buffer, offset) {
 
 function writeReply(context, replyBuffer) {
   /* jshint validthis:true */
-  var buffer = new Buffer(32);
+  var buffer = Buffer.allocUnsafe(32);
   // Session identifier
   bignum.writeInt64LE(buffer, context.sessionId, 0);
   // Packet sequence number in this session

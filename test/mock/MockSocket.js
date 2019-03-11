@@ -29,11 +29,11 @@ function MockSocket(options) {
   this.initializationErrorCode = options.initializationErrorCode;
   var chunk;
   if (this.invalidInitializationReply) {
-    chunk = new Buffer(5);
+    chunk = Buffer.allocUnsafe(5);
   } else if (this.initializationErrorCode) {
     chunk = this.initializationErrorCode;
   } else {
-    chunk = new Buffer([4, 20, 0, 4, 1, 0, 0, 0]);
+    chunk = Buffer.from([4, 20, 0, 4, 1, 0, 0, 0]);
   }
   this.chunks = [chunk];
 }

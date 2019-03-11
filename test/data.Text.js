@@ -26,7 +26,7 @@ describe('Data', function () {
     var part =  useCesu8 ? { useCesu8: true } : {};
     return util.extend(part, {
       argumentCount: 1,
-      buffer: (useCesu8) ? util.convert.encode(command, true) : new Buffer(command, 'utf8')
+      buffer: (useCesu8) ? util.convert.encode(command, true) : Buffer.from(command, 'utf8')
     });
   }
 
@@ -96,16 +96,16 @@ describe('Data', function () {
     var textList = ['a', 'b'];
     var clientInfoPart = {
       argumentCount: 2,
-      buffer: new Buffer([1, textList[0].charCodeAt(), 1, textList[1].charCodeAt()])
+      buffer: Buffer.from([1, textList[0].charCodeAt(), 1, textList[1].charCodeAt()])
     };
 
     var cesu8textList = ['🍩', '🍨'];
     var cesu8clientInfoPart = {
       argumentCount: 2,
       buffer: Buffer.concat([
-        new Buffer([6]),
+        Buffer.from([6]),
         util.convert.encode(cesu8textList[0], true),
-        new Buffer([6]),
+        Buffer.from([6]),
         util.convert.encode(cesu8textList[1], true)
       ]),
       useCesu8: true
@@ -118,10 +118,10 @@ describe('Data', function () {
     var largeClientInfoPart = {
       argumentCount: 2,
       buffer: Buffer.concat([
-        new Buffer([0xf6, 0xff, 0]),
-        new Buffer(largeTextList[0], 'utf-8'),
-        new Buffer([0xf6, 0xff, 0]),
-        new Buffer(largeTextList[1], 'utf-8')
+        Buffer.from([0xf6, 0xff, 0]),
+        Buffer.from(largeTextList[0], 'utf-8'),
+        Buffer.from([0xf6, 0xff, 0]),
+        Buffer.from(largeTextList[1], 'utf-8')
       ])
     };
 

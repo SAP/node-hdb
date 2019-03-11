@@ -19,7 +19,7 @@ var TypeCode = lib.common.TypeCode;
 exports.DEFAULT = {
   part: {
     argumentCount: 2,
-    buffer: new Buffer([
+    buffer: Buffer.from([
       // first row
       0x0b, 0x00,
       0x01, 0x1d, 0x08, 0x00, 0x76, 0x65, 0x68, 0x78, 0x73, 0x30, 0x30, 0x31,

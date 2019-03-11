@@ -68,13 +68,13 @@ function insert(statement, cb) {
       1, 'SAP AG',
       fs.createReadStream(path.join(dirname, 'sap.jpg')),
       fs.createReadStream(path.join(dirname, 'logo.png')),
-      new Buffer('SAP headquarters located in Walldorf, Germany', 'ascii')
+      Buffer.from('SAP headquarters located in Walldorf, Germany', 'ascii')
     ],
     [
       2, 'SAP lobby',
       fs.createReadStream(path.join(dirname, 'lobby.jpg')),
       fs.createReadStream(path.join(dirname, 'locked.png')),
-      new Buffer('SAP lobby in Walldorf, Germany', 'ascii')
+      Buffer.from('SAP lobby in Walldorf, Germany', 'ascii')
     ]
   ];
 

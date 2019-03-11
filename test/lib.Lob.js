@@ -21,13 +21,13 @@ var PartKind = lib.common.PartKind;
 var ReadLobReply = lib.data[PartKind.READ_LOB_REPLY];
 var LobOptions = lib.common.LobOptions;
 var LobSourceType = lib.common.LobSourceType;
-var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
 
 function createReadLobReply(chunk, isLast) {
   /* jshint bitwise:false */
   var buffer;
   if (Buffer.isBuffer(chunk) && chunk.length) {
-    buffer = new Buffer(chunk.length + 16);
+    buffer = Buffer.allocUnsafe(chunk.length + 16);
     if (isLast) {
       buffer[8] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
     } else {
@@ -36,7 +36,7 @@ function createReadLobReply(chunk, isLast) {
     buffer.writeInt32LE(chunk.length, 9);
     chunk.copy(buffer, 16);
   } else {
-    buffer = new Buffer(16);
+    buffer = Buffer.allocUnsafe(16);
     buffer.fill(0);
   }
   locatorId.copy(buffer, 0);
@@ -49,7 +49,7 @@ function createReadLobReply(chunk, isLast) {
 function createLob(err, length) {
   /* jshint bitwise:false */
   var i = 0;
-  var ld = createReadLobReply(new Buffer([++i]));
+  var ld = createReadLobReply(Buffer.from([++i]));
   ld.type = LobSourceType.BLOB;
   ld.charLength = 0;
   ld.byteLength = 5;
@@ -63,7 +63,7 @@ function createLob(err, length) {
         return cb(err);
       }
       cb(null, {
-        readLobReply: createReadLobReply(new Buffer([++i]), i >= length)
+        readLobReply: createReadLobReply(Buffer.from([++i]), i >= length)
       });
     }, 1);
   }
@@ -77,7 +77,7 @@ describe('Lib', function () {
     it('should read a Lob', function (done) {
       var lob = createLob(null, 5);
       lob.read(function (err, buffer) {
-        buffer.should.eql(new Buffer([1, 2, 3, 4, 5]));
+        buffer.should.eql(Buffer.from([1, 2, 3, 4, 5]));
         done();
       });
     });
@@ -111,7 +111,7 @@ describe('Lib', function () {
         done(err);
       });
       stream.once('end', function () {
-        Buffer.concat(chunks).should.eql(new Buffer([1, 2, 3, 4, 5]));
+        Buffer.concat(chunks).should.eql(Buffer.from([1, 2, 3, 4, 5]));
         done();
       });
     });
@@ -133,7 +133,7 @@ describe('Lib', function () {
     });
 
     it('should receive data in paused state', function (done) {
-      var ld = createReadLobReply(new Buffer([1]));
+      var ld = createReadLobReply(Buffer.from([1]));
       var options = {
         readSize: 1
       };
@@ -144,7 +144,7 @@ describe('Lib', function () {
           lob.resume();
         }, 1);
         cb(null, {
-          readLobReply: createReadLobReply(new Buffer([2]), true)
+          readLobReply: createReadLobReply(Buffer.from([2]), true)
         });
       }
       var lob = new Lob(readLob, ld, options);
@@ -153,14 +153,14 @@ describe('Lib', function () {
         chunks.push(chunk);
       });
       lob.on('end', function onend() {
-        Buffer.concat(chunks).should.eql(new Buffer([1, 2]));
+        Buffer.concat(chunks).should.eql(Buffer.from([1, 2]));
         done();
       });
       lob.resume();
     });
 
     it('should create a Lob with type NCLOB', function () {
-      var chunk = new Buffer('e282ac', 'hex');
+      var chunk = Buffer.from('e282ac', 'hex');
 
       function readLob() {}
       var lob = new Lob(readLob, createLobDescriptor(LobSourceType.NCLOB, chunk, 1));
@@ -170,7 +170,7 @@ describe('Lib', function () {
     });
 
     it('should create a Lob with type NCLOB containing CESU-8 symbols', function () {
-      var chunk = new Buffer('eda0bcedbda8', 'hex'); // 🍨
+      var chunk = Buffer.from('eda0bcedbda8', 'hex'); // 🍨
 
       function readLob() {}
       var lob = new Lob(readLob, createLobDescriptor(LobSourceType.NCLOB, chunk, 1), { useCesu8: true });
@@ -180,7 +180,7 @@ describe('Lib', function () {
     });
 
     it('should create a Lob with type CLOB', function () {
-      var chunk = new Buffer('x', 'ascii');
+      var chunk = Buffer.from('x', 'ascii');
 
       function readLob() {}
       var lob = new Lob(readLob, createLobDescriptor(LobSourceType.CLOB, chunk, 1));

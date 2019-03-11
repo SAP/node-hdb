@@ -20,7 +20,7 @@ var ParameterMode = lib.common.ParameterMode;
 exports.VERSION_AND_CURRENT_USER = {
   part: {
     argumentCount: 2,
-    buffer: new Buffer([
+    buffer: Buffer.from([
       // first column
       0x02,
       0x09,

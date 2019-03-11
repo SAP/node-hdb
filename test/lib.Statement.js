@@ -28,7 +28,7 @@ function createStatement(options) {
       functionCode: FunctionCode.INSERT,
       rowsAffected: 1
     },
-    id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
+    id: Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]),
     functionCode: FunctionCode.INSERT,
     parameterMetadata: [{
       dataType: TypeCode.INT,

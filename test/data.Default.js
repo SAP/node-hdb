@@ -22,7 +22,7 @@ describe('Data', function () {
   describe('#Default', function () {
 
     it('should deserialize an Default Part from buffer', function () {
-      var buffer = new Buffer([1, 2, 3, 4]);
+      var buffer = Buffer.from([1, 2, 3, 4]);
       var part = {
         argumentCount: 1,
         buffer: buffer,
@@ -37,7 +37,7 @@ describe('Data', function () {
     it('should serialize a Default Part', function () {
       var part = {
         argumentCount: 1,
-        buffer: new Buffer(0),
+        buffer: Buffer.allocUnsafe(0),
         length: 16
       };
       Default.write.call(part).should.eql(part);

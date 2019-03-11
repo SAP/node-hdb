@@ -41,12 +41,12 @@ function createLobBuffer(locatorId, chunk, encoding) {
       break;
   }
   if (!chunk || !chunk.length) {
-    buffer = new Buffer(2);
+    buffer = Buffer.allocUnsafe(2);
     buffer[0] = sourceType;
     buffer[1] = LobOptions.NULL_INDICATOR;
     return buffer;
   }
-  buffer = new Buffer(32 + chunk.length);
+  buffer = Buffer.allocUnsafe(32 + chunk.length);
   buffer[0] = sourceType;
   buffer[1] = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA;
   buffer[2] = buffer[3] = 0;
@@ -66,7 +66,7 @@ describe('Lib', function () {
     it('should read a TinyInt', function () {
       var len = 1;
       var offset = 0;
-      var buffer = new Buffer(1 + (2 * (len + 1)));
+      var buffer = Buffer.allocUnsafe(1 + (2 * (len + 1)));
       // null
       buffer[offset++] = 0;
       // 1
@@ -90,7 +90,7 @@ describe('Lib', function () {
     it('should read a SmallInt', function () {
       var len = 2;
       var offset = 0;
-      var buffer = new Buffer(1 + (2 * (len + 1)));
+      var buffer = Buffer.allocUnsafe(1 + (2 * (len + 1)));
       // null
       buffer[offset++] = 0;
       // -1
@@ -111,7 +111,7 @@ describe('Lib', function () {
     it('should read a Int', function () {
       var len = 4;
       var offset = 0;
-      var buffer = new Buffer(1 + (2 * (len + 1)));
+      var buffer = Buffer.allocUnsafe(1 + (2 * (len + 1)));
       // null
       buffer[offset++] = 0;
       // -1
@@ -132,7 +132,7 @@ describe('Lib', function () {
     it('should read a BigInt', function () {
       var len = 8;
       var offset = 0;
-      var buffer = new Buffer(1 + (2 * (len + 1)));
+      var buffer = Buffer.allocUnsafe(1 + (2 * (len + 1)));
       // null
       buffer[offset++] = 0;
       // -1
@@ -151,7 +151,7 @@ describe('Lib', function () {
     });
 
     it('should read a Double', function () {
-      var buffer = new Buffer([
+      var buffer = Buffer.from([
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x7f,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xff,
@@ -168,7 +168,7 @@ describe('Lib', function () {
     });
 
     it('should read a Float', function () {
-      var buffer = new Buffer([
+      var buffer = Buffer.from([
         0xff, 0xff, 0xff, 0xff,
         0x00, 0x00, 0x80, 0x7f,
         0x00, 0x00, 0x80, 0xff,
@@ -185,7 +185,7 @@ describe('Lib', function () {
     });
 
     it('should read a Decimal', function () {
-      var buffer = new Buffer(32);
+      var buffer = Buffer.allocUnsafe(32);
       buffer.fill(0x00);
       buffer[15] = 0x70;
       buffer[16] = 0x01;
@@ -198,7 +198,7 @@ describe('Lib', function () {
     });
 
     it('should read a String in utf-8 encoding', function () {
-      var buffer = new Buffer([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
+      var buffer = Buffer.from([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
       var reader = new lib.Reader(buffer);
       should(reader.readString() === null).ok;
       reader.readString().should.equal('𤭢');
@@ -206,7 +206,7 @@ describe('Lib', function () {
     });
 
     it('should read a String in cesu-8 encoding', function () {
-      var buffer = new Buffer([0xff, 6, 0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]);
+      var buffer = Buffer.from([0xff, 6, 0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]);
       var reader = new lib.Reader(buffer, null, true);
       should(reader.readString() === null).ok;
       reader.readString().should.equal('🍨');
@@ -214,7 +214,7 @@ describe('Lib', function () {
     });
 
     it('should read a Binary', function () {
-      var buffer = new Buffer([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
+      var buffer = Buffer.from([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
       var reader = new lib.Reader(buffer);
       should(reader.readBinary() === null).ok;
       reader.readBinary().should.eql(buffer.slice(2));
@@ -223,7 +223,7 @@ describe('Lib', function () {
 
     it('should read 255 Bytes', function () {
       var len = 255;
-      var buffer = new Buffer(len + 3);
+      var buffer = Buffer.allocUnsafe(len + 3);
       buffer[0] = 0xf6;
       buffer.writeInt16LE(len, 1);
       var reader = new lib.Reader(buffer);
@@ -233,7 +233,7 @@ describe('Lib', function () {
 
     it('should read 32787 Bytes', function () {
       var len = 32787;
-      var buffer = new Buffer(len + 5);
+      var buffer = Buffer.allocUnsafe(len + 5);
       buffer[0] = 0xf7;
       buffer.writeInt32LE(len, 1);
       var reader = new lib.Reader(buffer);
@@ -242,7 +242,7 @@ describe('Lib', function () {
     });
 
     it('should read a Date', function () {
-      var buffer = new Buffer([
+      var buffer = Buffer.from([
         0xff, 0x7f, 0x00, 0x00,
         0x01, 0x80, 0x00, 0x01,
         0x0f, 0xa7, 0x0b, 0x1f
@@ -255,7 +255,7 @@ describe('Lib', function () {
     });
 
     it('should read a Time', function () {
-      var buffer = new Buffer([
+      var buffer = Buffer.from([
         0x7f, 0xff, 0x00, 0x00,
         0x81, 0x01, 0xe8, 0x03
       ]);
@@ -266,7 +266,7 @@ describe('Lib', function () {
     });
 
     it('should read a Timestamp', function () {
-      var buffer = new Buffer([
+      var buffer = Buffer.from([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x81, 0x01, 0xe8, 0x03,
         0xde, 0x87, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
@@ -281,7 +281,7 @@ describe('Lib', function () {
     });
 
     it('should read a DayDate', function () {
-      var buffer = new Buffer([
+      var buffer = Buffer.from([
         0x00, 0x00, 0x00, 0x00,
         0xde, 0xb9, 0x37, 0x00,
         0x02, 0x00, 0x00, 0x00
@@ -294,7 +294,7 @@ describe('Lib', function () {
     });
 
     it('should read a SecondTime', function () {
-      var buffer = new Buffer([
+      var buffer = Buffer.from([
         0x00, 0x00, 0x00, 0x00,
         0x82, 0x51, 0x01, 0x00,
         0x02, 0x00, 0x00, 0x00
@@ -307,7 +307,7 @@ describe('Lib', function () {
     });
 
     it('should read a SecondDate', function () {
-      var buffer = new Buffer(24);
+      var buffer = Buffer.allocUnsafe(24);
       buffer.fill(0x00, 0, 8);
       bignum.writeInt64LE(buffer, 315538070401, 8);
       bignum.writeInt64LE(buffer, 2, 16);
@@ -320,7 +320,7 @@ describe('Lib', function () {
 
 
     it('should read a LongDate', function () {
-      var buffer = new Buffer(40);
+      var buffer = Buffer.allocUnsafe(40);
       buffer.fill(0x00, 0, 8);
       bignum.writeInt64LE(buffer, '3155380704000000001', 8);
       bignum.writeInt64LE(buffer, 2, 16);
@@ -338,8 +338,8 @@ describe('Lib', function () {
 
   it('should read a BLob', function () {
     /* jshint bitwise:false */
-    var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
-    var chunk = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+    var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
+    var chunk = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
     var buffer = createLobBuffer(locatorId, chunk);
     var reader = new lib.Reader(buffer, lobFactoy);
     var lob = reader.readBLob();
@@ -352,8 +352,8 @@ describe('Lib', function () {
 
   it('should read a CLob', function () {
     /* jshint bitwise:false */
-    var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
-    var chunk = new Buffer('12345678', 'ascii');
+    var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
+    var chunk = Buffer.from('12345678', 'ascii');
     var buffer = createLobBuffer(locatorId, chunk, 'ascii');
     var reader = new lib.Reader(buffer, lobFactoy);
     var lob = reader.readCLob();

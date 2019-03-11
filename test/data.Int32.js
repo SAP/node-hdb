@@ -24,7 +24,7 @@ describe('Data', function () {
     it('should deserialize an Int32 Part from buffer', function () {
       var part = {
         argumentCount: 1,
-        buffer: new Buffer([1, 0, 0, 0])
+        buffer: Buffer.from([1, 0, 0, 0])
       };
       var value = Int32.read(part);
       value.should.equal(1);
@@ -35,7 +35,7 @@ describe('Data', function () {
     it('should serialize an Int32 Part', function () {
       Int32.write.call(1).should.eql({
         argumentCount: 1,
-        buffer: new Buffer([1, 0, 0, 0])
+        buffer: Buffer.from([1, 0, 0, 0])
       });
     });
   });

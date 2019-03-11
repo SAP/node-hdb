@@ -18,51 +18,51 @@ var lib = require('../lib');
 var bignum = lib.util.bignum;
 
 function readInt64(hex) {
-  return bignum.readInt64LE(new Buffer(hex, 'hex'), 0);
+  return bignum.readInt64LE(Buffer.from(hex, 'hex'), 0);
 }
 
 function writeInt64(value) {
-  var buffer = new Buffer(8);
+  var buffer = Buffer.allocUnsafe(8);
   bignum.writeInt64LE(buffer, value, 0);
   return buffer.toString('hex');
 }
 
 function readUInt64(hex) {
-  return bignum.readUInt64LE(new Buffer(hex, 'hex'), 0);
+  return bignum.readUInt64LE(Buffer.from(hex, 'hex'), 0);
 }
 
 function writeUInt64(value) {
-  var buffer = new Buffer(8);
+  var buffer = Buffer.allocUnsafe(8);
   bignum.writeUInt64LE(buffer, value, 0);
   return buffer.toString('hex');
 }
 
 function readDec128(hex) {
-  return bignum.readDec128(new Buffer(hex, 'hex'), 0);
+  return bignum.readDec128(Buffer.from(hex, 'hex'), 0);
 }
 
 function readDecFloat(hex) {
-  return bignum.readDecFloat(new Buffer(hex, 'hex'), 0);
+  return bignum.readDecFloat(Buffer.from(hex, 'hex'), 0);
 }
 
 function readDecFixed(hex, frac) {
-  return bignum.readDecFixed(new Buffer(hex, 'hex'), 0, frac);
+  return bignum.readDecFixed(Buffer.from(hex, 'hex'), 0, frac);
 }
 
 function writeDec128(value) {
-  var buffer = new Buffer(16);
+  var buffer = Buffer.allocUnsafe(16);
   bignum.writeDec128(buffer, value, 0);
   return buffer.toString('hex');
 }
 
 function writeUInt128(value) {
-  var buffer = new Buffer(16);
+  var buffer = Buffer.allocUnsafe(16);
   bignum.writeUInt128LE(buffer, value, 0);
   return buffer.toString('hex');
 }
 
 function readUInt128(hex) {
-  return bignum.readUInt128LE(new Buffer(hex, 'hex'), 0);
+  return bignum.readUInt128LE(Buffer.from(hex, 'hex'), 0);
 }
 
 describe('Util', function () {

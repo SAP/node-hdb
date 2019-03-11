@@ -41,7 +41,7 @@ function createResultSet(err, rows) {
 }
 
 function createLob(err, buffer) {
-  var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+  var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
   var lob = new Lob(null, {
     locatorId: locatorId
   });
@@ -169,7 +169,7 @@ describe('Lib', function () {
       var result = createResult();
       var part = {
         argumentCount: 1,
-        buffer: new Buffer('010d000000', 'hex')
+        buffer: Buffer.from('010d000000', 'hex')
       };
       result.createOutputParameters(part).should.eql({
         X: 13
@@ -177,7 +177,7 @@ describe('Lib', function () {
     });
 
     it('should create a lob', function () {
-      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+      var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
       var result = createResult();
 
       result._connection._readLob = function readLob() {};
@@ -215,7 +215,7 @@ describe('Lib', function () {
             name: 'Z'
           }],
         });
-        var _buffer = new Buffer('foo', 'utf8');
+        var _buffer = Buffer.from('foo', 'utf8');
         var _params = {
           Z: createLob(null, _buffer)
         };
@@ -242,7 +242,7 @@ describe('Lib', function () {
             name: 'Z'
           }],
         });
-        var _buffer = new Buffer('foo', 'utf8');
+        var _buffer = Buffer.from('foo', 'utf8');
         var _params = {
           Z: _buffer
         };

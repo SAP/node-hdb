@@ -25,7 +25,7 @@ describe('Rep', function () {
 
   describe('#Segment', function () {
 
-    var data = new Buffer(
+    var data = Buffer.from(
       '180000000000000000000100000000000000000000000000', 'hex');
 
     it('should create a new Segment', function () {
@@ -66,10 +66,10 @@ describe('Rep', function () {
       (!segment.getPart(1)).should.be.ok;
       var parts = [{
         kind: 1,
-        buffer: new Buffer([1])
+        buffer: Buffer.from([1])
       }, {
         kind: 1,
-        buffer: new Buffer([2])
+        buffer: Buffer.from([2])
       }];
       segment.parts = parts.slice(0, 1);
       segment.getPart(1).should.eql(parts[0]);
@@ -81,22 +81,22 @@ describe('Rep', function () {
       var segment = new Segment();
       segment.push({
         kind: PartKind.COMMAND,
-        buffer: new Buffer('foo', 'utf8')
+        buffer: Buffer.from('foo', 'utf8')
       });
       segment.push({
         kind: PartKind.COMMAND,
-        buffer: new Buffer('bar', 'utf8')
+        buffer: Buffer.from('bar', 'utf8')
       });
       segment.push({
         kind: PartKind.COMMAND,
-        buffer: new Buffer('foobar', 'utf8')
+        buffer: Buffer.from('foobar', 'utf8')
       });
       var reply = segment.getReply();
       reply.command.should.eql(['foo', 'bar', 'foobar']);
     });
 
     it('should serialize a segment to a buffer', function () {
-      var part = new Part(PartKind.ROWS_AFFECTED, 0, 1, new Buffer([1, 0, 0, 0]));
+      var part = new Part(PartKind.ROWS_AFFECTED, 0, 1, Buffer.from([1, 0, 0, 0]));
       var segment = new Segment();
       segment.push(part);
       var buffer = segment.toBuffer(256);

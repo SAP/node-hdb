@@ -25,13 +25,13 @@ exports['select * from numbers where b like ? order by a'] = {
     kind: PartKind.STATEMENT_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0100000000000000', 'hex')
   }, {
     kind: PartKind.RESULT_SET_METADATA,
     argumentCount: 2,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '020300000a00000000000000ffffffff08000000080000000109000010000000' +
       '0a000000ffffffff1200000012000000074e554d424552530141074e554d4245' +
       '52530142', 'hex')
@@ -39,7 +39,7 @@ exports['select * from numbers where b like ? order by a'] = {
     kind: PartKind.PARAMETER_METADATA,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '02090100ffffffff1000000000000000', 'hex')
   }]
 };
@@ -51,13 +51,13 @@ exports['call read_numbers_between (?, ?, ?)'] = {
     kind: PartKind.STATEMENT_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0200000000000000', 'hex')
   }, {
     kind: PartKind.PARAMETER_METADATA,
     argumentCount: 2,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '02030100000000000a0000000200ffff02030100020000000a0000000200ffff' +
       '01410142', 'hex')
   }]
@@ -70,13 +70,13 @@ exports['insert into images values (?, ?)'] = {
     kind: PartKind.STATEMENT_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0300000000000000', 'hex')
   }, {
     kind: PartKind.PARAMETER_METADATA,
     argumentCount: 2,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '02090100ffffffff1000000018000000021b0100ffffffff1000000008000000',
       'hex')
   }]
@@ -89,13 +89,13 @@ exports['insert into numbers values (?, ?)'] = {
     kind: PartKind.STATEMENT_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0400000000000000', 'hex')
   }, {
     kind: PartKind.PARAMETER_METADATA,
     argumentCount: 2,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '02030100ffffffff0a0000000100000002090100ffffffff1000000008000000',
       'hex')
   }]
@@ -108,20 +108,20 @@ exports['select * from dummy where dummy = ?'] = {
     kind: PartKind.STATEMENT_ID,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '0700000000000000', 'hex')
   }, {
     kind: PartKind.RESULT_SET_METADATA,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '020800000100000000000000ffffffff06000000060000000544554d4d590544' +
       '554d4d59', 'hex')
   }, {
     kind: PartKind.PARAMETER_METADATA,
     argumentCount: 1,
     attributes: 0,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '02090100ffffffff1000000008000000', 'hex')
   }]
 };
@@ -134,7 +134,7 @@ exports['call concat_strings_proc (?, ?, ?, ?)'] = {
       kind: PartKind.STATEMENT_CONTEXT,
       argumentCount: 2,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '012144000100000020292029010000000000000000001b1cea7f0000994e8400' +
         '00000000e91600000000000000000000000000000000000000000000ffffffff' +
         '00000000000000000204bb02000000000000', 'hex')
@@ -143,14 +143,14 @@ exports['call concat_strings_proc (?, ?, ?, ?)'] = {
       kind: PartKind.STATEMENT_ID,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         'e5b25188195d0500', 'hex')
     },
     {
       kind: PartKind.PARAMETER_METADATA,
       argumentCount: 3,
       attributes: 0,
-      buffer: new Buffer(
+      buffer: Buffer.from(
         '020b0100000000000a00000000000000020b0100020000000a00000000000000' +
         '020b0400040000003200000000000000014101420143', 'hex')
     }

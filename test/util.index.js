@@ -48,7 +48,7 @@ describe('Util', function () {
       function emitData() {
         process.nextTick(function () {
           if (values.length) {
-            ds.emit('data', new Buffer([values.shift()]));
+            ds.emit('data', Buffer.from([values.shift()]));
           } else {
             ds.emit('end');
           }
