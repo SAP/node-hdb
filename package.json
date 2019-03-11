@@ -26,7 +26,7 @@
     "./lib/protocol/tcp.js": "./chrome/sockets/tcp.js"
   },
   "engines": {
-    "node": ">= 0.12"
+    "node": ">= 6.0"
   },
   "dependencies": {
     "iconv-lite": "^0.4.18"
@@ -35,11 +35,11 @@
     "async": "^2.4.1",
     "chrome-net": "^3.3.0",
     "concat-stream": "^1.5.1",
-    "coveralls": "^2.13.1",
+    "coveralls": "^3.0.3",
     "fstream": "^1.0.11",
     "generic-pool": "^2.4.2",
     "istanbul": "^0.4.4",
-    "mocha": "^3.4.2",
+    "mocha": "^6.0.2",
     "should": "^10.0.0"
   },
   "optionalDependencies": {}
