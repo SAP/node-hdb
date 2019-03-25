@@ -120,8 +120,8 @@ describe('Lib', function () {
       });
       var chunks = [];
       rst.on('readable', function () {
-        var value = rst.read();
-        if (value !== null) {
+        var value;
+        while ((value = rst.read()) !== null) {
           chunks.push(Buffer.from([value]));
         }
       });
@@ -143,8 +143,8 @@ describe('Lib', function () {
       });
       var chunks = [];
       rst.on('readable', function () {
-        var value = rst.read();
-        if (value !== null) {
+        var value;
+        while ((value = rst.read()) !== null) {
           chunks.push(Buffer.from(value));
         }
       });
@@ -167,8 +167,8 @@ describe('Lib', function () {
       });
       var chunks = [];
       rst.on('readable', function () {
-        var value = rst.read();
-        if (value !== null) {
+        var value;
+        while ((value = rst.read()) !== null) {
           chunks.push(Buffer.from(value));
         }
       });

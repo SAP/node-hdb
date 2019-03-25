@@ -93,10 +93,10 @@ ConnectionMock.prototype.fetchNext = function fetchNext(options, cb) {
 function readSimpleStream(rs, stream, cb) {
   var chunks = [];
   stream.on('readable', function onreadable() {
-    var chunk = stream.read();
-    if (chunk !== null) {
-      chunks.push(chunk);
-    }
+     var chunk;
+     while (null !== (chunk = stream.read())) {
+       chunks.push(chunk);
+     }
   });
   rs.once('error', function onerror(err) {
     cb(err);

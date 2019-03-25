@@ -52,8 +52,8 @@ function fetchRows(rs, cb) {
 
   function onreadable() {
     /* jshint validthis:true */
-    var chunk = this.read();
-    if (chunk) {
+    var chunk;
+    while (null !== (chunk = this.read())) {
       rows.push(chunk);
     }
   }

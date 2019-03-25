@@ -96,8 +96,8 @@ describe('Lib', function () {
       var stream = lob.createReadStream();
       var chunks = [];
       stream.on('readable', function () {
-        var chunk = stream.read();
-        if (chunk) {
+        var chunk;
+        while (null !== (chunk = stream.read())) {
           chunks.push(chunk);
         }
         if (chunks.length === 3) {

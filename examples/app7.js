@@ -107,8 +107,8 @@ function fetch(rs, cb) {
 
   function read() {
     /* jshint validthis:true */
-    var row = this.read();
-    if (row) {
+    var row;
+    while (null !== (row = this.read())) {
       rows.push(row);
     }
   }

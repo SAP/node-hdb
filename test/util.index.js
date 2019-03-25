@@ -57,10 +57,14 @@ describe('Util', function () {
 
       var chunks = [];
       readable.on('readable', function () {
-        var chunk = this.read();
-        if (chunk !== null) {
+        var chunk;
+        var emit = false;
+        while (null !== (chunk = this.read())) {
           var value = chunk[0];
           chunks.unshift(value);
+          emit = true;
+        }
+        if (emit) {
           emitData();
         }
       });
