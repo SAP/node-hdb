@@ -24,7 +24,7 @@ var localOptions = {
   port: 30015,
   user: 'TEST_USER',
   password: 'abcd1234',
-  useDefaultLobType: process.env.USE_DEFAULT_LOB_TYPE === 'true'
+  ignoreDefaultLobType: process.env.IGNORE_DEFAULT_LOB_TYPE === 'true'
 };
 
 var options;
