@@ -16,6 +16,7 @@
 
 var lib = require('../lib');
 var Lob = lib.Lob;
+var LobDescriptor = lib.Reader.LobDescriptor;
 var PartKind = lib.common.PartKind;
 var ReadLobReply = lib.data[PartKind.READ_LOB_REPLY];
 var LobOptions = lib.common.LobOptions;
@@ -189,13 +190,9 @@ describe('Lib', function () {
     });
 
     function createLobDescriptor(type, chunk, charLength) {
-      return {
-        type: type,
-        locatorId: locatorId,
-        chunk: chunk,
-        charLength: charLength,
-        byteLength: chunk.length
-      };
+      var byteLength = chunk.length;
+      var options = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA
+      return new LobDescriptor(type, options, charLength, byteLength, locatorId, chunk)
     }
 
   });

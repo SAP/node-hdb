@@ -23,7 +23,8 @@ var localOptions = {
   host: 'localhost',
   port: 30015,
   user: 'TEST_USER',
-  password: 'abcd1234'
+  password: 'abcd1234',
+  useDefaultLobType: process.env.USE_DEFAULT_LOB_TYPE === 'true'
 };
 
 var options;
