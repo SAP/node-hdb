@@ -189,6 +189,19 @@ describe('Lib', function () {
       lob._offset.should.equal(2);
     });
 
+
+    it('should create a Lob with defaultType containing CESU-8 symbols', function () {
+      var chunk = new Buffer('eda0bcedbda8', 'hex'); // 🍨
+
+      function readLob() {}
+      var ld = createLobDescriptor(LobSourceType.BLOB, chunk, 1)
+      ld.defaultType = LobSourceType.NCLOB
+      var lob = new Lob(readLob, ld, { useCesu8: true, useDefaultType: true });
+      lob.length.should.equal(1);
+      lob.increaseOffset(chunk);
+      lob._offset.should.equal(2);
+    });
+
     function createLobDescriptor(type, chunk, charLength) {
       var byteLength = chunk.length;
       var options = LobOptions.DATA_INCLUDED | LobOptions.LAST_DATA
