@@ -364,4 +364,15 @@ describe('Lib', function () {
     lob.byteLength.should.equal(chunk.length);
   });
 
+  it('should have type and defaultType', function () {
+    /* jshint bitwise:false */
+    var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+    var chunk = new Buffer('12345678', 'ascii');
+    var buffer = createLobBuffer(locatorId, chunk, 'ascii');
+    var reader = new lib.Reader(buffer, lobFactoy);
+    var lob = reader.readNCLob()
+    lob.type.should.eql(LobSourceType.CLOB);
+    lob.defaultType.should.eql(LobSourceType.NCLOB);
+  });
+
 });
