@@ -26,7 +26,7 @@ exports['0300000000000000'] = {
       kind: PartKind.WRITE_LOB_REPLY,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer('0300000000000000', 'hex')
+      buffer: Buffer.from('0300000000000000', 'hex')
     }]
   },
   6: {
@@ -36,7 +36,7 @@ exports['0300000000000000'] = {
       kind: PartKind.WRITE_LOB_REPLY,
       argumentCount: 0,
       attributes: 0,
-      buffer: new Buffer(0)
+      buffer: Buffer.allocUnsafe(0)
     }]
   }
 };

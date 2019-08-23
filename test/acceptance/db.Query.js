@@ -73,8 +73,8 @@ describe('db', function () {
           readable.once('error', function onerror() {
             done(err);
           }).on('readable', function onreadable() {
-            var chunk = this.read();
-            if (chunk) {
+            var chunk;
+            while (null !== (chunk = this.read())) {
               rows = rows.concat(chunk);
             }
           }).once('end', function onend() {

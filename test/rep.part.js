@@ -23,10 +23,10 @@ describe('Rep', function () {
 
   describe('#Part', function () {
 
-    var data = new Buffer(
+    var data = Buffer.from(
       '0c000100000000000400000000000000' +
       '0100000000000000', 'hex');
-    var dataBigArg = new Buffer(
+    var dataBigArg = Buffer.from(
       '0c00ffff020000000400000000000000' +
       '0100000000000000', 'hex');
     var buffer = data.slice(PART_HEADER_LENGTH, PART_HEADER_LENGTH + 4);
@@ -81,7 +81,7 @@ describe('Rep', function () {
         '  kind: PartKind.ROWS_AFFECTED,',
         '  argumentCount: 1,',
         '  attributes: 0,',
-        '  buffer: new Buffer(',
+        '  buffer: Buffer.from(',
         '    \'01000000\', \'hex\')',
         '}'
       ].join('\n'));

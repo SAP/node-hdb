@@ -22,7 +22,7 @@ describe('Data', function () {
   describe('#Binary', function () {
 
     it('should deserialize a Binary Part from buffer', function () {
-      var buffer = new Buffer([1, 2, 3, 4]);
+      var buffer = Buffer.from([1, 2, 3, 4]);
       var part = {
         argumentCount: 1,
         buffer: buffer
@@ -34,7 +34,7 @@ describe('Data', function () {
     });
 
     it('should serialize a Binary Part', function () {
-      var buffer = new Buffer(0);
+      var buffer = Buffer.allocUnsafe(0);
       Binary.write.call(buffer).should.eql({
         argumentCount: 1,
         buffer: buffer

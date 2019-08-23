@@ -88,7 +88,7 @@ describe('Lib', function () {
         var stream = writer._lobs[0];
         stream._readableState.should.have.length(6054);
 
-        var locatorId = new Buffer('0100000000000000', 'hex');
+        var locatorId = Buffer.from('0100000000000000', 'hex');
         writer.update([locatorId]);
 
         writer.getWriteLobRequest(SIZE, function (err, part) {
@@ -96,7 +96,7 @@ describe('Lib', function () {
             return done(err);
           }
           part.buffer.should.have.length(SIZE);
-          var exp = new Buffer(
+          var exp = Buffer.from(
             '0100000000000000020000000000000000eb030000',
             'hex');
           part.buffer.slice(0, 21).should.eql(exp);
@@ -109,18 +109,18 @@ describe('Lib', function () {
       var writer = new Writer([TypeCode.BLOB]);
       var stream = new lib.util.stream.Readable();
       stream._chunks = [
-        new Buffer('Lorem ', 'ascii'),
-        new Buffer('ipsum ', 'ascii'),
-        new Buffer('dolor ', 'ascii'),
-        new Buffer('sit ', 'ascii'),
-        new Buffer('amet.', 'ascii'),
+        Buffer.from('Lorem ', 'ascii'),
+        Buffer.from('ipsum ', 'ascii'),
+        Buffer.from('dolor ', 'ascii'),
+        Buffer.from('sit ', 'ascii'),
+        Buffer.from('amet.', 'ascii'),
         null
       ];
       stream._read = function () {
         this.push(this._chunks.shift());
       };
       writer._lobs.push(stream);
-      stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+      stream._locatorId = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
       writer.getWriteLobRequest(1024, function (err, part) {
         if (err) {
           return done(err);
@@ -151,7 +151,7 @@ describe('Lib', function () {
 
     it('should set a BLOB value', function () {
       var writer = new Writer([TypeCode.BLOB]);
-      var buf = new Buffer([0x48, 0x4B]);
+      var buf = Buffer.from([0x48, 0x4B]);
       // write buffer
       writer.setValues([buf]);
       writer.length.should.equal(10);
@@ -178,7 +178,7 @@ describe('Lib', function () {
 
     it('should set a CLOB value', function () {
       var writer = new Writer([TypeCode.CLOB]);
-      var buf = new Buffer('EUR', 'ascii');
+      var buf = Buffer.from('EUR', 'ascii');
       // write buffer
       writer.setValues([buf]);
       writer.length.should.equal(10);
@@ -191,7 +191,7 @@ describe('Lib', function () {
 
     it('should set a NCLOB value', function () {
       var writer = new Writer([TypeCode.NCLOB]);
-      var buf = new Buffer([0xe2, 0x82, 0xac]);
+      var buf = Buffer.from([0xe2, 0x82, 0xac]);
       // write buffer
       writer.setValues([buf]);
       writer.length.should.equal(10);
@@ -236,7 +236,7 @@ describe('Lib', function () {
       var writer = new Writer([TypeCode.BINARY]);
       var value, length;
       // tiny
-      value = new Buffer('tiny', 'ascii');
+      value = Buffer.from('tiny', 'ascii');
       length = value.length;
       writer.setValues([value]);
       writer.length.should.equal(length + 2);
@@ -259,7 +259,7 @@ describe('Lib', function () {
       done) {
       var writer = new Writer([TypeCode.BLOB]);
       var stream = new lib.util.stream.Readable();
-      var buffer = new Buffer('blob', 'ascii');
+      var buffer = Buffer.from('blob', 'ascii');
       var size = 10 + buffer.length;
       stream.push(buffer);
       stream.push(null);
@@ -283,11 +283,11 @@ describe('Lib', function () {
         done) {
         var writer = new Writer([TypeCode.BLOB]);
         var stream = new lib.util.stream.Readable();
-        var buffer = new Buffer('blob', 'ascii');
+        var buffer = Buffer.from('blob', 'ascii');
         var size = 21 + buffer.length;
         stream.push(buffer);
         stream.push(null);
-        stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+        stream._locatorId = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
         writer._lobs.push(stream);
         writer.getWriteLobRequest(size, function (err, part) {
           part.argumentCount.should.equal(1);
@@ -323,7 +323,7 @@ describe('Lib', function () {
         var writer = new Writer([TypeCode.BLOB]);
         var stream = new lib.util.stream.Readable();
         stream.read = function (size) {
-          return new Buffer(size + 1);
+          return Buffer.allocUnsafe(size + 1);
         };
         writer.setValues([stream]);
         writer.getParameters(64, function (err) {
@@ -338,7 +338,7 @@ describe('Lib', function () {
         var streamError = new Error('stream error');
         var writer = new Writer([TypeCode.BLOB]);
         var stream = new EventEmitter();
-        stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+        stream._locatorId = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
         stream.read = function () {
           return null;
         };
@@ -354,9 +354,9 @@ describe('Lib', function () {
       function (done) {
         var writer = new Writer([TypeCode.BLOB]);
         var stream = new EventEmitter();
-        stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+        stream._locatorId = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
         stream.read = function (size) {
-          return new Buffer(size + 1);
+          return Buffer.allocUnsafe(size + 1);
         };
         writer._lobs.push(stream);
         writer.getWriteLobRequest(64, function (err) {

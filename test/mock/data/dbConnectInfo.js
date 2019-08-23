@@ -26,7 +26,7 @@ exports.NOT_CONNECTED = {
       kind: PartKind.DB_CONNECT_INFO,
       argumentCount: 3,
       attributes: 0,
-      buffer: new Buffer('041c00021d0c0031322e33342e35362e3132330303a8790000', 'hex')
+      buffer: Buffer.from('041c00021d0c0031322e33342e35362e3132330303a8790000', 'hex')
     }
   ]
 };
@@ -39,7 +39,7 @@ exports.CONNECTED = {
       kind: PartKind.DB_CONNECT_INFO,
       argumentCount: 1,
       attributes: 0,
-      buffer: new Buffer('041c01', 'hex')
+      buffer: Buffer.from('041c01', 'hex')
     }
   ]
 };

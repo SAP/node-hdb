@@ -81,7 +81,7 @@ describe('db', function () {
             });
           },
           function insert(cb) {
-            var values = [1, new Buffer('invalid type', 'ascii')];
+            var values = [1, Buffer.from('invalid type', 'ascii')];
             statement.exec(values, function (err) {
               err.should.be.instanceof(Error);
               cb();

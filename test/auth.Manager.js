@@ -20,7 +20,7 @@ var PartKind = lib.common.PartKind;
 var Fields = lib.data[PartKind.AUTHENTICATION];
 
 var user = 'SYSTEM';
-var emptyBuffer = new Buffer(0);
+var emptyBuffer = Buffer.allocUnsafe(0);
 
 describe('Auth', function () {
 
@@ -28,15 +28,15 @@ describe('Auth', function () {
 
     var method = 'SCRAMSHA256';
     var password = 'secret';
-    var clientChallenge = new Buffer(
+    var clientChallenge = Buffer.from(
       'edbd7cc8b2f26489d65a7cd51e27f2e73fca227d1ab6aafcac0f428ca4d8e10c' +
       '19e3e38f3aac51075e67bbe52fdb6103a7c34c8a70908ed5be0b3542705f738c',
       'hex');
-    var clientProof = new Buffer(
+    var clientProof = Buffer.from(
       '000120e47d8f244855b92dc966395d0d282547b54dfd09614d44374df94f293c1a020e',
       'hex');
-    var salt = new Buffer('80964fa85428ae3a81acd3e686a27933', 'hex');
-    var serverChallenge = new Buffer(
+    var salt = Buffer.from('80964fa85428ae3a81acd3e686a27933', 'hex');
+    var serverChallenge = Buffer.from(
       '41065150117e455fec2f03f6f47c19d405ade50dd65731dc0fb3f7954db62c8a' +
       'a67a7e825e1300bee975e74518238c9a', 'hex');
     var serverChallengeData = Fields.write({}, [salt, serverChallenge]).buffer;
@@ -44,7 +44,7 @@ describe('Auth', function () {
     it('should get the corresponding authentication method instance', function () {
       var manager = auth.createManager({
         user: user,
-        password: new Buffer(password, 'utf8'),
+        password: Buffer.from(password, 'utf8'),
         clientChallenge: clientChallenge
       });
       var authMethod = manager.getMethod(method);
@@ -124,8 +124,8 @@ describe('Auth', function () {
   describe('#SAML', function () {
 
     var method = 'SAML';
-    var assertion = new Buffer('3fca227d', 'hex');
-    var sessionCookie = new Buffer('fcac0f42', 'hex');
+    var assertion = Buffer.from('3fca227d', 'hex');
+    var sessionCookie = Buffer.from('fcac0f42', 'hex');
 
     it('should get the corresponding authentication method instance', function () {
       var manager = auth.createManager({
@@ -151,7 +151,7 @@ describe('Auth', function () {
       initialData = manager.initialData();
       initialData.should.eql(['', method, assertion]);
       // initialize manager
-      manager.initialize([method, new Buffer(user, 'utf8')]);
+      manager.initialize([method, Buffer.from(user, 'utf8')]);
       manager._authMethod.should.equal(authMethod);
       // user
       manager.userFromServer.should.equal(user);
@@ -170,7 +170,7 @@ describe('Auth', function () {
   describe('#SessionCookie', function () {
 
     var method = 'SessionCookie';
-    var sessionCookie = new Buffer('fcac0f42', 'hex');
+    var sessionCookie = Buffer.from('fcac0f42', 'hex');
 
     it('should get the corresponding authentication method instance', function () {
       var pid = lib.util.pid;
@@ -235,7 +235,7 @@ describe('Auth', function () {
       var manager = auth.createManager({
         user: user,
         password: 'secret',
-        clientChallenge: new Buffer(4)
+        clientChallenge: Buffer.allocUnsafe(4)
       });
 
       (function () {

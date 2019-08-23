@@ -23,7 +23,7 @@ describe('Data', function () {
 
   var paramsPart = {
     argumentCount: 4,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '020b01000000000000010000500a0000' +
       '020b01000b0000000001000000000000' +
       '020b01001b0000000001000000000000' +

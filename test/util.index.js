@@ -48,7 +48,7 @@ describe('Util', function () {
       function emitData() {
         process.nextTick(function () {
           if (values.length) {
-            ds.emit('data', new Buffer([values.shift()]));
+            ds.emit('data', Buffer.from([values.shift()]));
           } else {
             ds.emit('end');
           }
@@ -57,10 +57,14 @@ describe('Util', function () {
 
       var chunks = [];
       readable.on('readable', function () {
-        var chunk = this.read();
-        if (chunk !== null) {
+        var chunk;
+        var emit = false;
+        while (null !== (chunk = this.read())) {
           var value = chunk[0];
           chunks.unshift(value);
+          emit = true;
+        }
+        if (emit) {
           emitData();
         }
       });

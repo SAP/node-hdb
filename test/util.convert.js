@@ -21,8 +21,8 @@ describe('Util', function () {
 
   describe('#convert', function () {
     var outOfBom = '🍩';
-    var outOfBomCesuBuffer = new Buffer([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa9]);
-    var outOfBomUtf8Buffer = new Buffer([0xf0, 0x9f, 0x8d, 0xa9]);
+    var outOfBomCesuBuffer = Buffer.from([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa9]);
+    var outOfBomUtf8Buffer = Buffer.from([0xf0, 0x9f, 0x8d, 0xa9]);
 
     it('should encode in cesu8 if useCesu8 is true', function () {
       util.convert.encode(outOfBom, true).should.eql(outOfBomCesuBuffer);

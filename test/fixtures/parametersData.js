@@ -25,7 +25,7 @@ exports.MAX_PART_SIZE = MAX_PART_SIZE;
 exports.DEFAULT = {
   part: {
     argumentCount: 1,
-    buffer: new Buffer(
+    buffer: Buffer.from(
       '1e03616c6c' +
       '1d0464617465' +
       '1d0464657363' +
@@ -63,19 +63,19 @@ exports.DEFAULT = {
   ]
 };
 
-var blob = new Buffer(
+var blob = Buffer.from(
   '89504e470d0a1a0a0000000d494844520000000d0000000e0806000000f47f96d20000' +
   '000467414d410000b18f0bfc6105000000097048597300000ec100000ec101b8916bed' +
   '0000001974455874536f667477617265005061696e742e4e45542076332e352e38373b' +
   '805d00000045494441542853636040030606060b80f83f125e80ae06850fd3a0afaf6f' +
   '00c350cd981ad14c46b605838dd756a22489b10dc320a8a6787cf4a826030370005135' +
   '2068971a00fc928ca7dff7607f0000000049454e44ae426082', 'hex');
-var clob = new Buffer('Bjoern Borg', 'ascii');
-var nclob = new Buffer('Bj\u00F6rn Borg', 'utf8');
+var clob = Buffer.from('Bjoern Borg', 'ascii');
+var nclob = Buffer.from('Bj\u00F6rn Borg', 'utf8');
 exports.ALL_TYPES = {
   part: {
     argumentCount: 1,
-    buffer: Buffer.concat([new Buffer(
+    buffer: Buffer.concat([Buffer.from(
       '0301000000' +
       '020200' +
       '0303000000' +
@@ -174,7 +174,7 @@ var uuid = '536A6F342D036BA5E10000000A434504';
 exports.BINARY = {
   part: {
     argumentCount: 1,
-    buffer: new Buffer('0c10' + uuid + '0c10' + uuid + '0c10' + uuid, 'hex')
+    buffer: Buffer.from('0c10' + uuid + '0c10' + uuid + '0c10' + uuid, 'hex')
   },
   types: [
     TypeCode.BINARY,
@@ -182,9 +182,9 @@ exports.BINARY = {
     TypeCode.BSTRING
   ],
   values: [
-    new Buffer(uuid, 'hex'),
-    new Buffer(uuid, 'hex'),
-    new Buffer(uuid, 'hex')
+    Buffer.from(uuid, 'hex'),
+    Buffer.from(uuid, 'hex'),
+    Buffer.from(uuid, 'hex')
   ]
 };
 
@@ -192,7 +192,7 @@ exports.BINARY = {
 var logo = fs.readFileSync(path.join(__dirname, 'img', 'logo.png'));
 
 function logoBuffer(size) {
-  var buffer = new Buffer(size);
+  var buffer = Buffer.allocUnsafe(size);
   var offset = 15;
   buffer[0] = TypeCode.INT;
   buffer.writeInt32LE(1, 1);
@@ -222,10 +222,10 @@ exports.EMOJI = {
   part: {
     argumentCount: 2,
     buffer: Buffer.concat([
-      new Buffer([0x1e, 0x6]),
-      new Buffer([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]), // cesu-8 encoded 🍨
-      new Buffer([0x1a, 0x6, 0x6, 0x0, 0x0, 0x0, 0x13, 0x0, 0x0, 0x0]),
-      new Buffer([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa9])  // cesu-8 encoded 🍩
+      Buffer.from([0x1e, 0x6]),
+      Buffer.from([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]), // cesu-8 encoded 🍨
+      Buffer.from([0x1a, 0x6, 0x6, 0x0, 0x0, 0x0, 0x13, 0x0, 0x0, 0x0]),
+      Buffer.from([0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa9])  // cesu-8 encoded 🍩
     ])
   },
   types: [

@@ -40,7 +40,7 @@ function getBuffer(id, offset, length) {
   /* jshint bitwise:false, unused:false */
   offset = offset || 1025;
   var bdata = IMAGES[id].BDATA;
-  var buffer = new Buffer(16);
+  var buffer = Buffer.allocUnsafe(16);
   bignum.writeUInt64LE(buffer, id, 0);
   var start = offset - 1;
   var end = start + length;

@@ -22,21 +22,21 @@ describe('Data', function () {
   describe('#Fields', function () {
 
     var smallFields = [
-      new Buffer([1]),
-      new Buffer([2])
+      Buffer.from([1]),
+      Buffer.from([2])
     ];
-    var smallBuffer = new Buffer([2, 0, 1, 1, 1, 2]);
+    var smallBuffer = Buffer.from([2, 0, 1, 1, 1, 2]);
 
     var complexFields = [
-      new Buffer([1]), [
-        new Buffer([2]),
-        new Buffer([3])
+      Buffer.from([1]), [
+        Buffer.from([2]),
+        Buffer.from([3])
       ]
     ];
-    var complexBuffer = new Buffer([2, 0, 1, 1, 6, 2, 0, 1, 2, 1, 3]);
+    var complexBuffer = Buffer.from([2, 0, 1, 1, 6, 2, 0, 1, 2, 1, 3]);
 
     function createLargeBuffer(length) {
-      var buffer = new Buffer(length);
+      var buffer = Buffer.allocUnsafe(length);
       buffer.fill(0);
       return buffer;
     }
@@ -45,10 +45,10 @@ describe('Data', function () {
       createLargeBuffer(256)
     ];
     var largeBuffer = Buffer.concat([
-      new Buffer([2, 0]),
-      new Buffer([246, 0, 1]),
+      Buffer.from([2, 0]),
+      Buffer.from([246, 0, 1]),
       largeFields[0],
-      new Buffer([246, 0, 1]),
+      Buffer.from([246, 0, 1]),
       largeFields[1]
     ]);
 

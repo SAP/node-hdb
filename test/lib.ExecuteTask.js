@@ -21,7 +21,7 @@ var TypeCode = lib.common.TypeCode;
 var MessageType = lib.common.MessageType;
 var util = lib.util;
 var setImmediate = util.setImmediate;
-var STATEMENT_ID = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+var STATEMENT_ID = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
 
 describe('Lib', function () {
 
@@ -168,8 +168,8 @@ describe('Lib', function () {
     });
 
     it('should run a single task with BLOB type', function (next) {
-      var buffer = new Buffer(64);
-      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+      var buffer = Buffer.allocUnsafe(64);
+      var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
       createExecuteTask({
         parameters: {
           types: [TypeCode.BLOB],
@@ -194,8 +194,8 @@ describe('Lib', function () {
     });
 
     it('should run a single failing task with BLOB type ', function (next) {
-      var buffer = new Buffer(64);
-      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+      var buffer = Buffer.allocUnsafe(64);
+      var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
       createExecuteTask({
         parameters: {
           types: [TypeCode.BLOB],
@@ -266,7 +266,7 @@ describe('Lib', function () {
     });
 
     it('should getParameters with read stream error', function (done) {
-      var buffer = new Buffer(64);
+      var buffer = Buffer.allocUnsafe(64);
       var task = createExecuteTask({
         parameters: {
           types: [TypeCode.BLOB],

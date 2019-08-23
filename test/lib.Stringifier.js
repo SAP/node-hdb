@@ -73,11 +73,11 @@ function testStringifier(chunks, rows, done) {
   stringifier.on('error', function (err) {
     done(err);
   }).on('readable', function () {
-    var chunk = this.read();
-    if (chunk) {
+    var chunk;
+    while (null !== (chunk = this.read())) {
       data += chunk;
     }
-  }).on('finish', function () {
+  }).on('end', function () {
     JSON.parse(data).should.eql(rows);
     done();
   });

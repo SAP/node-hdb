@@ -21,7 +21,7 @@ var ResultSetTransform = lib.ResultSetTransform;
 var Transform = util.stream.Transform;
 
 function write(rst, str, cb) {
-  rst.write(new Buffer(str, 'ascii'), 'buffer', cb);
+  rst.write(Buffer.from(str, 'ascii'), 'buffer', cb);
 }
 
 function createResultSetTransform(options) {
@@ -91,7 +91,7 @@ describe('Lib', function () {
     it('should create a Reader', function () {
       function parseRow() {}
       var resultSet = {};
-      var chunk = new Buffer(0);
+      var chunk = Buffer.allocUnsafe(0);
       var rst = new ResultSetTransform(parseRow, resultSet, {
         arrayMode: true
       });
@@ -120,9 +120,9 @@ describe('Lib', function () {
       });
       var chunks = [];
       rst.on('readable', function () {
-        var value = rst.read();
-        if (value !== null) {
-          chunks.push(new Buffer([value]));
+        var value;
+        while ((value = rst.read()) !== null) {
+          chunks.push(Buffer.from([value]));
         }
       });
       rst.on('end', function () {
@@ -143,9 +143,9 @@ describe('Lib', function () {
       });
       var chunks = [];
       rst.on('readable', function () {
-        var value = rst.read();
-        if (value !== null) {
-          chunks.push(new Buffer(value));
+        var value;
+        while ((value = rst.read()) !== null) {
+          chunks.push(Buffer.from(value));
         }
       });
       rst.on('end', function () {
@@ -167,9 +167,9 @@ describe('Lib', function () {
       });
       var chunks = [];
       rst.on('readable', function () {
-        var value = rst.read();
-        if (value !== null) {
-          chunks.push(new Buffer(value));
+        var value;
+        while ((value = rst.read()) !== null) {
+          chunks.push(Buffer.from(value));
         }
       });
       rst.on('end', function () {
