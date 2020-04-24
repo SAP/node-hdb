@@ -452,7 +452,9 @@ describe('Lib', function () {
         return manager;
       };
       connection.send = sendAuthenticationRequest;
+      console.log("hey");
       connection.connect(credentials, function (err, reply) {
+        console.log("what's up");
         (!!err).should.be.not.ok;
         reply.authentication.should.equal('FINAL');
         settings.sessionCookie.should.equal('cookie');

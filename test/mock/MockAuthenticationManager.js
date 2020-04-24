@@ -30,11 +30,12 @@
    return 'INITIAL';
  };
 
- MockAuthenticationManager.prototype.initialize = function initialize(data) {
+ MockAuthenticationManager.prototype.initialize = function initialize(data, cb) {
    if (this.options.initializeError) {
-     throw this.options.initializeError;
+     return cb(this.options.initializeError);
    }
    data.should.equal('INITIAL');
+   cb();
  };
 
  MockAuthenticationManager.prototype.finalData = function initialData() {

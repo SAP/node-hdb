@@ -26,42 +26,61 @@ describe('Auth', function () {
 
   describe('#SCRAMSHA256', function () {
 
-    var method = 'SCRAMSHA256';
+    var method1 = 'SCRAMPBKDF2SHA256';
+    var method2 = 'SCRAMSHA256';
     var password = 'secret';
     var clientChallenge = new Buffer(
       'edbd7cc8b2f26489d65a7cd51e27f2e73fca227d1ab6aafcac0f428ca4d8e10c' +
       '19e3e38f3aac51075e67bbe52fdb6103a7c34c8a70908ed5be0b3542705f738c',
       'hex');
-    var clientProof = new Buffer(
+    var clientProofNoPBKDF2 = new Buffer(
       '000120e47d8f244855b92dc966395d0d282547b54dfd09614d44374df94f293c1a020e',
+      'hex');
+    var clientProofWithPBKDF2 = new Buffer(
+      '000120c19eab8d5eaf34b45f5d25d09615003679a3b1a53192fd12ff58779567ad37f1',
       'hex');
     var salt = new Buffer('80964fa85428ae3a81acd3e686a27933', 'hex');
     var serverChallenge = new Buffer(
       '41065150117e455fec2f03f6f47c19d405ade50dd65731dc0fb3f7954db62c8a' +
       'a67a7e825e1300bee975e74518238c9a', 'hex');
-    var serverChallengeData = Fields.write({}, [salt, serverChallenge]).buffer;
+    var serverChallengeDataNoPBKDF2 =
+      Fields.write({}, [salt, serverChallenge]).buffer;
+    var iterations = new Buffer(4);
+    iterations.writeUInt32BE(15000, 0);
+    var serverChallengeDataWithPBKDF2 =
+      Fields.write({}, [salt, serverChallenge, iterations]).buffer;
+    var serverProof = new Buffer(
+      '01002093cae8d0d3fd8ea7e67da4a09678d504429e67a1cb6197ed3a6a70afbd757a96',
+      'hex');
+    var wrongServerProof = new Buffer(
+      '01002093cae8d0d3fd9ea7e67da4a09678d504429e67a1cb6197ed3a6a70afbd757a96',
+      'hex');
 
-    it('should get the corresponding authentication method instance', function () {
+    it('should get the corresponding authentication method instances', function () {
       var manager = auth.createManager({
         user: user,
         password: new Buffer(password, 'utf8'),
         clientChallenge: clientChallenge
       });
-      var authMethod = manager.getMethod(method);
-      Buffer.isBuffer(authMethod.password).should.be.true;
-      authMethod.password.toString('utf8').should.equal(password);
+      var authMethod1 = manager.getMethod(method1);
+      Buffer.isBuffer(authMethod1.password).should.be.true;
+      authMethod1.password.toString('utf8').should.equal(password);
+
+      var authMethod2 = manager.getMethod(method2);
+      Buffer.isBuffer(authMethod2.password).should.be.true;
+      authMethod2.password.toString('utf8').should.equal(password);
     });
 
-    it('should authenticate and connect successfully', function () {
+    it('should authenticate and connect successfully without PBKDF2', function (done) {
       var manager = auth.createManager({
         user: user,
         password: password,
         clientChallenge: clientChallenge
       });
       manager.user.should.equal(user);
-      manager._authMethods.should.have.length(1);
-      var authMethod = manager._authMethods[0];
-      authMethod.name.should.equal(method);
+      manager._authMethods.should.have.length(2);
+      var authMethod = manager._authMethods[1];
+      authMethod.name.should.equal(method2);
       authMethod.password.should.be.instanceof(Buffer);
       authMethod.password.toString('utf8').should.eql(password);
       authMethod.clientChallenge.should.equal(clientChallenge);
@@ -69,19 +88,62 @@ describe('Auth', function () {
       var initialData = authMethod.initialData();
       initialData.should.equal(clientChallenge);
       initialData = manager.initialData();
-      initialData.should.eql([user, method, clientChallenge]);
+      initialData.should.eql([user, method1, clientChallenge, method2, clientChallenge]);
       // initialize manager
-      manager.initialize([method, serverChallengeData]);
-      manager._authMethod.should.equal(authMethod);
-      // clientProof
-      authMethod.clientProof.should.eql(clientProof);
-      // final data
-      var finalData = authMethod.finalData();
-      finalData.should.eql(clientProof);
-      finalData = manager.finalData();
-      finalData.should.eql([user, method, clientProof]);
-      // finalize manager
-      manager.finalize([method, null]);
+      manager.initialize([method2, serverChallengeDataNoPBKDF2], function(err) {
+        manager._authMethod.should.equal(authMethod);
+        // clientProof
+        authMethod.clientProof.should.eql(clientProofNoPBKDF2);
+        // final data
+        var finalData = authMethod.finalData();
+        finalData.should.eql(clientProofNoPBKDF2);
+        finalData = manager.finalData();
+        finalData.should.eql([user, method2, clientProofNoPBKDF2]);
+        // finalize manager
+        manager.finalize([method2, null]);
+        done();
+      });
+    });
+
+    it('should authenticate and connect successfully with PBKDF2', function (done) {
+      var manager = auth.createManager({
+        user: user,
+        password: password,
+        clientChallenge: clientChallenge
+      });
+      manager.user.should.equal(user);
+      manager._authMethods.should.have.length(2);
+      var authMethod = manager._authMethods[0];
+      authMethod.name.should.equal(method1);
+      authMethod.password.should.be.instanceof(Buffer);
+      authMethod.password.toString('utf8').should.eql(password);
+      authMethod.clientChallenge.should.equal(clientChallenge);
+      // initial data
+      var initialData = authMethod.initialData();
+      initialData.should.equal(clientChallenge);
+      initialData = manager.initialData();
+      initialData.should.eql([user, method1, clientChallenge, method2, clientChallenge]);
+      // initialize manager
+      manager.initialize([method1, serverChallengeDataWithPBKDF2], function(err) {
+        manager._authMethod.should.equal(authMethod);
+        // clientProof
+        authMethod.clientProof.should.eql(clientProofWithPBKDF2);
+        // final data
+        var finalData = authMethod.finalData();
+        finalData.should.eql(clientProofWithPBKDF2);
+        finalData = manager.finalData();
+        finalData.should.eql([user, method1, clientProofWithPBKDF2]);
+        // finalize manager
+        manager.finalize([method1, serverProof]);
+        var errorMessage = '';
+        try {
+            manager.finalize([method1, wrongServerProof]);
+        } catch(err) {
+            errorMessage = err.message;
+        }
+        errorMessage.should.eql("Server couldn't be authenticated");
+        done();
+      });
     });
 
     it('should write initial data fields part', function () {
@@ -94,7 +156,7 @@ describe('Auth', function () {
       var buffer = part.buffer;
       var offset = 0;
       var field, length;
-      buffer.readUInt16LE(offset).should.equal(3);
+      buffer.readUInt16LE(offset).should.equal(5);
       offset += 2;
       // validate user
       length = buffer[offset];
@@ -103,14 +165,28 @@ describe('Auth', function () {
       offset += length;
       length.should.equal(Buffer.byteLength(user));
       field.should.equal(user);
-      // validate name
+      // validate method1 name
       length = buffer[offset];
       offset += 1;
       field = buffer.toString('utf8', offset, offset + length);
       offset += length;
-      length.should.equal(Buffer.byteLength(method));
-      field.should.equal(method);
-      // validate clientChallenge
+      length.should.equal(Buffer.byteLength(method1));
+      field.should.equal(method1);
+      // validate clientChallenge #1
+      length = buffer[offset];
+      offset += 1;
+      field = buffer.slice(offset, offset + length);
+      offset += length;
+      length.should.equal(clientChallenge.length);
+      field.should.eql(clientChallenge);
+      // validate method2 name
+      length = buffer[offset];
+      offset += 1;
+      field = buffer.toString('utf8', offset, offset + length);
+      offset += length;
+      length.should.equal(Buffer.byteLength(method2));
+      field.should.equal(method2);
+      // validate clientChallenge #2
       length = buffer[offset];
       offset += 1;
       field = buffer.slice(offset, offset + length);
@@ -151,18 +227,19 @@ describe('Auth', function () {
       initialData = manager.initialData();
       initialData.should.eql(['', method, assertion]);
       // initialize manager
-      manager.initialize([method, new Buffer(user, 'utf8')]);
-      manager._authMethod.should.equal(authMethod);
-      // user
-      manager.userFromServer.should.equal(user);
-      // final data
-      var finalData = authMethod.finalData();
-      finalData.should.eql(emptyBuffer);
-      finalData = manager.finalData();
-      finalData.should.eql([user, method, emptyBuffer]);
-      // finalize manager
-      manager.finalize([method, sessionCookie]);
-      manager.sessionCookie.should.equal(sessionCookie);
+      manager.initialize([method, new Buffer(user, 'utf8')], function(err) {
+        manager._authMethod.should.equal(authMethod);
+        // user
+        manager.userFromServer.should.equal(user);
+        // final data
+        var finalData = authMethod.finalData();
+        finalData.should.eql(emptyBuffer);
+        finalData = manager.finalData();
+        finalData.should.eql([user, method, emptyBuffer]);
+        // finalize manager
+        manager.finalize([method, sessionCookie]);
+        manager.sessionCookie.should.equal(sessionCookie);
+      });
     });
 
   });
@@ -208,13 +285,14 @@ describe('Auth', function () {
       var initialData = authMethod.initialData();
       initialData.should.equal(authMethod.sessionCookie);
       // initialize manager
-      manager.initialize([method, emptyBuffer]);
-      manager._authMethod.should.equal(authMethod);
-      // final data
-      var finalData = authMethod.finalData();
-      finalData.should.eql(emptyBuffer);
-      // finalize manager
-      manager.finalize([method, emptyBuffer]);
+      manager.initialize([method, emptyBuffer], function(err) {
+        manager._authMethod.should.equal(authMethod);
+        // final data
+        var finalData = authMethod.finalData();
+        finalData.should.eql(emptyBuffer);
+        // finalize manager
+        manager.finalize([method, emptyBuffer]);
+      });
     });
 
   });
