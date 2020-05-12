@@ -146,6 +146,9 @@ function handleAuthenticate(msg) {
   var fields = Fields.read(msgPart);
   var user = fields[0];
   var algorithm = fields[1].toString('ascii');
+  if (algorithm === "SCRAMPBKDF2SHA256") {
+    var algorithm = fields[3].toString('ascii');
+  }
   var salt = new Buffer([
     0x80, 0x96, 0x4f, 0xa8, 0x54, 0x28, 0xae, 0x3a,
     0x81, 0xac, 0xd3, 0xe6, 0x86, 0xa2, 0x79, 0x33
