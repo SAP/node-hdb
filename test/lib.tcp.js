@@ -30,11 +30,28 @@ describe('Lib', function () {
       tcp.createSecureSocket = function tlsConnect(options, cb) {
         tcp.createSecureSocket = createSecureSocket;
         options.allowHalfOpen.should.equal(false);
+        options.servername.should.equal(options.host);
         process.nextTick(cb);
         return socket;
       };
       tcp.connect({
-        pfx: true
+        pfx: true,
+        host: 'localhost'
+      }, done).should.equal(socket);
+    });
+
+    it('should override default servername', function (done) {
+      tcp.createSecureSocket = function tlsConnect(options, cb) {
+        tcp.createSecureSocket = createSecureSocket;
+        options.allowHalfOpen.should.equal(false);
+        options.servername.should.equal('customSNI');
+        process.nextTick(cb);
+        return socket;
+      };
+      tcp.connect({
+        pfx: true,
+        host: 'localhost',
+        servername: 'customSNI'
       }, done).should.equal(socket);
     });
 
