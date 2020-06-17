@@ -1,19 +1,5 @@
-:heavy_exclamation_mark: Notice  :heavy_exclamation_mark:
-====================================
-
-__Only critical fixes will be provided in hdb. Please continue using the new hana-client  ([documentation](https://help.sap.com/viewer/0eec0d68141541d1b07893a39944924e/2.0.02/en-US/58c18548dab04a438a0f9c44be82b6cd.html)).__
-
-```shell
-npm config set @sap:registry https://npm.sap.com
-npm install @sap/hana-client
-```
-
-SAP HANA Database Client for Node
-====================================
-
-
-A JavaScript client for Node implementing the
-[SAP HANA Database SQL Command Network Protocol](http://help.sap.com/hana/SAP_HANA_SQL_Command_Network_Protocol_Reference_en.pdf).
+hdb - Pure JavaScript SAP HANA Database Client
+==============================================
 
 [![Version](https://img.shields.io/npm/v/hdb.svg?style=flat-square)](https://npmjs.org/package/hdb)
 [![Build](https://img.shields.io/travis/SAP/node-hdb.svg?style=flat-square)](http://travis-ci.org/SAP/node-hdb)
@@ -27,6 +13,7 @@ Table of contents
 -------------
 
 * [Install](#install)
+* [SAP Support for hdb and @sap/hana-client](#sap-support-for-hdb-and-saphana-client)
 * [Getting started](#getting-started)
 * [Establish a database connection](#establish-a-database-connection)
 * [Direct Statement Execution](#direct-statement-execution)
@@ -38,7 +25,6 @@ Table of contents
 * [CESU-8 encoding support](#cesu-8-encoding-support)
 * [Running tests](#running-tests)
 * [Running examples](#running-examples)
-* [Todo](#todo)
 
 Install
 -------
@@ -56,13 +42,46 @@ git clone https://github.com/SAP/node-hdb.git
 cd node-hdb
 npm install
 ```
+SAP Support for hdb and @sap/hana-client
+------------
+
+__The hdb and [@sap/hana-client](https://www.npmjs.com/package/@sap/hana-client) Node.js SAP HANA client drivers are supported by SAP for connecting to [SAP HANA Cloud](https://saphanacloudservices.com/hana-cloud/) and [SAP HANA Platform](https://www.sap.com/products/hana.html) servers. When starting a new project, it is encouraged to use the fully featured @sap/hana-client driver ([documentation](https://help.sap.com/viewer/f1b440ded6144a54ada97ff95dac7adf/latest/en-US/a5c332936d9f47d8b820a4ecc427352c.html)).__
+
+```shell
+npm install @sap/hana-client
+```
+
+Below is a major feature comparison chart between the two drivers:
+
+| Feature	                                        | @sap/hana-client |hdb|
+|-------------------------------------------------------|:----------------:|:----------------:|
+| Connectivity to SAP HANA Cloud	                |:heavy_check_mark:|:heavy_check_mark:|
+| Connectivity to SAP HANA as a Service	                |:heavy_check_mark:|:heavy_check_mark:|
+| Connectivity to SAP HANA Platform	                |:heavy_check_mark:|:heavy_check_mark:|
+| Transport Layer Security (TLS)	                |:heavy_check_mark:|:heavy_check_mark:|
+| Active-Active Read Enabled	                        |:heavy_check_mark:|:x:|
+| Client-Side Data Encryption	                        |:heavy_check_mark:|:x:|
+| Statement Distribution	                        |:heavy_check_mark:|:x:|
+| Kerberos Authentication	                        |:heavy_check_mark:|:x:|
+| Secure User Store Integration (hdbuserstore)	        |:heavy_check_mark:|:x:|
+| Connections through HTTP proxy	                |:heavy_check_mark:|:x:|
+| Connections through SOCKS proxy (SAP Cloud Connector)	|:heavy_check_mark:|:x:|
+| Tracing via hdbsqldbc_cons	                        |:heavy_check_mark:|:x:|
+| Tracing via environment variable to a file	        |:heavy_check_mark:|:heavy_check_mark:|
+| Pure JavaScript package	                        |:x:               |:heavy_check_mark:|
+| Node.js major version support                         |8, 10, 12|All Supported Versions|
+| License (without alternate SAP license agreement)     |[SAP Developer Agreement](tools.hana.ondemand.com/developer-license.txt)|[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)|
+| SAP Support (with SAP Support agreement)              |Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|
+| Community Support                                     |[answers.sap.com](https://answers.sap.com/tags/73554900100700000996) HANA tag|[node-hdb/issues](https://github.com/SAP/node-hdb/issues)
+
+The hdb driver may also have different APIs or lack support for SAP HANA server features where the @sap/hana-client is fully supported. APIs that are the same in both drivers may have different behaviour.
 
 Getting started
 ------------
 
-If you do not have access to a SAP HANA server, go to the [SAP HANA Developer Center](http://scn.sap.com/community/developer-center/hana) and choose one of the options to [get your own trial SAP HANA Server](http://scn.sap.com/docs/DOC-31722).
+If you do not have access to an SAP HANA server, go to the [SAP HANA Developer Center](https://developers.sap.com/topics/sap-hana.html) and choose one of the options to use SAP HANA Express or deploy a new SAP HANA Cloud server.
 
-This is a very simple example how to use this module:
+This is a very simple example showing how to use this module:
 
 ```js
 var hdb    = require('hdb');
@@ -92,7 +111,7 @@ client.connect(function (err) {
 Establish a database connection
 -------------------------------
 
-The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for following connect calls on the created client instance. In case of network connection errors like a connection timeout or a database restart you should register an error event handler in order to be able to handle this kind of problems. If there are no error event handlers, errors will not be emitted.
+The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for any following connect calls on the created client instance. In case of network connection errors like a connection timeout or a database restart, you should register an error event handler in order to be able to handle these kinds of problems. If there are no error event handlers, errors will not be emitted.
 
 ```js
 var hdb    = require('hdb');
@@ -108,11 +127,11 @@ client.on('error', function (err) {
 console.log(client.readyState); // new
 ```
 
-When a client instance is created it does not immediately open a network connection to the database host. Initially the client is in state `new`. When you call `connect` the first time two things are done internally.
+When a client instance is created it does not immediately open a network connection to the database host. Initially, the client is in a 'new' state. When you call `connect` for the first time, two things are done internally:
 
-1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established. The client is in state `disconnected`. This step is skipped if the client is already in state `disconnected`.
+1. A network connection is established and the communication is initialized (Protocol - and Product Version exchange). Now the connection is ready for exchanging messages but no user session is established as the client is in a `disconnected` state. This step is skipped if the client is already in a `disconnected` state.
 
-2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in state `connected`. If authentication fails the client remains in state `'disconnect'`.
+2. The authentication process is initiated. After a successful user authentication a database session is established and the client is in a `connected` state. If authentication fails the client remains in a `'disconnect'` state.
 
 ```js
 client.connect(function (err) {
@@ -124,7 +143,7 @@ client.connect(function (err) {
 ```
 If user and password are specified they will override the defaults of the client. It is possible to disconnect and reconnect with a different user on the same client instance and the same network connection.
 
-The client also supports HANA systems installed in multiple-container (MDC) mode. In this case a single HANA system may contain several isolated tenant databases.
+The client also supports SAP HANA systems installed in multiple-container (MDC) mode. In this case a single SAP HANA system may contain several isolated tenant databases.
 A database is identified by its name. One of the databases in an MDC setup is the system database which is used for central system administration.
 One can connect to a specific tenant database directly via its host and SQL port (as shown in the example above) or via the system database which may lookup the exact host and port of a particular database by a given name.
 
@@ -163,10 +182,10 @@ var client = hdb.createClient({
 });
 ```
 
-This is suitable for Multiple-host HANA systems which are distributed over several hosts. The client will establish a connection to the first available host from the list.
+This is suitable for multiple-host SAP HANA systems which are distributed over several hosts. The client establishes a connection to the first available host from the list.
 
 ### Authentication mechanisms
-Details about the different authentication method can be found in the [SAP HANA Security Guide](http://help.sap.com/hana/SAP_HANA_Security_Guide_en.pdf).
+Details about the different authentication methods can be found in the [SAP HANA Security Guide](https://help.sap.com/viewer/6b94445c94ae495c83a19646e7c3fd56/latest/en-US/440f6efe693d4b82ade2d8b182eb1efb.html).
 
 #### User / Password
 Users authenticate themselves with their database `user` and `password`.
@@ -175,7 +194,7 @@ Users authenticate themselves with their database `user` and `password`.
 SAML bearer assertions as well as unsolicited SAML responses that include an
 unencrypted SAML assertion can be used to authenticate users. SAML assertions and responses must be signed using XML signatures. XML Digital signatures can be created with [xml-crypto](https://www.npmjs.org/package/xml-crypto) or [xml-dsig](https://www.npmjs.org/package/xml-dsig).
 
-Instead of `user` and `password` you have to provide a SAML `assertion`.
+Instead of `user` and `password` you have to provide a SAML `assertion`:
 
 ```js
 client.connect({
@@ -189,14 +208,10 @@ client.connect({
 });
 ```
 
-After a successful SAML authentication the server returns the database `user` and a `SessionCookie` which can be used for reconnect.
-
-#### Kerberos
-A Kerberos authentication provider can be used to authenticate users.
-> This mechanism is not implemented and I do not plan to implement a Kerberos authentication provider myself. Contributions via pull request are welcome.
+After a successful SAML authentication, the server returns the database `user` and a `SessionCookie` which can be used for reconnecting.
 
 ### Encrypted network communication
-To establish an encrypted database connection just pass whether `key`, `cert` and `ca` or a `pfx` to createClient.
+To establish an encrypted database connection just pass either `key`, `cert` and `ca` or a `pfx` to createClient.
 
 ```js
 var client = hdb.createClient({
@@ -209,7 +224,7 @@ var client = hdb.createClient({
 });
 ```
 
-Use the `useTLS` option if you would like to connect to HANA using Node.js's trusted certificates.
+Use the `useTLS` option if you would like to connect to SAP HANA using Node.js's trusted certificates.
 
 ```js
 var client = hdb.createClient({
@@ -231,12 +246,12 @@ Direct Statement Execution
 
 Direct statement execution is the simplest way to execute SQL statements.
 The only input parameter is the SQL command to be executed.
-Generally we return the statement execution results using callbacks.
+Generally, statement execution results are returned using callbacks.
 The type of returned result depends on the kind of statement.
 
 ### DDL Statement
 
-In the case of a DDL Statement nothing is returned.
+In the case of a DDL statement nothing is returned:
 
 ```js
 client.exec('create table TEST.NUMBERS (a int, b varchar(16))', function (err) {
@@ -249,7 +264,7 @@ client.exec('create table TEST.NUMBERS (a int, b varchar(16))', function (err) {
 
 ### DML Statement
 
-In the case of a DML Statement the number of `affectedRows` is returned.
+In the case of a DML Statement the number of `affectedRows` is returned:
 
 ```js
 client.exec('insert into TEST.NUMBERS values (1, \'one\')', function (err, affectedRows) {
@@ -262,7 +277,7 @@ client.exec('insert into TEST.NUMBERS values (1, \'one\')', function (err, affec
 
 ### Query
 
-The `exec` function is a convenient way to completely retrieve the result of a query. In this case all selected `rows` are fetched and returned in the callback. The `resultSet` is automatically closed and all `Lobs` are completely read and returned as Buffer objects. If streaming of the results is required you will have to use the `execute` function. This is described in section [Streaming results](#streaming-results).
+The `exec` function is a convenient way to completely retrieve the result of a query. In this case all selected `rows` are fetched and returned in the callback. The `resultSet` is automatically closed and all `Lobs` are completely read and returned as buffer objects. If streaming of the results is required you will have to use the `execute` function. This is described in section [Streaming results](#streaming-results):
 
 ```js
 client.exec('select A, B from TEST.NUMBERS order by A', function(err, rows) {
@@ -275,7 +290,7 @@ client.exec('select A, B from TEST.NUMBERS order by A', function(err, rows) {
 
 Different Representations of Query Results
 -----------------------------------
-The default representation of a single row is an Object where the property names are the columnDisplayNames of the resultSetMetadata.
+The default representation of a single row is an object where the property names are the columnDisplayNames of the resultSetMetadata:
 
 ```js
 var command = 'select top 1 * from t1';
@@ -290,7 +305,7 @@ client.exec(command, function(err, rows) {
 });
 ```
 
-If your SQL statement is a join with overlapping column names, you may want to get separate objects for each table per row. This is possible if you set option `nestTables` to true.
+If your SQL statement is a join with overlapping column names, you may want to get separate objects for each table per row. This is possible if you set option `nestTables` to TRUE:
 
 ```js
 var command = 'select top 1 * from t1 join t2 on t1.id = t2.id';
@@ -315,7 +330,7 @@ client.exec(command, options, function(err, rows) {
 });
 ```
 
-It is also possible to return all rows as an Array where the order of the column values is exactly the same as in the resultSetMetadata. In this case you have to set the option `rowsAsArray` to true.
+It is also possible to return all rows as an array where the order of the column values is exactly the same as in the resultSetMetadata. In this case you have to set the option `rowsAsArray` to TRUE:
 
 ```js
 var command = 'select top 1 * from t1 join t2 on t1.id = t2.id';
@@ -341,7 +356,7 @@ Prepared Statement Execution
 
 ###  Prepare a Statement
 
-The client returns a `statement` object which can be executed multiple times.
+The client returns a `statement` object which can be executed multiple times:
 
 ```js
 client.prepare('select * from DUMMY where DUMMY = ?', function (err, statement){
@@ -355,7 +370,7 @@ client.prepare('select * from DUMMY where DUMMY = ?', function (err, statement){
 
 ### Execute a Statement
 
-The execution of a prepared statement is similar to the direct statement execution on the client. The difference is that the first parameter of `exec` function is an array with positional `parameters`. In case of named parameters it can also be an `parameters` object.
+The execution of a prepared statement is similar to the direct statement execution on the client. The difference is that the first parameter of the `exec` function is an array with positional `parameters`. In case of named parameters it can also be an `parameters` object:
 
 ```js
 statement.exec(['X'], function (err, rows) {
@@ -366,11 +381,11 @@ statement.exec(['X'], function (err, rows) {
 });
 ```
 
-If you use the `execute` instead of `exec` function the `resultSet` is returned in the callback like in direct query execution above.
+If you use the `execute` function instead of the `exec` function the `resultSet` is returned in the callback like in the direct query execution above.
 
 ### Calling Stored Procedures
 
-If you have for example the following stored procedure:
+If you have a stored procedure similar to the following example:
 
 ```sql
 create procedure PROC_DUMMY (in a int, in b int, out c int, out d DUMMY, out e TABLES)
@@ -382,10 +397,10 @@ create procedure PROC_DUMMY (in a int, in b int, out c int, out d DUMMY, out e T
     e = select * from TABLES;
   end
 ```
-you can call it via a prepared statement.
+You can call it via a prepared statement.
 The second argument is always an object with the scalar parameters.
-If there are no scalar parameters, an empty object ``{}`` will be returned.
-The following arguments are the `resultSets`.
+If there are no scalar parameters, an empty object ``{}`` is returned.
+The following arguments are the `resultSets`:
 
 ```js
 client.prepare('call PROC_DUMMY (?, ?, ?, ?, ?)', function(err, statement){
@@ -409,7 +424,7 @@ client.prepare('call PROC_DUMMY (?, ?, ?, ?, ?)', function(err, statement){
 
 ### Drop Statement
 
-To drop the statement simply call
+To drop the statement simply call:
 
 ```js
 statement.drop(function(err){
@@ -423,10 +438,10 @@ The callback is optional in this case.
 
 ### Using Datetime types
 
-If you want to use datetime types in a prepared statement,
+If you want to use DATETIME types in a prepared statement,
 be aware that strings like `'14.04.2016 12:41:11.215'` are not
 processed by the SAP HANA Database but by the node-hdb module.
-Therefore you must use the exact required format that would be returned
+Therefore, you must use the exact required format that would be returned
 by a selection made with this module.
 The formats are:
 ```js
@@ -438,13 +453,13 @@ SECONDDATE: '2016-04-14T13:32:20'
 
 Another possibility is to use the functions
 `TO_DATE`, `TO_DATS`, `TO_TIME` and `TO_TIMESTAMP` in your
-SQL statement to convert your string to a valid datetime type.
+SQL statement to convert your string to a valid DATETIME type.
 
 Bulk Insert
 ---------------
 
-If you want to insert multiple rows with a single execute you just
-have to provide the all parameters as array.
+If you want to insert multiple rows with a single execution you just
+have to provide the all parameters as array, for example:
 
 ```js
 client.prepare('insert into TEST.NUMBERS values (?, ?)', function(err, statement){
@@ -459,13 +474,13 @@ client.prepare('insert into TEST.NUMBERS values (?, ?)', function(err, statement
   });
 });
 ```
-Take a look at the example [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js) for further details.
+For further details, see: [app9](https://github.com/SAP/node-hdb/blob/master/examples/app9.js).
 
 
 Streaming results
 ---------------
 
-If you use the `execute` function of client or statement instead of the `exec` function, a `resultSet` object is returned in the callback instead of an array of all rows. The `resultSet` object allows you to create an object based `row` stream or an array based stream of `rows` which can be piped to an writer object. Don't forget to close the `resultSet` if you use the `execute` function.
+If you use the `execute` function of the client or statement instead of the `exec` function, a `resultSet` object is returned in the callback instead of an array of all rows. The `resultSet` object allows you to create an object based `row` stream or an array based stream of `rows` which can be piped to an writer object. Don't forget to close the `resultSet` if you use the `execute` function:
 
 ```js
 client.execute('select A, B from TEST.NUMBERS order by A', function(err, rs) {
@@ -482,12 +497,12 @@ client.execute('select A, B from TEST.NUMBERS order by A', function(err, rs) {
     });
 });
 ```
-Take a look at the example [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js) for further details.
+For further details, see [app4](https://github.com/SAP/node-hdb/blob/master/examples/app4.js).
 
 Transaction handling
 ---------------
 
-The default behavior is that each statement is automatically commited. If you want to manually control `commit ` and `rollback` of a transaction, you can do this by calling `setAutoCommit(false)` on the client object.
+The default behavior is that each statement is automatically committed. If you want to manually control `commit ` and `rollback` of a transaction, you can do this by calling `setAutoCommit(false)` on the client object:
 
 ```js
 function execTransaction(cb) {
@@ -530,7 +545,7 @@ execTransaction(function(err, ok){
 
 ```
 
-Take a look at the example [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js) for further details.
+For further details, see: [tx1](https://github.com/SAP/node-hdb/blob/master/examples/tx1.js).
 
 Streaming Large Objects
 -------------
@@ -541,14 +556,14 @@ Reading large object as stream can be done if you use the `execute` method of cl
 
 ### Write Streams
 
-Writing large objects is automatically done. You just have to pass instance of [`Readable`](http://nodejs.org/api/stream.html#stream_class_stream_readable_1) or a Buffer object as parameter.
+Writing large objects is automatically done. You just have to pass a [`Readable`](http://nodejs.org/api/stream.html#stream_class_stream_readable_1) instance or a buffer object as parameter.
 
-Take a look at the example [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js) for further details.
+For further details, see: [app7](https://github.com/SAP/node-hdb/blob/master/examples/app7.js).
 
 CESU-8 encoding support
 -------------
 
-SAP HANA server connectivity protocol uses [CESU-8](https://en.wikipedia.org/wiki/CESU-8) encoding. Node.js does not suport CESU-8 natively and the driver by default converts all text to CESU-8 format in the javascript layer including SQL statements.
+The SAP HANA server connectivity protocol uses [CESU-8](https://en.wikipedia.org/wiki/CESU-8) encoding. Node.js does not suport CESU-8 natively and the driver by default converts all text to CESU-8 format in the javascript layer including SQL statements.
 
 Due to the fact that Node.js has built-in support for UTF-8, using UTF-8 in the HDB drivers can lead to performance gains especially for large text data.
 If you are sure that your data contains only [BMP](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane) characters, you can disable CESU-8 conversion by setting a flag in the client configuration.
@@ -586,13 +601,13 @@ To run the unit tests as well as acceptance tests for _hdb_ you have to run:
 make test
 ```
 
-For the acceptance tests a database connection has to be established. Therefore you need to copy the configuration template [config.tpl.json](https://github.com/SAP/node-hdb/blob/master/test/db/config.tpl.json) in the ```test/db``` folder to ```config.json``` and change the connection data to yours. If the ```config.json``` file does not exist a local mock server is started.
+For the acceptance tests a database connection has to be established. Therefore, you need to copy the configuration template [config.tpl.json](https://github.com/SAP/node-hdb/blob/master/test/db/config.tpl.json) in the ```test/db``` folder to ```config.json``` and change the connection data to yours. If the ```config.json``` file does not exist a local mock server is started.
 
 
 Running examples
 ----------------
 
-Also, for the examples you need a valid a ```config.json``` in the ```test/db``` folder.
+For any examples you need a valid ```config.json``` in the ```test/db``` folder.
 
 
 - [app1](https://github.com/SAP/node-hdb/blob/master/examples/app1.js): Simple query.
@@ -612,14 +627,8 @@ Also, for the examples you need a valid a ```config.json``` in the ```test/db```
 - [csv](https://github.com/SAP/node-hdb/blob/master/examples/csv.js): Stream a db table into csv file.
 - [server](https://github.com/SAP/node-hdb/blob/master/examples/server.js): Stream rows into http response `http://localhost:1337/{schema}/{tablename}?top={top}`
 
-To run e.g. the first example:
+To run the first example:
 
 ```bash
 node examples/app1
 ```
-
-Todo
-----
-* Improve documentation of the client api
-* Improve error handling
-* ...
