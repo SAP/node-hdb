@@ -77,6 +77,30 @@ describe('Lib', function () {
       }).run(next);
     });
 
+    it('should raise an error correctly', function (next) {
+      var task = createExecuteTask({
+        parameters: {
+          types: [TypeCode.INT],
+          values: [
+            [1],
+            [2],
+            [3]
+          ]
+        },
+        replies: [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            rowsAffected: [1, 1, 1]
+          }]
+        }]
+      }, function done(err) {
+        err.should.be.an.instanceOf(Error);
+      },
+      false);
+      task.writer._types = undefined;
+      task.run(next);
+    });
+
     it('should run a batch task with INT type', function (next) {
       createExecuteTask({
         parameters: {
@@ -323,7 +347,7 @@ describe('Lib', function () {
   });
 });
 
-function createExecuteTask(options, cb) {
+function createExecuteTask(options, cb, checkReplies) {
   options = util.extend({
     parameters: {
       types: [TypeCode.INT],
@@ -339,8 +363,11 @@ function createExecuteTask(options, cb) {
   var connection = new Connection(options.availableSize, options.replies);
   options.availableSize = undefined;
   options.replies = undefined;
+  if (checkReplies === undefined) checkReplies = true;
   return ExecuteTask.create(connection, options, function () {
-    connection.replies.should.have.length(0);
+    if (checkReplies) {
+      connection.replies.should.have.length(0);
+    }
     cb.apply(null, arguments);
   });
 }
