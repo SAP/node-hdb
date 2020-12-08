@@ -70,7 +70,7 @@ Below is a major feature comparison chart between the two drivers:
 | Tracing via environment variable to a file	        |:heavy_check_mark:|:heavy_check_mark:|
 | Pure JavaScript package	                        |:x:               |:heavy_check_mark:|
 | Node.js major version support                         |8, 10, 12|All Supported Versions|
-| License (without alternate SAP license agreement)     |[SAP Developer Agreement](tools.hana.ondemand.com/developer-license.txt)|[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)|
+| License (without alternate SAP license agreement)     |[SAP Developer Agreement](https://tools.hana.ondemand.com/developer-license.txt)|[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)|
 | SAP Support (with SAP Support agreement)              |Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|
 | Community Support                                     |[answers.sap.com](https://answers.sap.com/tags/73554900100700000996) HANA tag|[node-hdb/issues](https://github.com/SAP/node-hdb/issues)
 
