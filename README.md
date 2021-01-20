@@ -590,7 +590,7 @@ __Note:__ Using CESU-8 brings performance penalties proportionate to the text si
 TCP Keepalive
 -------------
 
-To enable TCP keepalive behaviour, include the tcpKeepAliveIdle connect option. The value provided for this option is the number of seconds before an idle connection will begin sending keepalive packets.
+To configure TCP keepalive behaviour, include the tcpKeepAliveIdle connect option. The value provided for this option is the number of seconds before an idle connection will begin sending keepalive packets. By default, TCP keepalive will be turned on with a value of 200 seconds. If a value of 0 is specified, keepalive behaviour is determined by the operating system.
 The following example creates a client whose connections will begin sending keepalive packets after 300 seconds.
 
 ```js
