@@ -803,5 +803,80 @@ describe('hdb', function () {
 
     });
 
+    it('should connect to specified host upon nameserver redirect', function (done) {
+      var client = new lib.Client({ host: 'localhost', port: 30013, user: 'testuser', password: 'secret'});
+
+      var connOpenCount = 0;
+
+      var systemDbConnOpened = false;
+      var systemDbConnClosed = false;
+      var tenantDbConnOpened = false;
+
+      client._connection.open = function (options, cb) {
+        ++connOpenCount;
+        if (connOpenCount === 1) {
+          options.host.should.equal('localhost');
+          options.port.should.equal(30013);
+          systemDbConnOpened = true;
+          cb();
+        } else if (connOpenCount === 2) {
+          options.host.should.equal('127.0.0.1');
+          options.port.should.equal(30041);
+          tenantDbConnOpened = true;
+          cb();
+        } else {
+          cb(new Error('Test error. Open method called on the connection ' + connOpenCount + ' times.'));
+        }
+      };
+
+      client._connection._createAuthenticationManager = function(options) {
+        return mock.createManager({});
+      };
+
+      var sendCount = 0;
+      var reply1 = {
+        dbConnectInfo: [ { name: 4, type: 28, value: false },
+                         { name: 2, type: 29, value: '127.0.0.1' },
+                         { name: 3, type: 3, value: 30041 } ]
+      };
+      var reply2 = {
+        kind: 2,
+        functionCode: 0,
+        resultSets: [],
+        authentication: 'INITIAL'
+      };
+      var reply3 = {
+        kind: 2,
+        functionCode: 0,
+        resultSets: [],
+        authentication: 'FINAL',
+        connectOptions: []
+      };
+
+      client._connection.send = function (data, cb) {
+        ++sendCount;
+        if (sendCount == 1) {
+          cb(new Error(), reply1);
+        } else if (sendCount == 2) {
+          cb(undefined, reply2);
+        } else if (sendCount == 3) {
+          cb(undefined, reply3);
+        }
+      };
+
+      client._connection._closeSilently = function () {
+        connOpenCount.should.equal(1);
+        systemDbConnClosed = true;
+      };
+
+      client.connect(function (err) {
+        systemDbConnOpened.should.equal(true);
+        systemDbConnClosed.should.equal(true);
+        tenantDbConnOpened.should.equal(true);
+        done(err);
+      });
+
+    });
+
   });
 });
