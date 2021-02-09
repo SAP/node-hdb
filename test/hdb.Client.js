@@ -280,6 +280,16 @@ describe('hdb', function () {
         });
       });
 
+      it('should disable tcp keepalive', function (done) {
+        var client = new lib.Client({
+          tcpKeepAliveIdle: false
+        });
+        client.connect(function (err) {
+          should(client._connection._socket.keepAlive).be.false();
+          done();
+        });
+      });
+
     });
 
     it('should connect with saml assertion', function (done) {
