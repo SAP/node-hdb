@@ -25,6 +25,8 @@ function MockSocket(options) {
   this.writable = true;
   this.readable = true;
   this.delay = options.delay || 1;
+  this.keepAlive = false;
+  this.keepAliveIdle = 0;
   this.invalidInitializationReply = !!options.invalidInitializationReply;
   this.initializationErrorCode = options.initializationErrorCode;
   var chunk;
@@ -67,6 +69,15 @@ MockSocket.prototype.write = function write() {
     }
     self.emit(event, data);
   }, this.delay);
+};
+
+MockSocket.prototype.setKeepAlive = function setKeepAlive(enable, time) {
+  if (enable) {
+    this.keepAlive = true;
+    this.keepAliveIdle = time;
+  } else {
+    this.keepAlive = false;
+  }
 };
 
 Object.defineProperty(MockSocket.prototype, 'readyState', {

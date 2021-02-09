@@ -227,6 +227,61 @@ describe('hdb', function () {
 
     });
 
+    describe('#TCP keepalive', function () {
+
+      var tcp = require('../lib/protocol/tcp');
+      var originalCreateSocket = tcp.createSocket;
+      var socketStub;
+
+      beforeEach(function () {
+        socketStub = new mock.createSocket({});
+        socketStub.setNoDelay = function () {
+          process.nextTick(function () {
+            socketStub.write();
+          });
+        };
+        tcp.createSocket = function () {
+            return socketStub;
+        };
+      });
+
+      afterEach(function () {
+        tcp.createSocket = originalCreateSocket;
+      });
+
+      it('should set tcpKeepAliveIdle by default', function (done) {
+        var client = new lib.Client({});
+        client.connect(function (err) {
+          should(client._connection._socket.keepAlive).be.true();
+          should(client._connection._socket.keepAliveIdle).be.equal(200000);
+          done();
+        });
+      });
+
+      it('should set tcpKeepAliveIdle via numeric connect option', function (done) {
+        var client = new lib.Client({
+          tcpKeepAliveIdle: 300
+        });
+        client.connect(function (err) {
+          should(client._connection._socket.keepAlive).be.true();
+          should(client._connection._socket.keepAliveIdle).be.equal(300000);
+          done();
+        });
+      });
+
+      it('should set tcpKeepAliveIdle via string connect option', function (done) {
+        var client = new lib.Client({
+          tcpKeepAliveIdle: '300'
+        });
+        client.connect(function (err) {
+          should(client._connection._socket.keepAlive).be.true();
+          should(client._connection._socket.keepAliveIdle).be.equal(300000);
+          done();
+        });
+      });
+
+    });
+
     it('should connect with saml assertion', function (done) {
       var client = new TestClient({
         assertion: 'assertion'
