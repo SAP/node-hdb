@@ -605,6 +605,20 @@ var client = hdb.createClient({
 
 ```
 
+TCP keepalive can be explicity disabled by specifying tcpKeepAliveIdle=false as in the example below.
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  host             : 'hostname',
+  port             : 30015,
+  user             : 'user',
+  password         : 'secret',
+  tcpKeepAliveIdle : false
+});
+
+```
+
 Running tests
 -------------
 
