@@ -19,7 +19,8 @@ var createSecureSocket = tcp.createSecureSocket;
 var socket = {
   setNoDelay: function setNoDelay(noDelay) {
     noDelay.should.equal(true);
-  }
+  },
+  setKeepAlive: function setKeepAlive(enable, time) {}
 };
 
 describe('Lib', function () {
