@@ -23,6 +23,7 @@ Table of contents
 * [Transaction handling](#transaction-handling)
 * [Streaming Large Objects](#streaming-large-objects)
 * [CESU-8 encoding support](#cesu-8-encoding-support)
+* [TCP Keepalive](#tcp-keepalive)
 * [Running tests](#running-tests)
 * [Running examples](#running-examples)
 
@@ -585,6 +586,38 @@ var client = hdb.createClient({
 This setting is per client and cannot be changed later.
 
 __Note:__ Using CESU-8 brings performance penalties proportionate to the text size that has to be converted.
+
+TCP Keepalive
+-------------
+
+To configure TCP keepalive behaviour, include the tcpKeepAliveIdle connect option. The value provided for this option is the number of seconds before an idle connection will begin sending keepalive packets. By default, TCP keepalive will be turned on with a value of 200 seconds. If a value of 0 is specified, keepalive behaviour is determined by the operating system.
+The following example creates a client whose connections will begin sending keepalive packets after 300 seconds.
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  host             : 'hostname',
+  port             : 30015,
+  user             : 'user',
+  password         : 'secret',
+  tcpKeepAliveIdle : 300
+});
+
+```
+
+TCP keepalive can be explicity disabled by specifying tcpKeepAliveIdle=false as in the example below.
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  host             : 'hostname',
+  port             : 30015,
+  user             : 'user',
+  password         : 'secret',
+  tcpKeepAliveIdle : false
+});
+
+```
 
 Running tests
 -------------
