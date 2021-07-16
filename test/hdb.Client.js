@@ -868,5 +868,250 @@ describe('hdb', function () {
 
     });
 
+    it('should connect to specified host upon nameserver redirect', function (done) {
+      var client = new lib.Client({ host: 'localhost', port: 30013, user: 'testuser', password: 'secret'});
+
+      var connOpenCount = 0;
+
+      var systemDbConnOpened = false;
+      var systemDbConnClosed = false;
+      var tenantDbConnOpened = false;
+
+      var mock_open = function (options, cb) {
+        ++connOpenCount;
+        if (connOpenCount === 1) {
+          options.host.should.equal('localhost');
+          options.port.should.equal(30013);
+          systemDbConnOpened = true;
+          cb();
+        } else if (connOpenCount === 2) {
+          options.host.should.equal('127.0.0.1');
+          options.port.should.equal(30041);
+          tenantDbConnOpened = true;
+          cb();
+        } else {
+          cb(new Error('Test error. Open method called on the connection ' + connOpenCount + ' times.'));
+        }
+      };
+
+      var sendCount = 0;
+      var reply1 = {
+        dbConnectInfo: [ { name: 4, type: 28, value: false },
+                         { name: 2, type: 29, value: '127.0.0.1' },
+                         { name: 3, type: 3, value: 30041 } ]
+      };
+      var reply2 = {
+        kind: 2,
+        functionCode: 0,
+        resultSets: [],
+        authentication: 'INITIAL'
+      };
+      var reply3 = {
+        kind: 2,
+        functionCode: 0,
+        resultSets: [],
+        authentication: 'FINAL',
+        connectOptions: []
+      };
+
+      var mock_send = function (data, cb) {
+        ++sendCount;
+        if (sendCount == 1) {
+          cb(new Error(), reply1);
+        } else if (sendCount == 2) {
+          cb(undefined, reply2);
+        } else if (sendCount == 3) {
+          var hasRedirectionType = false;
+          var hasRedirectedHost = false;
+          var hasRedirectedPort = false;
+          var hasEndpointHost = false;
+          var hasEndpointPort = false;
+          var hasEndpointList = false;
+          data.parts[2].args.forEach(function(option) {
+            // check connect options
+            if(option.name === 57) {
+              hasRedirectionType = true;
+              option.value.should.equal(3); // AZAWARE
+            }
+            if(option.name === 58) {
+              hasRedirectedHost = true;
+              option.value.should.equal('127.0.0.1') // redirect host
+            }
+            if(option.name === 59) {
+              hasRedirectedPort = true;
+              option.value.should.equal(30041) // redirect port
+            }
+            if(option.name === 60) {
+              hasEndpointHost = true;
+              option.value.should.equal('localhost') // original host
+            }
+            if(option.name === 61) {
+              hasEndpointPort = true;
+              option.value.should.equal(30013) // original port
+            }
+            if(option.name === 62) {
+              hasEndpointList = true;
+              option.value.should.equal('localhost:30013') // initial host list
+            }
+          });
+          hasRedirectionType.should.equal(true);
+          hasRedirectedHost.should.equal(true);
+          hasRedirectedPort.should.equal(true);
+          hasEndpointHost.should.equal(true);
+          hasEndpointPort.should.equal(true);
+          hasEndpointList.should.equal(true);
+          cb(undefined, reply3);
+        }
+      };
+
+      var mock_createAuthenticationManager = function(options) {
+        return mock.createManager({});
+      };
+
+      var mock_closeSilently = function() {
+        connOpenCount.should.equal(1);
+        systemDbConnClosed = true;
+      };
+
+      client._connection.open = mock_open;
+      client._connection.send = mock_send;
+      client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+      client._connection._closeSilently = mock_closeSilently;
+
+      var createConnection_orig = client._createConnection;
+      client._createConnection = function(settings) {
+          var ret = createConnection_orig(settings);
+          ret.open = mock_open;
+          ret.send = mock_send;
+          ret._createAuthenticationManager = mock_createAuthenticationManager;
+          ret._closeSilently = mock_closeSilently;
+          return ret;
+      }
+
+      client.connect(function(err) {
+        systemDbConnOpened.should.equal(true);
+        systemDbConnClosed.should.equal(true);
+        tenantDbConnOpened.should.equal(true);
+        done(err);
+      });
+
+    });
+
+    it('should disable cloud tenant redirection', function (done) {
+      var client = new lib.Client({ host: 'localhost', port: 30013, user: 'testuser', password: 'secret', disableCloudRedirect: true});
+
+      var connOpenCount = 0;
+
+      var systemDbConnOpened = false;
+
+      var mock_open = function (options, cb) {
+        ++connOpenCount;
+        if (connOpenCount === 1) {
+          options.host.should.equal('localhost');
+          options.port.should.equal(30013);
+          systemDbConnOpened = true;
+          cb();
+        } else {
+          cb(new Error('Test error. Open method called on the connection ' + connOpenCount + ' times.'));
+        }
+      };
+
+      var sendCount = 0;
+      var reply1 = {
+        kind: 2,
+        functionCode: 0,
+        resultSets: [],
+        authentication: 'INITIAL',
+        dbConnectInfo: [ { name: 4, type: 28, value: false },
+                         { name: 2, type: 29, value: '127.0.0.1' },
+                         { name: 3, type: 3, value: 30041 } ] // should be ignored
+      };
+      var reply2 = {
+        kind: 2,
+        functionCode: 0,
+        resultSets: [],
+        authentication: 'FINAL',
+        connectOptions: []
+      };
+
+      var mock_send = function (data, cb) {
+        ++sendCount;
+        if (sendCount == 1) {
+          cb(undefined, reply1);
+        } else if (sendCount == 2) {
+          var hasRedirectionType = false;
+          var hasRedirectedHost = false;
+          var hasRedirectedPort = false;
+          var hasEndpointHost = false;
+          var hasEndpointPort = false;
+          var hasEndpointList = false;
+          data.parts[2].args.forEach(function(option) {
+            // check connect options
+            if(option.name === 57) {
+              hasRedirectionType = true;
+              option.value.should.equal(1); // disabled
+            }
+            if(option.name === 58) {
+              hasRedirectedHost = true;
+              option.value.should.equal('localhost') // redirect host
+            }
+            if(option.name === 59) {
+              hasRedirectedPort = true;
+              option.value.should.equal(30013) // redirect port
+            }
+            if(option.name === 60) {
+              hasEndpointHost = true;
+              option.value.should.equal('localhost') // original host
+            }
+            if(option.name === 61) {
+              hasEndpointPort = true;
+              option.value.should.equal(30013) // original port
+            }
+            if(option.name === 62) {
+              hasEndpointList = true;
+              option.value.should.equal('localhost:30013') // initial host list
+            }
+          });
+          hasRedirectionType.should.equal(true);
+          hasRedirectedHost.should.equal(true);
+          hasRedirectedPort.should.equal(true);
+          hasEndpointHost.should.equal(true);
+          hasEndpointPort.should.equal(true);
+          hasEndpointList.should.equal(true);
+          cb(undefined, reply2);
+        }
+      };
+
+      var mock_createAuthenticationManager = function(options) {
+        return mock.createManager({});
+      };
+
+      var mock_closeSilently = function() {
+        connOpenCount.should.equal(1);
+        systemDbConnClosed = true;
+      };
+
+      client._connection.open = mock_open;
+      client._connection.send = mock_send;
+      client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+      client._connection._closeSilently = mock_closeSilently;
+
+      var createConnection_orig = client._createConnection;
+      client._createConnection = function(settings) {
+          var ret = createConnection_orig(settings);
+          ret.open = mock_open;
+          ret.send = mock_send;
+          ret._createAuthenticationManager = mock_createAuthenticationManager;
+          ret._closeSilently = mock_closeSilently;
+          return ret;
+      }
+
+      client.connect(function(err) {
+        systemDbConnOpened.should.equal(true);
+        done(err);
+      });
+
+    });
+
   });
 });
