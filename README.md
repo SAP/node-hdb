@@ -8,6 +8,7 @@ hdb - Pure JavaScript SAP HANA Database Client
 [![DevDependencies](https://img.shields.io/david/dev/SAP/node-hdb.svg?style=flat-square)](https://david-dm.org/SAP/node-hdb?type=dev&view=list)
 [![License](https://img.shields.io/npm/l/hdb.svg?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0.html)
 [![Downloads](https://img.shields.io/npm/dm/hdb.svg?style=flat-square)](http://npm-stat.com/charts.html?package=hdb)
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/node-hdb)](https://api.reuse.software/info/github.com/SAP/node-hdb)
 
 Table of contents
 -------------
@@ -665,3 +666,7 @@ To run the first example:
 ```bash
 node examples/app1
 ```
+
+## Licensing
+
+Copyright 2013-2021 SAP SE or an SAP affiliate company and node-hdb contributors. Please see our [LICENSE](LICENSE) for copyright and license information. Detailed information including third-party components and their licensing/copyright information is available [via the REUSE tool](https://api.reuse.software/info/github.com/SAP/node-hdb).
