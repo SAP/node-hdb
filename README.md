@@ -80,7 +80,7 @@ The hdb driver may also have different APIs or lack support for SAP HANA server 
 Getting started
 ------------
 
-If you do not have access to an SAP HANA server, go to the [SAP HANA Developer Center](https://developers.sap.com/topics/sap-hana.html) and choose one of the options to use SAP HANA Express or deploy a new SAP HANA Cloud server.
+If you do not have access to an SAP HANA server, go to the [SAP HANA Developer Center](https://developers.sap.com/topics/hana.html) and choose one of the options to use SAP HANA Express or deploy a new SAP HANA Cloud server.
 
 This is a very simple example showing how to use this module:
 
