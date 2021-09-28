@@ -47,7 +47,7 @@ npm install
 SAP Support for hdb and @sap/hana-client
 ------------
 
-__The hdb and [@sap/hana-client](https://www.npmjs.com/package/@sap/hana-client) Node.js SAP HANA client drivers are supported by SAP for connecting to [SAP HANA Cloud](https://saphanacloudservices.com/hana-cloud/) and [SAP HANA Platform](https://www.sap.com/products/hana.html) servers. When starting a new project, it is encouraged to use the fully featured @sap/hana-client driver ([documentation](https://help.sap.com/viewer/f1b440ded6144a54ada97ff95dac7adf/latest/en-US/a5c332936d9f47d8b820a4ecc427352c.html)).__
+__The hdb and [@sap/hana-client](https://www.npmjs.com/package/@sap/hana-client) Node.js SAP HANA client drivers are supported by SAP for connecting to [SAP HANA Cloud](https://www.sap.com/products/hana/cloud.html) and [SAP HANA Platform](https://www.sap.com/products/hana.html) servers. When starting a new project, it is encouraged to use the fully featured @sap/hana-client driver ([documentation](https://help.sap.com/viewer/f1b440ded6144a54ada97ff95dac7adf/latest/en-US/a5c332936d9f47d8b820a4ecc427352c.html)).__
 
 ```shell
 npm install @sap/hana-client
