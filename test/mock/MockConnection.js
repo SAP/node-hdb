@@ -16,6 +16,7 @@
 var EventEmitter = require('events').EventEmitter;
 var lib = require('../../lib');
 var util = lib.util;
+var common = require('../../lib/protocol/common');
 
 module.exports = MockConnection;
 
@@ -52,6 +53,11 @@ function MockConnection(settings) {
     committed: true,
     rolledBack: true
   };
+  this._initialHost = undefined;
+  this._initialPort = undefined;
+  this._redirectHost = undefined;
+  this._redirectPort = undefined;
+  this._redirectType = common.RedirectType.REDIRECTION_NONE;
 }
 
 MockConnection.create = function createConnection(settings) {
@@ -205,4 +211,18 @@ MockConnection.prototype.fetchDbConnectInfo = function fetchDbConnectInfo(option
     var reply = self.getReply('dbConnectInfo');
     cb(err, reply);
   });
+};
+
+MockConnection.prototype.setInitialHostAndPort = function setInitialHostAndPort(host, port) {
+  this._initialHost = host;
+  this._initialPort = port;
+};
+
+MockConnection.prototype.setRedirectHostAndPort = function setRedirectHostAndPort(host, port) {
+  this._redirectHost = host;
+  this._redirectPort = port;
+};
+
+MockConnection.prototype.setRedirectType = function setRedirectType(type) {
+  this._redirectType = type;
 };
