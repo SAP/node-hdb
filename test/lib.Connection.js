@@ -71,7 +71,7 @@ describe('Lib', function () {
       connection.getClientInfo().getUpdatedProperties().should.eql([]);
     });
 
-    it('should sent client info parts for execute requests', function (done) {
+    it('should send client info parts for execute requests', function (done) {
       var connection = createConnection();
       connection.open({}, function () {
         connection.getClientInfo().setProperty('LOCALE', 'en_US');

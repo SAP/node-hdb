@@ -151,6 +151,51 @@ describe('hdb', function () {
       });
     });
 
+    it('should set session variables from connect properties', function (done) {
+      var client = new lib.Client();
+      client._connection = createConn();
+      function createConn() {
+        var connection = new lib.Connection();
+        connection._connect = function (options, connectListener) {
+          var socket = mock.createSocket(options);
+          util.setImmediate(connectListener);
+          return socket;
+        };
+        return connection;
+      }
+      var props = {'SESSIONVARIABLE:SESSVAR1' : 'TESTVAR1',
+                   'SESSIONVARIABLE:SESSVAR2' : 'TESTVAR2'};
+      client.connect(props, function (err) {
+        client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
+        client._connection.getClientInfo().getProperty("SESSVAR1").should.equal("TESTVAR1");
+        client._connection.getClientInfo().getProperty("SESSVAR2").should.equal("TESTVAR2");
+        client._connection.send(new lib.request.Segment(lib.common.MessageType.CONNECT), null);
+        client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
+        client._connection.getClientInfo().getProperty("SESSVAR1").should.equal("TESTVAR1");
+        client._connection.getClientInfo().getProperty("SESSVAR2").should.equal("TESTVAR2");
+        done();
+      });
+    });
+
+    it('should set session variables via setClientInfo', function (done) {
+      var client = new lib.Client();
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
+
+      client.setClientInfo("VARKEY1", "VARVAL1");
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
+      client._connection.getClientInfo().getProperty("VARKEY1").should.equal("VARVAL1");
+      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
+
+      client.setClientInfo("VARKEY2", "VARVAL2");
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
+      client._connection.getClientInfo().getProperty("VARKEY1").should.equal("VARVAL1");
+      client._connection.getClientInfo().getProperty("VARKEY2").should.equal("VARVAL2");
+      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
+      done();
+    });
+
     describe('#secure connection', function () {
       var tcp = require('../lib/protocol/tcp');
       var originalCreateSocket = tcp.createSocket;
