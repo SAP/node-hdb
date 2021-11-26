@@ -26,7 +26,7 @@ describe('Lib', function () {
       var ci = new ClientInfo();
       ci.setProperty('LOCALE', 'en');
 
-      ci.shouldSend(MessageType.DISCONNECT).should.eql(false);
+      ci.shouldSend(MessageType.CONNECT).should.eql(false);
       ci.shouldSend(MessageType.EXECUTE_DIRECT).should.eql(true);
       ci.getUpdatedProperties().should.eql(['LOCALE', 'en']);
 
