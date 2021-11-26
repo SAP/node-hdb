@@ -169,7 +169,7 @@ describe('hdb', function () {
         client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
         client._connection.getClientInfo().getProperty("SESSVAR1").should.equal("TESTVAR1");
         client._connection.getClientInfo().getProperty("SESSVAR2").should.equal("TESTVAR2");
-        client._connection.send(new lib.request.Segment(lib.common.MessageType.CONNECT), null);
+        client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
         client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
         client._connection.getClientInfo().getProperty("SESSVAR1").should.equal("TESTVAR1");
         client._connection.getClientInfo().getProperty("SESSVAR2").should.equal("TESTVAR2");
