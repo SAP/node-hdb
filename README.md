@@ -638,7 +638,7 @@ var client = hdb.createClient({
 client.setClientInfo("EXAMPLEKEY2", "EXAMPLEVALUE2");
 
 ```
-Session variables set via the setClientInfo method will be sent to the server during the next connect, execute, prepare, or fetch operation.
+Session variables set via the setClientInfo method will be sent to the server during the next execute, prepare, or fetch operation.
 
 
 Running tests
