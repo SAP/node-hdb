@@ -25,6 +25,7 @@ Table of contents
 * [Streaming Large Objects](#streaming-large-objects)
 * [CESU-8 encoding support](#cesu-8-encoding-support)
 * [TCP Keepalive](#tcp-keepalive)
+* [Setting Session-Specific Client Information](#setting-session-specific-client-information)
 * [Running tests](#running-tests)
 * [Running examples](#running-examples)
 
@@ -113,7 +114,7 @@ client.connect(function (err) {
 Establish a database connection
 -------------------------------
 
-The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for any following connect calls on the created client instance. In case of network connection errors like a connection timeout or a database restart, you should register an error event handler in order to be able to handle these kinds of problems. If there are no error event handlers, errors will not be emitted.
+The first step to establish a database connection is to create a client object. It is recommended to pass all required `connect` options like `host`, `port`, `user` and `password` to the `createClient` function. They will be used as defaults for any following connect calls on the created client instance. Options beginning with the prefix "SESSIONVARIABLE:" are used to set session-specific client information at connect time (see example of setting EXAMPLEKEY=EXAMPLEVALUE below). In case of network connection errors like a connection timeout or a database restart, you should register an error event handler in order to be able to handle these kinds of problems. If there are no error event handlers, errors will not be emitted.
 
 ```js
 var hdb    = require('hdb');
@@ -121,7 +122,8 @@ var client = hdb.createClient({
   host     : 'hostname',
   port     : 30015,
   user     : 'user',
-  password : 'secret'
+  password : 'secret',
+  'SESSIONVARIABLE:EXAMPLEKEY' : 'EXAMPLEVALUE'
 });
 client.on('error', function (err) {
   console.error('Network connection error', err);
@@ -619,6 +621,25 @@ var client = hdb.createClient({
 });
 
 ```
+Setting Session-Specific Client Information
+-------------
+
+The client information is a list of session variables (defined in property-value pairs that are case sensitive) that an application can set on a client object. These variables can be set at connection time via "SESSIONVARIABLE:" prefixed options, or by using the setClientInfo method to specify a single property-value pair.
+
+```js
+var hdb    = require('hdb');
+var client = hdb.createClient({
+  host             : 'hostname',
+  port             : 30015,
+  user             : 'user',
+  password         : 'secret',
+  "SESSIONVARIABLE:EXAMPLEKEY1" : "EXAMPLEVALUE1"
+});
+client.setClientInfo("EXAMPLEKEY2", "EXAMPLEVALUE2");
+
+```
+Session variables set via the setClientInfo method will be sent to the server during the next execute, prepare, or fetch operation.
+
 
 Running tests
 -------------
@@ -636,6 +657,9 @@ make test
 ```
 
 For the acceptance tests a database connection has to be established. Therefore, you need to copy the configuration template [config.tpl.json](https://github.com/SAP/node-hdb/blob/master/test/db/config.tpl.json) in the ```test/db``` folder to ```config.json``` and change the connection data to yours. If the ```config.json``` file does not exist a local mock server is started.
+
+
+
 
 
 Running examples
