@@ -17,7 +17,7 @@
 var lib = require('../lib');
 var ClientInfo = lib.ClientInfo;
 var MessageType = lib.common.MessageType;
-
+var os = require('os');
 
 describe('Lib', function () {
 
@@ -36,6 +36,21 @@ describe('Lib', function () {
 
       ci.shouldSend(MessageType.PREPARE).should.eql(false);
       ci.getUpdatedProperties().should.eql([]);
+    });
+
+    it('should provide default application and application user values', function() {
+      var ci = new ClientInfo();
+      ci.getUser().should.eql(os.userInfo().username);
+      ci.getApplication().should.eql('node');
+    });
+
+    it('should override default application and application user values', function() {
+      var ci = new ClientInfo();
+      ci.setProperty('APPLICATIONUSER', 'TestUser');
+      ci.getUser().should.eql('TestUser');
+
+      ci.setProperty('APPLICATION', 'lib.ClientInfo.js');
+      ci.getApplication().should.eql('lib.ClientInfo.js');
     });
   });
 });

@@ -18,6 +18,7 @@ var should = require('should');
 var lib = require('../lib');
 var util = lib.util;
 var mock = require('./mock');
+var pjson = require('../package.json');
 
 util.inherits(TestClient, lib.Client);
 
@@ -36,6 +37,20 @@ TestClient.prototype._createConnection = mock.createConnection;
 TestClient.prototype._createResult = function _createResult() {
   this._result = mock.createResult.apply(this, arguments);
   return this._result;
+};
+
+var mock_auth_reply= {
+  kind: 2,
+  functionCode: 0,
+  resultSets: [],
+  authentication: 'INITIAL'
+};
+var mock_conn_reply = {
+  kind: 2,
+  functionCode: 0,
+  resultSets: [],
+  authentication: 'FINAL',
+  connectOptions: []
 };
 
 describe('hdb', function () {
@@ -194,6 +209,149 @@ describe('hdb', function () {
       client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
       client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
       done();
+    });
+
+    it('should send default client context during authentication', function(done) {
+      var client = new lib.Client({ host: 'localhost', port: 30015, user: 'testuser', password: 'secret'});
+      var sentClientVersion = false;
+      var sentClientType = false;
+      var sentClientAppProgram = false;
+
+      var mock_open = function(options, cb) {
+        cb();
+      }
+
+      var sendCount = 0;
+      var mock_send = function(data, cb) {
+        sendCount += 1;
+        if (sendCount === 1) {
+          data.parts.forEach(function(part) {
+            if (part.kind == 29) { // CLIENT_CONTEXT
+              part.args.forEach(function(option) {
+                if (option.name == 1) { // CLIENT_VERSION
+                  sentClientVersion = true;
+                  option.value.should.equal(pjson.version);
+                } else if (option.name == 2) { // CLIENT_TYPE
+                  sentClientType = true;
+                  option.value.should.equal('node-hdb');
+                } else if (option.name == 3) { // CLIENT_APPLICATION_PROGRAM
+                  sentClientAppProgram = true;
+                  option.value.should.equal('node');
+                }
+              });
+            }
+          });
+          cb(undefined, mock_auth_reply);
+        } else if (sendCount === 2) {
+          cb(undefined, mock_conn_reply);
+        }
+      }
+
+      var mock_createAuthenticationManager = function(options) {
+        return mock.createManager({});
+      };
+
+      client._connection.open = mock_open;
+      client._connection.send = mock_send;
+      client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+
+      client.connect(function(err) {
+        sentClientVersion.should.equal(true);
+        sentClientType.should.equal(true);
+        sentClientAppProgram.should.equal(true);
+        done(err);
+      });
+    });
+
+    it('should set application session variable in client context', function(done) {
+      var client = new lib.Client({ host: 'localhost', port: 30015, user: 'testuser', password: 'secret', 'SESSIONVARIABLE:APPLICATION' : 'TestApp'});
+      var sentClientVersion = false;
+      var sentClientType = false;
+      var sentClientAppProgram = false;
+
+      var mock_open = function(options, cb) {
+        cb();
+      }
+
+      var sendCount = 0;
+      var mock_send = function(data, cb) {
+        sendCount += 1;
+        if (sendCount === 1) {
+          data.parts.forEach(function(part) {
+            if (part.kind == 29) { // CLIENT_CONTEXT
+              part.args.forEach(function(option) {
+                if (option.name == 1) { // CLIENT_VERSION
+                  sentClientVersion = true;
+                  option.value.should.equal(pjson.version);
+                } else if (option.name == 2) { // CLIENT_TYPE
+                  sentClientType = true;
+                  option.value.should.equal('node-hdb');
+                } else if (option.name == 3) { // CLIENT_APPLICATION_PROGRAM
+                  sentClientAppProgram = true;
+                  option.value.should.equal('TestApp');
+                }
+              });
+            }
+          });
+          cb(undefined, mock_auth_reply);
+        } else if (sendCount === 2) {
+          cb(undefined, mock_conn_reply);
+        }
+      }
+
+      var mock_createAuthenticationManager = function(options) {
+        return mock.createManager({});
+      };
+
+      client._connection.open = mock_open;
+      client._connection.send = mock_send;
+      client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+
+      client.connect(function(err) {
+        sentClientVersion.should.equal(true);
+        sentClientType.should.equal(true);
+        sentClientAppProgram.should.equal(true);
+        done(err);
+      });
+    });
+
+    it('should set applicationuser session variable as OS_USER connect option', function(done) {
+      var client = new lib.Client({ host: 'localhost', port: 30015, user: 'testuser', password: 'secret', 'SESSIONVARIABLE:APPLICATIONUSER' : 'TestUser'});
+      var sentOS_User = false;
+
+      var mock_open = function(options, cb) {
+        cb();
+      }
+
+      var sendCount = 0;
+      var mock_send = function(data, cb) {
+        sendCount += 1;
+        if (sendCount === 1) {
+          cb(undefined, mock_auth_reply);
+        } else if (sendCount === 2) {
+          data.parts[2].args.forEach(function(option) {
+            // check connect options
+            if(option.name == 32) { // OS_USER
+              sentOS_User = true;
+              option.value.should.equal('TestUser');
+            }
+          });
+          cb(undefined, mock_conn_reply);
+        }
+      }
+
+      var mock_createAuthenticationManager = function(options) {
+        return mock.createManager({});
+      };
+
+      client._connection.open = mock_open;
+      client._connection.send = mock_send;
+      client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+
+      client.connect(function(err) {
+        sentOS_User.should.equal(true);
+        done(err);
+      });
     });
 
     describe('#secure connection', function () {
@@ -945,26 +1103,13 @@ describe('hdb', function () {
                          { name: 2, type: 29, value: '127.0.0.1' },
                          { name: 3, type: 3, value: 30041 } ]
       };
-      var reply2 = {
-        kind: 2,
-        functionCode: 0,
-        resultSets: [],
-        authentication: 'INITIAL'
-      };
-      var reply3 = {
-        kind: 2,
-        functionCode: 0,
-        resultSets: [],
-        authentication: 'FINAL',
-        connectOptions: []
-      };
 
       var mock_send = function (data, cb) {
         ++sendCount;
         if (sendCount == 1) {
           cb(new Error(), reply1);
         } else if (sendCount == 2) {
-          cb(undefined, reply2);
+          cb(undefined, mock_auth_reply);
         } else if (sendCount == 3) {
           var hasRedirectionType = false;
           var hasRedirectedHost = false;
@@ -1005,7 +1150,7 @@ describe('hdb', function () {
           hasEndpointHost.should.equal(true);
           hasEndpointPort.should.equal(true);
           hasEndpointList.should.equal(true);
-          cb(undefined, reply3);
+          cb(undefined, mock_conn_reply);
         }
       };
 
