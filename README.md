@@ -4,8 +4,6 @@ hdb - Pure JavaScript SAP HANA Database Client
 [![Version](https://img.shields.io/npm/v/hdb.svg?style=flat-square)](https://npmjs.org/package/hdb)
 [![Build](https://img.shields.io/travis/SAP/node-hdb.svg?style=flat-square)](http://travis-ci.org/SAP/node-hdb)
 [![Coverage](https://img.shields.io/coveralls/SAP/node-hdb/master.svg?style=flat-square)](https://coveralls.io/r/SAP/node-hdb?branch=master)
-[![Dependencies](https://img.shields.io/david/SAP/node-hdb.svg?style=flat-square)](https://david-dm.org/SAP/node-hdb#info=dependencies&view=list)
-[![DevDependencies](https://img.shields.io/david/dev/SAP/node-hdb.svg?style=flat-square)](https://david-dm.org/SAP/node-hdb?type=dev&view=list)
 [![License](https://img.shields.io/npm/l/hdb.svg?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0.html)
 [![Downloads](https://img.shields.io/npm/dm/hdb.svg?style=flat-square)](http://npm-stat.com/charts.html?package=hdb)
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/node-hdb)](https://api.reuse.software/info/github.com/SAP/node-hdb)
