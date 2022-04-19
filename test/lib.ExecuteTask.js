@@ -19,6 +19,7 @@ var ExecuteTask = lib.ExecuteTask;
 var FunctionCode = lib.common.FunctionCode;
 var TypeCode = lib.common.TypeCode;
 var MessageType = lib.common.MessageType;
+var PartKind = lib.common.PartKind;
 var util = lib.util;
 var setImmediate = util.setImmediate;
 var STATEMENT_ID = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
@@ -155,28 +156,82 @@ describe('Lib', function () {
           parameters: {
             types: [TypeCode.STRING],
             values: [
-              ['Lorem ipsum dolor'],
               ['consectetuer adipiscing elit'],
-              ['Aenean commodo ligula']
+              ['Lorem ipsum dolor'],
+              ['Aenean commodo'],
+              ['elementum velit']
             ]
           },
           replies: [{
             type: MessageType.EXECUTE,
             args: [null, {
+              rowsAffected: [1]
+            }],
+            checkMessage: function(msg) {
+              msg.parts.forEach(part => {
+                if (part.kind === PartKind.PARAMETERS) {
+                  var expected = []
+                  expected.push(
+                    Buffer.concat([
+                      Buffer.from('1d1c', 'hex'),
+                      Buffer.from('consectetuer adipiscing elit', 'utf8')
+                    ])
+                  );
+                  part.args.should.eql(expected);
+                }
+              });
+            }
+          }, {
+            type: MessageType.EXECUTE,
+            args: [null, {
               rowsAffected: [1, 1]
-            }]
+            }],
+            checkMessage: function(msg) {
+              msg.parts.forEach(part => {
+                if (part.kind === PartKind.PARAMETERS) {
+                  var expected = [];
+                  expected.push(
+                    Buffer.concat([
+                      Buffer.from('1d11', 'hex'),
+                      Buffer.from('Lorem ipsum dolor')
+                    ])
+                  );
+                  expected.push(
+                    Buffer.concat([
+                      Buffer.from('1d0e', 'hex'),
+                      Buffer.from('Aenean commodo')
+                    ])
+                  );
+                  part.args.should.eql(expected);
+                }
+              });
+            }
           }, {
             type: MessageType.EXECUTE,
             args: [null, {
               rowsAffected: [1]
-            }]
+            }],
+            checkMessage: function(msg) {
+              msg.parts.forEach(part => {
+                if (part.kind === PartKind.PARAMETERS) {
+                  var expected = [];
+                  expected.push(
+                    Buffer.concat([
+                      Buffer.from('1d0f', 'hex'),
+                      Buffer.from('elementum velit')
+                    ])
+                  );
+                  part.args.should.eql(expected);
+                }
+              });
+            }
           }, {
             type: MessageType.COMMIT,
             args: [null]
           }]
         }, function done(err, reply) {
           (!err).should.be.ok;
-          reply.rowsAffected.should.eql([1, 1, 1]);
+          reply.rowsAffected.should.eql([1, 1, 1, 1]);
         }).run(next);
       });
 
@@ -381,6 +436,9 @@ function Connection(size, replies) {
 Connection.prototype.send = function (msg, cb) {
   var reply = this.replies.shift();
   msg.type.should.equal(reply.type);
+  if (typeof reply.checkMessage === 'function') {
+      reply.checkMessage(msg);
+  }
   setImmediate(function () {
     cb.apply(null, reply.args);
   });
