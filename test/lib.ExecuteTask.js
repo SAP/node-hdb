@@ -247,7 +247,7 @@ describe('Lib', function () {
     });
 
     it('should run a single task with BLOB type', function (next) {
-      var buffer = new Buffer(64);
+      var buffer = new Buffer(128);
       var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
       createExecuteTask({
         parameters: {
@@ -257,17 +257,27 @@ describe('Lib', function () {
         replies: [{
           type: MessageType.EXECUTE,
           args: [null, {
-            writeLobReply: [locatorId]
+            writeLobReply: [locatorId],
+            rowsAffected: [-1]
           }]
         }, {
           type: MessageType.WRITE_LOB,
           args: [null, {}]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {
+            rowsAffected: [1]
+          }]
         }, {
           type: MessageType.COMMIT,
           args: [null, {}]
         }]
       }, function done(err, reply) {
         (!err).should.be.ok;
+        reply.rowsAffected.should.eql([1]);
         reply.writeLobReply[0].should.eql(locatorId);
       }).run(next);
     });
