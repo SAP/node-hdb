@@ -65,7 +65,7 @@ Below is a major feature comparison chart between the two drivers:
 | Statement Distribution	                        |:heavy_check_mark:|:x:|
 | Password/PBKDF2 Authentication	                |:heavy_check_mark:|:heavy_check_mark:|
 | SAML Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
-| JWT Authentication	                            |:heavy_check_mark:|:x:|
+| JWT Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
 | LDAP Authentication	                            |:heavy_check_mark:|:x:|
 | Kerberos Authentication	                        |:heavy_check_mark:|:x:|
 | X.509 Authentication	                          |:heavy_check_mark:|:x:|
@@ -216,6 +216,25 @@ client.connect({
 ```
 
 After a successful SAML authentication, the server returns the database `user` and a `SessionCookie` which can be used for reconnecting.
+
+#### JWT token
+JWT tokens can also be used to authenticate users.
+
+Instead of `user` and `password` you have to provide a JWT `token`:
+
+```js
+client.connect({
+  token: 'eyJhbGciOiJSUzI1NiJ9....'
+},function (err) {
+  if (err) {
+    return console.error('Error:', err);
+  }
+  console.log('User:', client.get('user'));
+  console.log('SessionCookie:', client.get('SessionCookie'));
+});
+```
+
+After a successful JWT authentication, the server returns the database `user` and a `SessionCookie` which can be used for reconnecting.
 
 ### Encrypted network communication
 To establish an encrypted database connection just pass either `key`, `cert` and `ca` or a `pfx` to createClient.
