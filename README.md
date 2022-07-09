@@ -63,7 +63,12 @@ Below is a major feature comparison chart between the two drivers:
 | Active-Active Read Enabled	                        |:heavy_check_mark:|:x:|
 | Client-Side Data Encryption	                        |:heavy_check_mark:|:x:|
 | Statement Distribution	                        |:heavy_check_mark:|:x:|
+| Password/PBKDF2 Authentication	                |:heavy_check_mark:|:heavy_check_mark:|
+| SAML Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
+| JWT Authentication	                            |:heavy_check_mark:|:x:|
+| LDAP Authentication	                            |:heavy_check_mark:|:x:|
 | Kerberos Authentication	                        |:heavy_check_mark:|:x:|
+| X.509 Authentication	                          |:heavy_check_mark:|:x:|
 | Secure User Store Integration (hdbuserstore)	        |:heavy_check_mark:|:x:|
 | Connections through HTTP proxy	                |:heavy_check_mark:|:x:|
 | Connections through SOCKS proxy (SAP Cloud Connector)	|:heavy_check_mark:|:x:|
