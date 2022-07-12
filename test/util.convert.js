@@ -40,8 +40,12 @@ describe('Util', function () {
       util.convert.decode(outOfBomCesuBuffer, true).should.eql(outOfBom);
     });
 
-    it('should count cesu8 charactes in cesu8 encoded buffer', function () {
+    it('should count cesu8 characters in cesu8 encoded buffer', function () {
       util.convert.lengthInCesu8(outOfBomCesuBuffer).should.equal(1);
+    });
+
+    it('should count cesu8 surrogates in cesu8 encoded buffer', function () {
+      util.convert.lengthInCesu8(outOfBomCesuBuffer, false).should.equal(2);
     });
 
   });

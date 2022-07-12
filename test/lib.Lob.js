@@ -176,7 +176,7 @@ describe('Lib', function () {
       var lob = new Lob(readLob, createLobDescriptor(LobSourceType.NCLOB, chunk, 1), { useCesu8: true });
       lob.length.should.equal(1);
       lob.increaseOffset(chunk);
-      lob._offset.should.equal(2);
+      lob._offset.should.equal(3);
     });
 
     it('should create a Lob with type CLOB', function () {
@@ -199,7 +199,7 @@ describe('Lib', function () {
       var lob = new Lob(readLob, ld, { useCesu8: true, useDefaultType: true });
       lob.length.should.equal(1);
       lob.increaseOffset(chunk);
-      lob._offset.should.equal(2);
+      lob._offset.should.equal(3);
     });
 
     function createLobDescriptor(type, chunk, charLength) {
