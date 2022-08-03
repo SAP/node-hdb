@@ -18,3 +18,4 @@ exports.Client = lib.Client;
 exports.createClient = lib.createClient;
 exports.Stringifier = lib.Stringifier;
 exports.createJSONStringifier = lib.createJSONStringifier;
+exports.iconv = require('iconv-lite');
