@@ -200,7 +200,7 @@ describe('Auth', function () {
   describe('#SAML', function () {
 
     var method = 'SAML';
-    var assertion = new Buffer('3fca227d', 'hex');
+    var assertion = new Buffer('<saml:Assertion></saml:Assertion>', 'ascii');
     var sessionCookie = new Buffer('fcac0f42', 'hex');
 
     it('should get the corresponding authentication method instance', function () {
@@ -226,6 +226,53 @@ describe('Auth', function () {
       initialData.should.equal(assertion);
       initialData = manager.initialData();
       initialData.should.eql(['', method, assertion]);
+      // initialize manager
+      manager.initialize([method, new Buffer(user, 'utf8')], function(err) {
+        manager._authMethod.should.equal(authMethod);
+        // user
+        manager.userFromServer.should.equal(user);
+        // final data
+        var finalData = authMethod.finalData();
+        finalData.should.eql(emptyBuffer);
+        finalData = manager.finalData();
+        finalData.should.eql([user, method, emptyBuffer]);
+        // finalize manager
+        manager.finalize([method, sessionCookie]);
+        manager.sessionCookie.should.equal(sessionCookie);
+      });
+    });
+
+  });
+
+  describe('#JWT', function () {
+
+    var method = 'JWT';
+    var token = new Buffer('eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.eu3buOdtT84lHs90LfmC3MJ_17Qg0FfgBke2qnW5yE-wDlEdKWWEURFoneCzMmdGtJcnVqINmZD1X8XbvoAWeWq_tH75fSKcg_1RaooYaARdtpQGF_BtjXJ9jMJHoJ9kgjO8cv06GobNaoydu2v6C8fsSIBDVw9zEApGZIwNCJztkgmEGmkQKXHHxKRISi55DgCowVYk1Obgp55KMjRqmMkAvw8qoMsAU109n26NGQNI19wOaGiPrSGKpENkgq6lWFY6visswoA8X3pYn6EXdAqEGjuFH0ADuvqUoRyrrIaaem30JgVny8LQ-t2ms7gck8jPdxS7TUjiB2hHKjRwBw', 'ascii');
+    var sessionCookie = new Buffer('420facfc', 'hex');
+
+    it('should get the corresponding authentication method instance', function () {
+      var manager = auth.createManager({
+        user: null,
+        password: token
+      });
+      var authMethod = manager.getMethod(method);
+      authMethod.token.should.equal(token);
+    });
+
+    it('should authenticate and connect successfully', function () {
+      var manager = auth.createManager({
+        token: token
+      });
+      manager.user.should.equal('');
+      manager._authMethods.should.have.length(1);
+      var authMethod = manager._authMethods[0];
+      authMethod.name.should.equal(method);
+      authMethod.token.should.equal(token);
+      // initial data
+      var initialData = authMethod.initialData();
+      initialData.should.equal(token);
+      initialData = manager.initialData();
+      initialData.should.eql(['', method, token]);
       // initialize manager
       manager.initialize([method, new Buffer(user, 'utf8')], function(err) {
         manager._authMethod.should.equal(authMethod);
