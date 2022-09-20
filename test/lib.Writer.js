@@ -216,18 +216,18 @@ describe('Lib', function () {
       value = lorem.SHORT.toString('ascii');
       writer.setValues([value]);
       writer.length.should.equal(length + 4);
-      writer._buffers[0][1].should.equal(246);
+      writer._buffers[0][1].should.equal(lib.common.DATA_LENGTH_2BYTE_LENGTH_INDICATOR);
       // long
       length = lorem.LONG.length;
       value = lorem.LONG.toString('ascii');
       writer.setValues([value]);
       writer.length.should.equal(length + 6);
-      writer._buffers[0][1].should.equal(247);
+      writer._buffers[0][1].should.equal(lib.common.DATA_LENGTH_4BYTE_LENGTH_INDICATOR);
       // unicode char
       value = 'ä';
       length = value.length;
       writer.setValues([value]);
-      writer.length.should.equal(4); 
+      writer.length.should.equal(4);
       writer._buffers[0][2].should.equal(0xC3);
       writer._buffers[0][3].should.equal(0xA4);
     });
@@ -246,13 +246,13 @@ describe('Lib', function () {
       length = value.length;
       writer.setValues([value]);
       writer.length.should.equal(length + 4);
-      writer._buffers[0][1].should.equal(246);
+      writer._buffers[0][1].should.equal(lib.common.DATA_LENGTH_2BYTE_LENGTH_INDICATOR);
       // long
       value = lorem.LONG;
       length = value.length;
       writer.setValues([value]);
       writer.length.should.equal(length + 6);
-      writer._buffers[0][1].should.equal(247);
+      writer._buffers[0][1].should.equal(lib.common.DATA_LENGTH_4BYTE_LENGTH_INDICATOR);
     });
 
     it('should get Parameters where buffer excatly fits', function (
