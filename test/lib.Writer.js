@@ -75,6 +75,18 @@ describe('Lib', function () {
       });
     });
 
+    it('should write datetime types', function (done) {
+      var test = data.DATETIME;
+      var writer = Writer.create(test);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should write a BLOB', function (done) {
       var test = data.LOGO;
       var writer = Writer.create(test);
@@ -267,6 +279,11 @@ describe('Lib', function () {
       writer._buffers[0][1].should.equal(lib.common.DATA_LENGTH_4BYTE_LENGTH_INDICATOR);
     });
 
+    it('should set a LONGDATE value', function () {
+      var writer = new Writer([TypeCode.LONGDATE]);
+
+    });
+
     it('should get Parameters where buffer excatly fits', function (
       done) {
       var writer = new Writer([TypeCode.BLOB]);
@@ -425,24 +442,149 @@ describe('Lib', function () {
         .throw();
     });
 
-    it('should raise not implemented error for DAYDATE', function () {
-      var writer = new Writer([TypeCode.DAYDATE]);
-      Writer.prototype.setValues.bind(writer, [1]).should.throw();
-    });
-
-    it('should raise not implemented error for SECONDDATE', function () {
-      var writer = new Writer([TypeCode.SECONDDATE]);
-      Writer.prototype.setValues.bind(writer, [1]).should.throw();
-    });
-
-    it('should raise not implemented error for LONGDATE', function () {
+    it('should raise wrong input type error for LONGDATE', function () {
       var writer = new Writer([TypeCode.LONGDATE]);
-      Writer.prototype.setValues.bind(writer, [1]).should.throw();
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Regex does not match
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21|14:02:34'
+        ]).should
+        .throw();
+      // Invalid year
+      Writer.prototype.setValues.bind(writer, [
+          '0000-08-21 14:02:34.1234567'
+        ]).should
+        .throw();
+      // Invalid Month
+      Writer.prototype.setValues.bind(writer, [
+          '2014-13-21 14:02:34.1234567'
+        ]).should
+        .throw();
+      // Invalid Day
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-32 14:02:34.1234567'
+        ]).should
+        .throw();
+      // Invalid Hour
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21 24:02:34.1234567'
+        ]).should
+        .throw();
+      // Invalid Minute
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21 14:60:34.1234567'
+        ]).should
+        .throw();
+      // Invalid Second
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21 14:02:60.1234567'
+        ]).should
+        .throw();
     });
 
-    it('should raise not implemented error for SECONDTIME', function () {
+    it('should raise wrong input type error for SECONDDATE', function () {
+      var writer = new Writer([TypeCode.SECONDDATE]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Regex does not match
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21|14:02:34'
+        ]).should
+        .throw();
+      // Invalid year
+      Writer.prototype.setValues.bind(writer, [
+          '0000-08-21 14:02:34'
+        ]).should
+        .throw();
+      // Invalid Month
+      Writer.prototype.setValues.bind(writer, [
+          '2014-00-21 14:02:34'
+        ]).should
+        .throw();
+      // Invalid Day
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-00 14:02:34'
+        ]).should
+        .throw();
+      // Invalid Hour
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21 90:02:34'
+        ]).should
+        .throw();
+      // Invalid Minute
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21 14:90:34'
+        ]).should
+        .throw();
+      // Invalid Second
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-21 14:02:90'
+        ]).should
+        .throw();
+    });
+
+    it('should raise wrong input type error for DAYDATE', function () {
+      var writer = new Writer([TypeCode.DAYDATE]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Regex does not match
+      Writer.prototype.setValues.bind(writer, [
+          '2014|08|21'
+        ]).should
+        .throw();
+      // Invalid year
+      Writer.prototype.setValues.bind(writer, [
+          '198-08-21'
+        ]).should
+        .throw();
+      // Invalid Month
+      Writer.prototype.setValues.bind(writer, [
+          '2014-1-21 14:02:34'
+        ]).should
+        .throw();
+      // Invalid Day
+      Writer.prototype.setValues.bind(writer, [
+          '2014-08-1'
+        ]).should
+        .throw();
+    });
+
+    it('should raise wrong input type error for SECONDTIME', function () {
       var writer = new Writer([TypeCode.SECONDTIME]);
-      Writer.prototype.setValues.bind(writer, [1]).should.throw();
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Regex does not match
+      Writer.prototype.setValues.bind(writer, [
+          '14-02-34'
+        ]).should
+        .throw();
+      // Invalid Hour
+      Writer.prototype.setValues.bind(writer, [
+          '1:02:34'
+        ]).should
+        .throw();
+      // Invalid Minute
+      Writer.prototype.setValues.bind(writer, [
+          '14:61:34'
+        ]).should
+        .throw();
+      // Invalid Second
+      Writer.prototype.setValues.bind(writer, [
+          '14:02:61'
+        ]).should
+        .throw();
+    });
+
+    it('should raise wrong input type error for ALPHANUM', function () {
+      var writer = new Writer([TypeCode.ALPHANUM]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+    });
+
+    it('should raise wrong input type error for TEXT', function () {
+      var writer = new Writer([TypeCode.TEXT]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+    });
+
+    it('should raise wrong input type error for SHORTTEXT', function () {
+      var writer = new Writer([TypeCode.SHORTTEXT]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
   });

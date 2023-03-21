@@ -101,10 +101,14 @@ exports.ALL_TYPES = {
       '060ad7b941' +
       '0685ebc141' +
       '8c' +
-      // offset 167
-      '1b06c8000000c6000000' +
-      '19060b0000008e010000' +
-      '1a060b00000099010000',
+      '3F38450B00' +
+      '3E6DB3C0DB0E000000' +
+      '40EDB00000' +
+      '3DBFB3AF519B36DB08' +
+      // offset 195
+      '1b06c8000000e2000000' +
+      '19060b000000aa010000' +
+      '1a060b000000b5010000',
       'hex'), blob, clob, nclob])
   },
   types: [
@@ -133,6 +137,10 @@ exports.ALL_TYPES = {
     TypeCode.REAL,
     TypeCode.REAL,
     TypeCode.BINARY,
+    TypeCode.DAYDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.SECONDTIME,
+    TypeCode.LONGDATE,
     TypeCode.BLOB,
     TypeCode.CLOB,
     TypeCode.NCLOB
@@ -163,6 +171,10 @@ exports.ALL_TYPES = {
     23.23,
     24.24,
     null,
+    '2023-04-04',
+    '2023-04-04 12:34:52',
+    '12:34:52',
+    '2023-04-04 12:34:52.1357246',
     blob,
     clob,
     nclob
@@ -414,5 +426,73 @@ exports.DECIMAL = {
     "99999999999999999999999999999999995",
     "-00000000000000000000000000000000000000009999999999999979999999999999999999999999999999.99900000000000e-50",
     "1234567890123456789012345678909999999"
+  ]
+};
+
+exports.DATETIME = {
+  part: {
+    argumentCount: 1,
+    buffer: new Buffer(
+      '90' +
+      '3dc9f830e43673b308' +
+      '3d027700111f64ed06' +
+      '3d811658b7c86aed06' +
+      '3d0100000000000000' +
+      '3d00c00a49082aca2b' +
+      '90' +
+      '3eb9830a990e000000' +
+      '3e0100000000000000' +
+      '3e80db887749000000' +
+      '8e' +
+      '3f9e120b00' +
+      '3f439d0600' +
+      '3f01000000' +
+      '3fddb93700' +
+      '8f' +
+      '4039880000' +
+      '4080510100' +
+      '4001000000', 'hex')
+  },
+  types: [
+    TypeCode.LONGDATE,
+    TypeCode.LONGDATE,
+    TypeCode.LONGDATE,
+    TypeCode.LONGDATE,
+    TypeCode.LONGDATE,
+    TypeCode.LONGDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.DAYDATE,
+    TypeCode.DAYDATE,
+    TypeCode.DAYDATE,
+    TypeCode.DAYDATE,
+    TypeCode.DAYDATE,
+    TypeCode.SECONDTIME,
+    TypeCode.SECONDTIME,
+    TypeCode.SECONDTIME,
+    TypeCode.SECONDTIME,
+  ],
+  values: [
+    null,
+    '1987-10-16 09:41:12.84738',
+    '1582-10-15 12:30:30.0000001',
+    '1582-10-14 00:00:01',
+    '0001-01-01 00:00:00',
+    '9999-12-31 23:59:59.999999999999',
+    null,
+    '1987-10-16 09:41:12',
+    '0001-01-01 00:00:00',
+    '9999-12-31 23:59:59',
+    null,
+    '1987-10-16',
+    '1187-10-16',
+    '0001-01-01',
+    '9999-12-31',
+    null,
+    '09:41:12',
+    '23:59:59',
+    '00:00:00'
   ]
 };
