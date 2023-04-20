@@ -46,9 +46,9 @@ describe('Data', function () {
     ];
     var largeBuffer = Buffer.concat([
       new Buffer([2, 0]),
-      new Buffer([246, 0, 1]),
+      new Buffer([lib.common.DATA_LENGTH_2BYTE_LENGTH_INDICATOR, 0, 1]),
       largeFields[0],
-      new Buffer([246, 0, 1]),
+      new Buffer([lib.common.DATA_LENGTH_2BYTE_LENGTH_INDICATOR, 0, 1]),
       largeFields[1]
     ]);
 

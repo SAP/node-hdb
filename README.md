@@ -66,7 +66,7 @@ Below is a major feature comparison chart between the two drivers:
 | Password/PBKDF2 Authentication	                |:heavy_check_mark:|:heavy_check_mark:|
 | SAML Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
 | JWT Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
-| LDAP Authentication	                            |:heavy_check_mark:|:x:|
+| LDAP Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
 | Kerberos Authentication	                        |:heavy_check_mark:|:x:|
 | X.509 Authentication	                          |:heavy_check_mark:|:x:|
 | Secure User Store Integration (hdbuserstore)	        |:heavy_check_mark:|:x:|
@@ -195,7 +195,7 @@ This is suitable for multiple-host SAP HANA systems which are distributed over s
 Details about the different authentication methods can be found in the [SAP HANA Security Guide](https://help.sap.com/viewer/6b94445c94ae495c83a19646e7c3fd56/latest/en-US/440f6efe693d4b82ade2d8b182eb1efb.html).
 
 #### User / Password
-Users authenticate themselves with their database `user` and `password`.
+Users authenticate themselves with their database `user` and `password`. 
 
 #### SAML assertion
 SAML bearer assertions as well as unsolicited SAML responses that include an
