@@ -105,6 +105,18 @@ describe('Lib', function () {
       });
     });
 
+    it('should write decimal types', function (done) {
+      var test = data.DECIMAL;
+      var writer = Writer.create(test);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should get WriteLobRequest', function (done) {
       var writer = new Writer([TypeCode.BLOB]);
       var stream = new lib.util.stream.Readable();
@@ -383,6 +395,8 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
+      Writer.prototype.setValues.bind(writer, ['']).should.throw();
+      Writer.prototype.setValues.bind(writer, ['.']).should.throw();
     });
 
     it('should raise wrong input type error for DATE', function () {
