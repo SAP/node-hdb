@@ -60,8 +60,11 @@ Below is a major feature comparison chart between the two drivers:
 | Connectivity to SAP HANA as a Service	                |:heavy_check_mark:|:heavy_check_mark:|
 | Connectivity to SAP HANA Platform	                |:heavy_check_mark:|:heavy_check_mark:|
 | Transport Layer Security (TLS)	                |:heavy_check_mark:|:heavy_check_mark:|
+| Automatic Reconnect (Transparent Session Recovery)    |:heavy_check_mark:|:x:|
 | Active-Active Read Enabled	                        |:heavy_check_mark:|:x:|
+| Connection Pooling (Implicit and Explicit)            |:heavy_check_mark:|:x:|
 | Client-Side Data Encryption	                        |:heavy_check_mark:|:x:|
+| Database Redirection                              |:heavy_check_mark:|:x:|
 | Statement Distribution	                        |:heavy_check_mark:|:x:|
 | Password/PBKDF2 Authentication	                |:heavy_check_mark:|:heavy_check_mark:|
 | SAML Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
@@ -72,9 +75,15 @@ Below is a major feature comparison chart between the two drivers:
 | Secure User Store Integration (hdbuserstore)	        |:heavy_check_mark:|:x:|
 | Connections through HTTP proxy	                |:heavy_check_mark:|:x:|
 | Connections through SOCKS proxy (SAP Cloud Connector)	|:heavy_check_mark:|:x:|
-| Tracing via hdbsqldbc_cons	                        |:heavy_check_mark:|:x:|
+| Network Compression                                   |:heavy_check_mark:|:x:|
+| Network Packet Size                                   |:heavy_check_mark:|:x:|
+| Network Poll before Send                              |:heavy_check_mark:|:x:|
+| Advanced Tracing via external utility or environment variables |:heavy_check_mark:|:x:|
 | Tracing via environment variable to a file	        |:heavy_check_mark:|:heavy_check_mark:|
+| Promise support                                   |:heavy_check_mark:|:x:|
+| TypeScript support                                |:heavy_check_mark:|:x:|
 | Pure JavaScript package	                        |:x:               |:heavy_check_mark:|
+| Security Provider Support                         |SAP CommonCryptoLib, OpenSSL, MSCrypto|OpenSSL|
 | Node.js major version support                         |See [SAP Note 3165810](https://launchpad.support.sap.com/#/notes/3165810)|All Supported Versions|
 | License (without alternate SAP license agreement)     |[SAP Developer Agreement](https://tools.hana.ondemand.com/developer-license.txt)|[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)|
 | SAP Support (with SAP Support agreement)              |Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|
