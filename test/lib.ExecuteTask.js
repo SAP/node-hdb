@@ -14,6 +14,7 @@
 'use strict';
 /* jshint expr:true */
 
+var {Readable, Transform} = require('stream');
 var lib = require('../lib');
 var ExecuteTask = lib.ExecuteTask;
 var FunctionCode = lib.common.FunctionCode;
@@ -307,6 +308,109 @@ describe('Lib', function () {
       }).run(next);
     });
 
+    it('should run a task with one stream parameter with read stream error between writeLOB chunks', function (next) {
+      var content = new Content(200000);
+      var transform = new TransformWithError(150000, false);
+      transform.on('error', () => {
+        content.unpipe();
+        content.destroy();
+      });
+      content.pipe(transform);
+      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+      createExecuteTask({
+        parameters: {
+          types: [TypeCode.BLOB],
+          values: [transform]
+        },
+        availableSize : 50000,
+        replies: [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            writeLobReply: [locatorId]
+          }]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.ROLLBACK,
+          args: [null, {}]
+        }]
+      }, function done(err) {
+        err.should.be.an.instanceOf(Error);
+      }).run(next);
+    });
+
+    it('should run a task with multiple stream parameters with read stream error between writeLOB chunks', function (next) {
+      var content1 = new Content(200000);
+      var transform1 = new TransformWithError(300000, false);
+      transform1.on('error', () => {
+        content1.unpipe();
+        content1.destroy();
+      });
+      content1.pipe(transform1); // no read stream error since limit > content size
+      var content2 = new Content(200000);
+      var transform2 = new TransformWithError(150000, false);
+      transform2.on('error', () => {
+        content2.unpipe();
+        content2.destroy();
+      });
+      content2.pipe(transform2); // will cause read stream error since limit < content size
+      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+      createExecuteTask({
+        parameters: {
+          types: [TypeCode.BLOB, TypeCode.BLOB],
+          values: [transform1, transform2],
+        },
+        availableSize : 50000,
+        replies: [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            writeLobReply: [locatorId, locatorId],
+          }]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.ROLLBACK,
+          args: [null, {}]
+        }]
+      }, function done(err) {
+        err.should.be.an.instanceOf(Error);
+      }).run(next);
+    });
+
+    it('should run a task with read stream error before parameters bound', function (next) {
+      var content = new Content(100);
+      var transform = new TransformWithError(150000, true);
+      transform.on('error', () => {
+        content.unpipe();
+        content.destroy();
+      });
+      content.pipe(transform);
+      createExecuteTask({
+        parameters: {
+          types: [TypeCode.BLOB],
+          values: [transform]
+        },
+        availableSize : 50000,
+        replies: []
+      }, function done(err) {
+        err.should.be.an.instanceOf(Error);
+      }).run(next);
+    });
+
     it('should accumulate rows affected', function () {
       var task = createExecuteTask();
       task.pushReply({});
@@ -457,3 +561,48 @@ Connection.prototype.send = function (msg, cb) {
 Connection.prototype.getAvailableSize = function () {
   return this.size;
 };
+
+class Content extends Readable {
+    constructor(size) {
+        super();
+        this.bytesRead = 0;
+        this.testChunk = '';
+        for(let i = 0; i < (size / 8); ++i) {
+            this.testChunk += '12345678';
+        }
+    }
+
+    _read(size) {
+        let toRead = size;
+        if(toRead > 0 && this.bytesRead < this.testChunk.length) {
+            let chunk = this.testChunk.slice(this.bytesRead, this.bytesRead + toRead);
+            this.push(chunk);
+            this.bytesRead += chunk.length;
+        }
+        if(this.bytesRead == this.testChunk.length) {
+            this.push(null);
+        }
+    }
+}
+
+class TransformWithError extends Transform {
+    constructor(limit, errorOnFinal) {
+        super();
+        this.limit = limit;
+        this.errorOnFinal = Boolean(errorOnFinal);
+    }
+
+    _transform(chunk, encoding, callback) {
+        this.limit -= chunk.length;
+        if (this.limit > 0) {
+            callback(null, chunk);
+        } else {
+            callback(new Error('Error in transform'));
+        }
+    }
+
+    _final(callback) {
+        callback(this.errorOnFinal ? new Error('Error in final') : null);
+    }
+}
+
