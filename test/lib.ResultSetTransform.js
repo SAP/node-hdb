@@ -120,8 +120,8 @@ describe('Lib', function () {
       });
       var chunks = [];
       rst.on('readable', function () {
-        var value = rst.read();
-        if (value !== null) {
+        var value;
+        while(null !== (value = rst.read())) {
           chunks.push(new Buffer([value]));
         }
       });
