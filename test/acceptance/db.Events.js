@@ -20,7 +20,7 @@ describe('db', function () {
   describe('events', function () {
     var client;
 
-    before(function (done) {
+    beforeEach(function (done) {
       db.init(function (err) {
         if (err) {
           return done(err);
@@ -46,6 +46,17 @@ describe('db', function () {
       });
     });
 
+    it('should fail to execute prepared statement after client closed', function (done) {
+      client.prepare('select * from dummy where dummy = ?', function(err, stmt) {
+        client.close();
+        setTimeout(function () {
+          stmt.execute(["test"], function(err, res) {
+            err.message.should.equal("Connection closed");
+            done();
+          });
+        }, 0);
+      });
+    });
   });
 
 });
