@@ -90,11 +90,6 @@ function update(cb) {
   client.exec(sql, done);
 }
 
-function select(cb) {
-  var sql = 'select * from PERSONS';
-  client.exec(sql, cb);
-}
-
 function done(err, rows) {
   client.end();
   if (err) {
