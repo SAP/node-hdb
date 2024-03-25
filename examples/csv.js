@@ -41,6 +41,7 @@ var query = util._extend({
 var segments = params.pathname.match(/^\/?(?:([^.]+)\.)?(.*)/).slice(1);
 var schema = segments[0].toUpperCase();
 var tablename = segments[1].toUpperCase();
+// eslint-disable-next-line no-useless-escape
 var filename = tablename.replace(/^\/[^\/]+\//, '').toLowerCase() + '.csv';
 filename = path.join(os.tmpdir(), filename);
 
