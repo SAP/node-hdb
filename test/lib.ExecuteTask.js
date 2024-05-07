@@ -308,6 +308,100 @@ describe('Lib', function () {
       }).run(next);
     });
 
+    it('should fail to bind parameters if insufficient space left in packet', function(next) {
+      var statement_id_part_length = 24;
+      function failToBind(cb) {
+        createExecuteTask({
+          parameters: {
+            types: [TypeCode.NVARCHAR],
+            values: ["abcd".repeat(100)]
+          },
+          availableSize: 403 + statement_id_part_length,
+          replies: []
+        }, function done(err) {
+          err.should.be.an.instanceOf(Error);
+          err.message.should.equal('Failed to set parameters, maximum packet size exceeded.');
+        }).run(cb);
+      }
+
+      function succeedWithBinding(cb) {
+        createExecuteTask({
+          parameters: {
+            types: [TypeCode.NVARCHAR],
+            values: ["abcd".repeat(100)]
+          },
+          availableSize: 404 + statement_id_part_length,
+          replies: [{
+            type: MessageType.EXECUTE,
+            args: [null],
+          }]
+        }, function done(err) {
+          (!err).should.be.ok;
+        }).run(cb);
+      }
+
+      failToBind(() => {
+        succeedWithBinding(next);
+      });
+    });
+
+    it('should limit the size of writeLOB chunks', function (next) {
+      var buffer = new Buffer(500);
+      // write 'abcd' repeating to entire buffer
+      for (var i = 0; i < buffer.length; i++) {
+        buffer[i] = 97 + (i % 4);
+      }
+      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+      var lobBytesSent = 0;
+      createExecuteTask({
+        parameters: {
+          types: [TypeCode.NVARCHAR, TypeCode.BLOB],
+          values: ["abcd".repeat(100), buffer]
+        },
+        availableSize : 100000,
+        availableSizeForLobs : 200,
+        replies: [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            writeLobReply: [locatorId]
+          }],
+          checkMessage: function(msg) {
+            var parameterDataLen = msg.parts[1].args[0].length;
+            parameterDataLen.should.equal(4 + 400 + 10); // string prefix + entire string + lob descriptor (no lob data)
+          }
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}],
+          checkMessage: function(msg) {
+            var parameterDataLen = msg.parts[0].args.buffer.length;
+            lobBytesSent += parameterDataLen - 21; // subtract 21 bytes for non-data fields
+            parameterDataLen.should.equal(200);
+          }
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}],
+          checkMessage: function(msg) {
+            var parameterDataLen = msg.parts[0].args.buffer.length;
+            lobBytesSent += parameterDataLen - 21; // subtract 21 bytes for non-data fields
+            parameterDataLen.should.equal(200);
+          }
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}],
+          checkMessage: function(msg) {
+            var parameterDataLen = msg.parts[0].args.buffer.length;
+            lobBytesSent += parameterDataLen - 21; // subtract 21 bytes for non-data fields
+            lobBytesSent.should.equal(500); // entire lob now sent
+          }
+        }, {
+          type: MessageType.COMMIT,
+          args: [null, {}],
+        }]
+      }, function done(err) {
+        (!err).should.be.ok;
+      }).run(next);
+    });
+
     it('should run a task with one stream parameter with read stream error between writeLOB chunks', function (next) {
       var content = new Content(200000);
       var transform = new TransformWithError(150000, false);
@@ -452,7 +546,7 @@ describe('Lib', function () {
       task.writer.setValues = function () {
         throw invalidValuesError;
       };
-      task.getParameters(64, function (err) {
+      task.getParameters(64, 64, function (err) {
         err.message.should.equal('Cannot set parameter at row: 1. ' + invalidValuesError.message);
         done();
       });
@@ -470,7 +564,7 @@ describe('Lib', function () {
       task.writer.getParameters = function (remainingSize, cb) {
         cb(streamError);
       };
-      task.getParameters(64, function (err) {
+      task.getParameters(64, 64, function (err) {
         err.should.equal(streamError);
         done();
       });
@@ -479,8 +573,9 @@ describe('Lib', function () {
     it('should sendExecute with error', function (done) {
       var task = createExecuteTask();
       var error = new Error('error');
-      task.getParameters = function (availableSize, cb) {
+      task.getParameters = function (availableSize, availableSizeForLOBs, cb) {
         availableSize.should.equal(40);
+        availableSizeForLOBs.should.equal(40);
         cb(error);
       };
       task.sendExecute(function (err) {
@@ -527,10 +622,14 @@ function createExecuteTask(options, cb, checkReplies) {
     scrollableCursor: true,
     statementId: STATEMENT_ID,
     functionCode: FunctionCode.INSERT,
-    availableSize: 64
+    availableSize: 64,
   }, options);
-  var connection = new Connection(options.availableSize, options.replies);
+  if(options.availableSizeForLobs === undefined) {
+    options.availableSizeForLobs = options.availableSize;
+  }
+  var connection = new Connection(options.availableSize, options.availableSizeForLobs, options.replies);
   options.availableSize = undefined;
+  options.availableSizeForLobs = undefined;
   options.replies = undefined;
   if (checkReplies === undefined) checkReplies = true;
   return ExecuteTask.create(connection, options, function () {
@@ -541,8 +640,9 @@ function createExecuteTask(options, cb, checkReplies) {
   });
 }
 
-function Connection(size, replies) {
+function Connection(size, sizeForLobs, replies) {
   this.size = size;
+  this.sizeForLobs = sizeForLobs;
   this.replies = replies || [];
   this.useCesu8 = true;
 }
@@ -558,7 +658,10 @@ Connection.prototype.send = function (msg, cb) {
   });
 };
 
-Connection.prototype.getAvailableSize = function () {
+Connection.prototype.getAvailableSize = function (forLobs = false) {
+  if(forLobs) {
+      return this.sizeForLobs;
+  }
   return this.size;
 };
 
