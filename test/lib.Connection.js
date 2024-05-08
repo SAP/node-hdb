@@ -265,12 +265,72 @@ describe('Lib', function () {
     });
 
     it('should get the available message buffer size', function () {
-      var connection = createConnection();
-      var maxAvailableSize = connection.getAvailableSize();
-      connection._statementContext = {
+      var totalHeaderLength = 32 + 24 + 16; // PACKET_HEADER_LENGTH + SEGMENT_HEADER_LENGTH + PART_HEADER_LENGTH
+      var packetSizeMin = Math.pow(2, 16);
+      var packetSizeMax = Math.pow(2, 30) - 1;
+      var packetSizeDefault = Math.pow(2, 17);
+      var c1 = createConnection();
+      c1._statementContext = {
         size: 32
       };
-      connection.getAvailableSize().should.equal(maxAvailableSize - 32);
+      c1.getAvailableSize().should.equal(packetSizeDefault - totalHeaderLength - 32);
+      c1.getAvailableSize(true).should.equal(packetSizeDefault - totalHeaderLength - 32);
+
+      // packetSize defined, packetSizeLimit undefined
+      var ps = Math.pow(2, 18);
+      var psl = undefined;
+      var c2 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c2.getAvailableSize(false).should.equal(ps - totalHeaderLength);
+      c2.getAvailableSize(true).should.equal(ps - totalHeaderLength);
+
+      // packetSize undefined, packetSizeLimit defined
+      ps = undefined
+      psl = Math.pow(2, 19);
+      var c3 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c3.getAvailableSize(false).should.equal(psl - totalHeaderLength);
+      c3.getAvailableSize(true).should.equal(packetSizeDefault - totalHeaderLength);
+
+      // packetSizeLimit is larger than packetSize
+      ps = Math.pow(2, 20);
+      psl = Math.pow(2, 21);
+      var c4 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c4.getAvailableSize(false).should.equal(psl - totalHeaderLength);
+      c4.getAvailableSize(true).should.equal(ps - totalHeaderLength);
+
+      // packetSizeLimit is smaller than packetSize
+      ps = Math.pow(2, 20);
+      psl = Math.pow(2, 19);
+      var c4 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c4.getAvailableSize(false).should.equal(ps - totalHeaderLength);
+      c4.getAvailableSize(true).should.equal(ps - totalHeaderLength);
+
+      // packetSize below minimum
+      ps = Math.pow(2, 10);
+      psl = Math.pow(2, 20);
+      var c5 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c5.getAvailableSize(false).should.equal(psl - totalHeaderLength);
+      c5.getAvailableSize(true).should.equal(packetSizeMin - totalHeaderLength);
+
+      // packetSizeLimit above maximum
+      ps = Math.pow(2, 20);
+      psl = Math.pow(2, 31);
+      var c6 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c6.getAvailableSize(false).should.equal(packetSizeMax - totalHeaderLength);
+      c6.getAvailableSize(true).should.equal(ps - totalHeaderLength);
+
+      // packetSize and packetSizeLimit below minimum
+      ps = Math.pow(2, 10);
+      psl = Math.pow(2, 9);
+      var c7 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c7.getAvailableSize(false).should.equal(packetSizeMin - totalHeaderLength);
+      c7.getAvailableSize(true).should.equal(packetSizeMin - totalHeaderLength);
+
+      // packetSize and packetSizeLimit above maximum
+      ps = Math.pow(2, 32);
+      psl = Math.pow(2, 31);
+      var c8 = createConnection({packetSize : ps, packetSizeLimit : psl})
+      c8.getAvailableSize(false).should.equal(packetSizeMax - totalHeaderLength);
+      c8.getAvailableSize(true).should.equal(packetSizeMax - totalHeaderLength);
     });
 
     it('should parse a reply', function () {
