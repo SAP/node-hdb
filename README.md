@@ -276,6 +276,22 @@ If so, make sure to include all the necessary TLS-related properties for both th
 In case you need custom logic to validate the server's hostname against the certificate, you can assign a callback function to the `checkServerIdentity` property, alongside the other connection options. The callback is
 supplied to the `tls.connect` funciton of the [TLS](https://nodejs.org/api/tls.html#connect) API and should conform to the signature described there.
 
+### Controlling the Maximum Packet Size
+By default, the node-hdb driver restricts the size of outgoing packets to 128KB. Attempting to execute SQL statements larger than this limit will result in an error. Furthermore, large object parameters (LOBs) larger than this limit will be broken up and sent in multiple packets to the server.
+This limit is configurable via the `packetSize` and `packetSizeLimit` connect options. Node-hdb will never allocate outgoing packets larger than `packetSizeLimit` and will restrict the packet size further to `packetSize` if possible (via breaking up LOB parameters into multiple packets).
+
+For example, the following configuration will allow packets up to 2^20 bytes (1MB) if necessary, but will still restrict LOB data to 2^17 byte (128KB) packets:
+```js
+var client = hdb.createClient({
+  host : 'hostname',
+  port : 30015,
+  packetSize : Math.pow(2, 17),
+  packetSizeLimit : Math.pow(2, 20)
+  ...
+});
+```
+If not set, the value of `packetSize` defaults to 131072 (128KB) and `packetSizeLimit` defaults to `packetSize`. Values for `packetSize` may range from 65536 (64KB) to 1073741823 (1GB-1). Values for `packetSizeLimit` may range from `packetSize` to 1073741823 (1GB-1).
+
 Direct Statement Execution
 --------------------------
 
