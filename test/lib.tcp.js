@@ -162,9 +162,9 @@ describe('Lib', function () {
         ++testCase; // 1
         tcp.connect({ca: "DummyCert"}, () => {
           ++testCase; // 2
-          tcp.connect({ca: ["DummyCert", "DummyCert2"], sslUseDigiCertRoots: true}, () => {
+          tcp.connect({ca: ["DummyCert", "DummyCert2"], sslHanaCloudCertificates: true}, () => {
             ++testCase; // 3
-            tcp.connect({ca: "DummyCert", sslUseDigiCertRoots: false}, () => {
+            tcp.connect({ca: "DummyCert", sslHanaCloudCertificates: false}, () => {
               ++testCase; // 4
               tcp.connect({ca: ["DummyCert"], sslUseDefaultTrustStore: true}, () => {
                 tcp.createSecureSocket = createSecureSocket;
