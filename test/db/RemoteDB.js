@@ -24,6 +24,18 @@ function RemoteDB(options) {
   TestDB.call(this, options);
 }
 
+RemoteDB.prototype.getHanaBuildVersion = function getBuildVersion(cb) {
+  this.client.exec("SELECT VALUE FROM M_HOST_INFORMATION WHERE KEY='build_version'", function (err, rows) {
+    var version;
+    if (err) {
+      version = undefined;
+    } else {
+      version = rows[0].VALUE;
+    }
+    cb(version);
+  });
+}
+
 RemoteDB.prototype.createImages = function createImages(cb) {
   this.images = TestDB.IMAGES.slice(0);
   var values = this.images.map(function toParameters(img) {
@@ -112,15 +124,46 @@ RemoteDB.prototype.dropTable = function dropTable(tablename, cb) {
 };
 
 RemoteDB.prototype.createReadNumbersProc = function createReadNumbersProc(cb) {
-  var sql = [
-    'create procedure READ_NUMBERS_BETWEEN (in a int, in b int, out nums NUMBERS)',
-    'language sqlscript',
-    'reads sql data with result view READ_NUMBERS_BETWEEN_VIEW as',
-    'begin',
-    ' nums = select * from NUMBERS where a between :a and :b;',
-    'end;'
-  ].join('\n');
-  this.client.exec(sql, cb);
+  // Determine HANA build version
+  var self = this;
+  this.getHanaBuildVersion(function (version) {
+    if (version !== undefined && version.startsWith("4.5")) { // Check if HANA cloud
+      // On HANA cloud, "create procedure with result view" is not supported, so a function is created instead
+      var sql = [
+        'create procedure READ_NUMBERS_BETWEEN (in a int, in b int, out nums TABLE (A int, B varchar(16)))',
+        'language sqlscript',
+        'reads sql data as',
+        'begin',
+        ' nums = select * from NUMBERS where a between :a and :b;',
+        'end;'
+      ].join('\n');
+  
+      function createFunction () {
+        // ignore err
+        var sql2 = [
+          'create function READ_NUMBERS_BETWEEN_FUNC (IN a int, IN b int)',
+          ' returns TABLE(A int, B varchar(16)) as',
+          'begin',
+          'call READ_NUMBERS_BETWEEN(:a, :b, tmp);',
+          ' return :tmp;',
+          'end;'
+        ].join('\n');
+        self.client.exec(sql2, cb);
+      }
+  
+      self.client.exec(sql, createFunction);
+    } else {
+      var sql = [
+        'create procedure READ_NUMBERS_BETWEEN (in a int, in b int, out nums NUMBERS)',
+        'language sqlscript',
+        'reads sql data with result view READ_NUMBERS_BETWEEN_VIEW as',
+        'begin',
+        ' nums = select * from NUMBERS where a between :a and :b;',
+        'end;'
+      ].join('\n');
+      self.client.exec(sql, cb);
+    }
+  });
 };
 
 RemoteDB.prototype.dropReadNumbersProc = function dropReadNumbersProc(cb) {
