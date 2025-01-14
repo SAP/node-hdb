@@ -127,7 +127,7 @@ RemoteDB.prototype.createReadNumbersProc = function createReadNumbersProc(cb) {
   // Determine HANA build version
   var self = this;
   this.getHanaBuildVersion(function (version) {
-    if (version !== undefined && version.startsWith("4.5")) { // Check if HANA cloud
+    if (version !== undefined && version.startsWith("4.")) { // Check if HANA cloud
       // On HANA cloud, "create procedure with result view" is not supported, so a function is created instead
       var sql = [
         'create procedure READ_NUMBERS_BETWEEN (in a int, in b int, out nums TABLE (A int, B varchar(16)))',
