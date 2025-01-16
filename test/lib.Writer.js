@@ -279,12 +279,7 @@ describe('Lib', function () {
       writer._buffers[0][1].should.equal(lib.common.DATA_LENGTH_4BYTE_LENGTH_INDICATOR);
     });
 
-    it('should set a LONGDATE value', function () {
-      var writer = new Writer([TypeCode.LONGDATE]);
-
-    });
-
-    it('should get Parameters where buffer excatly fits', function (
+    it('should get Parameters where buffer exactly fits', function (
       done) {
       var writer = new Writer([TypeCode.BLOB]);
       var stream = new lib.util.stream.Readable();

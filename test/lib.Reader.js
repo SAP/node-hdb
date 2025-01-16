@@ -320,10 +320,6 @@ describe('Lib', function () {
     });
 
     it('should read a SecondDate', function () {
-      //var buffer = new Buffer(24);
-      //buffer.fill(0x00, 0, 8);
-      //bignum.writeInt64LE(buffer, 315538070401, 8);
-      //bignum.writeInt64LE(buffer, 2, 16);
       var buffer = new Buffer([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x81, 0xD8, 0x88, 0x77, 0x49, 0x00, 0x00, 0x00,
