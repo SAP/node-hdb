@@ -20,11 +20,11 @@ describe('Util', function () {
 
   describe('#DATE', function () {
 
-    it('should convert date to daydate', function () {
-      calendar.DATE(735284).should.equal('2014-02-18');
-      calendar.DATE(577738).should.equal('1582-10-15');
-      calendar.DATE(577737).should.equal('1582-10-04');
-      calendar.DATE(1).should.equal('0001-01-01');
+    it('should convert daydate to date', function () {
+      calendar.DATE(735284).should.deepEqual({y: 2014, m: 2, d: 18});
+      calendar.DATE(577738).should.deepEqual({y: 1582, m: 10, d: 15});
+      calendar.DATE(577737).should.deepEqual({y: 1582, m: 10, d: 4});
+      calendar.DATE(1).should.deepEqual({y: 1, m: 1, d: 1});
     });
 
   });
@@ -43,9 +43,33 @@ describe('Util', function () {
     });
 
     it('should convert year, month and day values to daydate', function () {
-      calendar.DAYDATE(1582, 9, 5).should.equal(577738);
+      calendar.DAYDATE(1582, 10, 5).should.equal(577738);
     });
 
+  });
+
+  describe('#DATETIMEVALIDITY', function () {
+
+    it('should identify invalid days', function() {
+      calendar.isValidDay(20, 11, 1995).should.equal(true);
+      calendar.isValidDay(31, 11, 1995).should.equal(false);
+      calendar.isValidDay(20, 13, 1995).should.equal(false);
+      calendar.isValidDay(20, 11, 10000).should.equal(false);
+    });
+
+    it('should identify invalid times', function() {
+      calendar.isValidTime(59, 59, 23).should.equal(true);
+      calendar.isValidTime(60, 59, 23).should.equal(false);
+      calendar.isValidTime(59, 60, 23).should.equal(false);
+      calendar.isValidTime(59, 59, 24).should.equal(false);
+    });
+
+    it('should identify leap years', function() {
+      calendar.isValidDay(29, 2, 2023).should.equal(false);
+      calendar.isValidDay(29, 2, 2024).should.equal(true);
+      calendar.isValidDay(29, 2, 2100).should.equal(false);
+      calendar.isValidDay(29, 2, 2000).should.equal(true);
+    });
   });
 
 });

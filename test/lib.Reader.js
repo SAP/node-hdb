@@ -284,12 +284,19 @@ describe('Lib', function () {
       var buffer = new Buffer([
         0x00, 0x00, 0x00, 0x00,
         0xde, 0xb9, 0x37, 0x00,
-        0x02, 0x00, 0x00, 0x00
+        0x01, 0x00, 0x00, 0x00,
+        0x02, 0x00, 0x00, 0x00,
+        0x31, 0x45, 0x0B, 0x00,
+        0xDD, 0xB9, 0x37, 0x00
+
       ]);
       var reader = new lib.Reader(buffer);
       should(reader.readDayDate() === null).ok;
       should(reader.readDayDate() === null).ok;
-      reader.readDayDate().should.equal(1);
+      reader.readDayDate().should.equal('0001-01-01');
+      reader.readDayDate().should.equal('0001-01-02');
+      reader.readDayDate().should.equal('2023-03-28');
+      reader.readDayDate().should.equal('9999-12-31');
       reader.hasMore().should.equal(false);
     });
 
@@ -297,41 +304,75 @@ describe('Lib', function () {
       var buffer = new Buffer([
         0x00, 0x00, 0x00, 0x00,
         0x82, 0x51, 0x01, 0x00,
-        0x02, 0x00, 0x00, 0x00
+        0x01, 0x00, 0x00, 0x00,
+        0x02, 0x00, 0x00, 0x00,
+        0x8A, 0xA1, 0x00, 0x00,
+        0x80, 0x51, 0x01, 0x00,
       ]);
       var reader = new lib.Reader(buffer);
       should(reader.readSecondTime() === null).ok;
       should(reader.readSecondTime() === null).ok;
-      reader.readSecondTime().should.equal(1);
+      reader.readSecondTime().should.equal('00:00:00');
+      reader.readSecondTime().should.equal('00:00:01');
+      reader.readSecondTime().should.equal('11:29:13');
+      reader.readSecondTime().should.equal('23:59:59');
       reader.hasMore().should.equal(false);
     });
 
     it('should read a SecondDate', function () {
-      var buffer = new Buffer(24);
-      buffer.fill(0x00, 0, 8);
-      bignum.writeInt64LE(buffer, 315538070401, 8);
-      bignum.writeInt64LE(buffer, 2, 16);
+      var buffer = new Buffer([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x81, 0xD8, 0x88, 0x77, 0x49, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x81, 0x51, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x86, 0xB6, 0xB7, 0xDB, 0x0E, 0x00, 0x00, 0x00,
+        0x80, 0xDB, 0x88, 0x77, 0x49, 0x00, 0x00, 0x00,
+      ]);
       var reader = new lib.Reader(buffer);
       should(reader.readSecondDate() === null).ok;
       should(reader.readSecondDate() === null).ok;
-      reader.readSecondDate().should.equal(1);
+      reader.readSecondDate().should.equal('0001-01-01 00:00:00');
+      reader.readSecondDate().should.equal('0001-01-01 00:00:01');
+      reader.readSecondDate().should.equal('0001-01-02 00:00:00');
+      reader.readSecondDate().should.equal('2023-03-28 16:57:41');
+      reader.readSecondDate().should.equal('9999-12-31 23:59:59');
       reader.hasMore().should.equal(false);
     });
 
-
     it('should read a LongDate', function () {
-      var buffer = new Buffer(40);
-      buffer.fill(0x00, 0, 8);
-      bignum.writeInt64LE(buffer, '3155380704000000001', 8);
-      bignum.writeInt64LE(buffer, 2, 16);
-      bignum.writeInt64LE(buffer, '1000000000000000001', 24);
-      bignum.writeInt64LE(buffer, '1000000000000000000', 32);
+      var buffer = new Buffer([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0xC0, 0x0A, 0x49, 0x08, 0x2A, 0xCA, 0x2B,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x81, 0x96, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x39, 0x92, 0xE7, 0x9E, 0xDB, 0xA7, 0xD7, 0x08,
+        0x00, 0xC0, 0x0A, 0x49, 0x08, 0x2A, 0xCA, 0x2B,
+      ]);
       var reader = new lib.Reader(buffer);
       (reader.readLongDate() === null).should.be.ok;
       (reader.readLongDate() === null).should.be.ok;
-      reader.readLongDate().should.equal(1);
-      reader.readLongDate().should.equal('1000000000000000000');
-      reader.readLongDate().should.equal('999999999999999999');
+      reader.readLongDate().should.equal('0001-01-01 00:00:00.000000000');
+      reader.readLongDate().should.equal('0001-01-01 00:00:00.000000100');
+      reader.readLongDate().should.equal('0001-01-01 00:00:01.000000000');
+      reader.readLongDate().should.equal('2020-01-31 12:30:00.186732000');
+      reader.readLongDate().should.equal('9999-12-31 23:59:59.999999900');
+      reader.hasMore().should.equal(false);
+    });
+
+    it('should read an Alphanum', function () {
+      var buffer = new Buffer([
+        0xFF,
+        0x07, 0x06, 0x61, 0x62, 0x63, 0x31, 0x32, 0x33,
+        0x04, 0x86, 0x31, 0x32, 0x33,
+        0x07, 0x86, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36
+      ]);
+      var reader = new lib.Reader(buffer);
+      (reader.readAlphanum() === null).should.be.ok;
+      reader.readAlphanum().should.equal('abc123');
+      reader.readAlphanum().should.equal('000123');
+      reader.readAlphanum().should.equal('123456');
       reader.hasMore().should.equal(false);
     });
   });
