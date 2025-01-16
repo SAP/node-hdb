@@ -20,6 +20,7 @@ var Readable = stream.Readable;
 var Writable = stream.Writable;
 var ResultSet = lib.ResultSet;
 var db = require('../db')();
+var RemoteDB = require('../db/RemoteDB');
 
 describe('db', function () {
   before(db.init.bind(db));
@@ -120,18 +121,40 @@ describe('db', function () {
         after(db.dropReadNumbersProc.bind(db));
 
         it('should return the numbers between 3 and 5', function (done) {
-          var sql =
-            'select * from READ_NUMBERS_BETWEEN_VIEW with parameters (' +
-            '\'placeholder\' = (\'$$a$$\', \'3\'),' +
-            '\'placeholder\' = (\'$$b$$\', \'5\'))';
-          client.exec(sql, function (err, rows) {
+          function testOnPremise() {
+            var sql =
+              'select * from READ_NUMBERS_BETWEEN_VIEW with parameters (' +
+              '\'placeholder\' = (\'$$a$$\', \'3\'),' +
+              '\'placeholder\' = (\'$$b$$\', \'5\'))';
+            client.exec(sql, validateResult);
+          }
+
+          function testCloud() {
+            var sql = 'SELECT * FROM READ_NUMBERS_BETWEEN_FUNC (placeholder."A"=>\'3\', placeholder."B"=>\'5\')';
+            client.exec(sql, validateResult);
+          }
+
+          function validateResult(err, rows) {
             if (err) {
               return done(err);
             }
             rows.should.have.length(3);
             rows.should.eql(db.numbers.slice(3, 6));
             done();
-          });
+          }
+
+          if (db instanceof RemoteDB) {
+            db.getHanaBuildVersion(function (version) {
+              if (version !== undefined && version.startsWith("4.")) { // HANA Cloud
+                testCloud();
+              } else {
+                testOnPremise();
+              }
+            })
+          } else {
+            // Mock server models on premise
+            testOnPremise();
+          }
         });
       });
 

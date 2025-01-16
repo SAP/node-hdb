@@ -40,8 +40,8 @@ describe('db', function () {
               var p = metadata[0];
               p.should.have.property('mode', 2);
               // on HANA SP12 dataType = 9 (VARCHAR1)
-              // on HANA2 dataType = 29 (STRING)
-              p.should.have.property('dataType').which.is.oneOf(9, 29);
+              // on HANA2 dataType = 29 (STRING) or 30 (NSTRING)
+              p.should.have.property('dataType').which.is.oneOf(9, 29, 30);
               p.should.have.property('ioType', 1);
               callback(null, statement);
             });
