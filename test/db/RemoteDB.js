@@ -25,15 +25,20 @@ function RemoteDB(options) {
 }
 
 RemoteDB.prototype.getHanaBuildVersion = function getBuildVersion(cb) {
-  this.client.exec("SELECT VALUE FROM M_HOST_INFORMATION WHERE KEY='build_version'", function (err, rows) {
-    var version;
-    if (err) {
-      version = undefined;
-    } else {
-      version = rows[0].VALUE;
-    }
-    cb(version);
-  });
+  if (this.hanaBuildVersion) {
+    cb(this.hanaBuildVersion);
+  } else {
+    this.client.exec("SELECT VALUE FROM M_HOST_INFORMATION WHERE KEY='build_version'", function (err, rows) {
+      var version;
+      if (err) {
+        version = undefined;
+      } else {
+        version = rows[0].VALUE;
+        RemoteDB.prototype.hanaBuildVersion = version; // Cache hana build version
+      }
+      cb(version);
+    });
+  }
 }
 
 RemoteDB.prototype.createImages = function createImages(cb) {
@@ -67,6 +72,22 @@ RemoteDB.prototype.dropNumbers = function dropNumbers(cb) {
   this.numbers = undefined;
   this.dropTable('NUMBERS', cb);
 };
+
+RemoteDB.prototype.createDateTable = function createDateTable(columns, cb) {
+  this.createTable('DATE_TABLE', columns, null, cb);
+}
+
+RemoteDB.prototype.dropDateTable = function dropDateTable(cb) {
+  this.dropTable('DATE_TABLE', cb);
+}
+
+RemoteDB.prototype.createTextTable = function createTextTable(columns, cb) {
+  this.createTable('TEXT_TABLE', columns, null, cb);
+}
+
+RemoteDB.prototype.dropTextTable = function dropTextTable(cb) {
+  this.dropTable('TEXT_TABLE', cb);
+}
 
 RemoteDB.prototype.createTable = function createTable(tablename, columns,
   values, cb) {
@@ -111,8 +132,14 @@ RemoteDB.prototype.createTable = function createTable(tablename, columns,
     if (err) {
       return cb(err);
     }
-    var sql = util.format('insert into %s values (%s)', tablename, insertCols);
-    self.client.prepare(sql, onprepare);
+    if (values && values.length) {
+      // Insert values if they exist
+      var sql = util.format('insert into %s values (%s)', tablename, insertCols);
+      self.client.prepare(sql, onprepare);
+    } else {
+      cb(err);
+    }
+    
   }
   dropAndCreateTable(ontable);
 };
