@@ -103,6 +103,7 @@ describe('hdb', function () {
           cleanup();
           return done(err);
         }
+        client.connectOptions.fullVersionString.should.not.be.undefined;
         client.close();
       });
     });
