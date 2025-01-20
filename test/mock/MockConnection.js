@@ -18,6 +18,8 @@ var lib = require('../../lib');
 var util = lib.util;
 var common = require('../../lib/protocol/common');
 
+const { mock_auth_reply, mock_conn_reply } = require('./data/replies.js');
+
 module.exports = MockConnection;
 
 util.inherits(MockConnection, EventEmitter);
@@ -171,6 +173,7 @@ MockConnection.prototype.connect = function connect(options, cb) {
       self.readyState = 'disconnected';
     } else {
       self.readyState = 'connected';
+      Object.assign(self.connectOptions, mock_conn_reply.connectOptions);
     }
     cb(err);
   });
