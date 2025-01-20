@@ -39,19 +39,7 @@ TestClient.prototype._createResult = function _createResult() {
   return this._result;
 };
 
-var mock_auth_reply= {
-  kind: 2,
-  functionCode: 0,
-  resultSets: [],
-  authentication: 'INITIAL'
-};
-var mock_conn_reply = {
-  kind: 2,
-  functionCode: 0,
-  resultSets: [],
-  authentication: 'FINAL',
-  connectOptions: []
-};
+const { mock_auth_reply, mock_conn_reply } = require('./mock/data/replies.js');
 
 describe('hdb', function () {
 
@@ -103,6 +91,7 @@ describe('hdb', function () {
           cleanup();
           return done(err);
         }
+        client.connectOptions.fullVersionString.should.not.be.undefined;
         client.close();
       });
     });
