@@ -480,20 +480,14 @@ describe('db', function () {
 
   describeRemoteDB('ALPHANUM, TEXT, SHORTTEXT (only tested on on-premise HANA)', function () {
     var skipTests = false;
-    var describeContext;
     before(function (done) {
-      describeContext = this;
-      function checkHANAOnPremise() {
-        db.getHanaBuildVersion(function (version) {
-          if (version === undefined || version.startsWith("4.")) { // Skip tests on HANA Cloud
-            skipTests = true;
-            describeContext.test.parent.pending = true;
-            describeContext.skip();
-          }
-          done();
-        });
+      var version = db.getHANAFullVersion();
+      if (version === undefined || version.startsWith("4.")) { // Skip tests on HANA cloud
+        skipTests = true;
+        this.test.parent.pending = true;
+        this.skip();
       }
-      checkHANAOnPremise();
+      done();
     });
 
     // Functions used to setup and drop tables only when the tests are not skipped
