@@ -23,6 +23,7 @@ var FunctionCode = lib.common.FunctionCode;
 var SegmentKind = lib.common.SegmentKind;
 var ErrorLevel = lib.common.ErrorLevel;
 var PartKind = lib.common.PartKind;
+const DataFormatVersion = lib.common.DataFormatVersion;
 
 function connect(options, connectListener) {
   var socket = mock.createSocket(options);
@@ -657,6 +658,49 @@ describe('Lib', function () {
         });
       });
 
+    });
+
+    context('data format support', function() {
+      function dataFormatTestConnection(options, cb) {
+        var connection = createConnection();
+
+        // Add authentication method so that the mock connection will go through
+        connection._createAuthenticationManager = function createManager(options) {
+          var manager = mock.createManager(options);
+          manager.sessionCookie = 'cookie';
+          return manager;
+        };
+        connection.send = sendAuthenticationRequest;
+        connection.connect(options, function (err) {
+          cb(err, connection);
+        });
+      }
+
+      it('should set valid data format support version', function (done) {
+        dataFormatTestConnection({ dataFormatSupport: 4 }, function (err, connection) {
+          if (err) { throw err; }
+          connection.connectOptions.should.have.property('dataFormatVersion', 4);
+          connection.connectOptions.should.have.property('dataFormatVersion2', 4);
+          done();
+        });
+      });
+
+      it('should not overwrite with invalid data format version', function (done) {
+        dataFormatTestConnection({ dataFormatSupport: -2 }, function (err, connection) {
+          err.should.be.an.instanceOf(Error);
+          err.message.should.equal(util.format("Data format -2 is invalid. Supported values are 1 to %d", DataFormatVersion.MAX_VERSION));
+          done();
+        });
+      });
+
+      it('should not overwrite with data format version past max support', function (done) {
+        dataFormatTestConnection({ dataFormatSupport: 99 }, function (err, connection) {
+          err.should.be.an.instanceOf(Error);
+          err.message.should.equal(util.format("Maximum driver supported data format %d is less than client requested 99",
+            DataFormatVersion.MAX_VERSION));
+          done();
+        });
+      });
     });
 
   });

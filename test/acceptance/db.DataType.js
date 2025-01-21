@@ -16,7 +16,7 @@
 
 var async = require('async');
 // Set the data format version necessary for the data types
-var db = require('../db')({dataFormatVersion: 4});
+var db = require('../db')({dataFormatSupport: 4});
 var RemoteDB = require('../db/RemoteDB');
 var lorem = require('../fixtures/lorem');
 
