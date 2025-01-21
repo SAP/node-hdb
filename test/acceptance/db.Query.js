@@ -144,13 +144,12 @@ describe('db', function () {
           }
 
           if (db instanceof RemoteDB) {
-            db.getHanaBuildVersion(function (version) {
-              if (version !== undefined && version.startsWith("4.")) { // HANA Cloud
-                testCloud();
-              } else {
-                testOnPremise();
-              }
-            })
+            var version = db.getHANAFullVersion();
+            if (version !== undefined && version.startsWith("4.")) { // HANA Cloud
+              testCloud();
+            } else {
+              testOnPremise();
+            }
           } else {
             // Mock server models on premise
             testOnPremise();

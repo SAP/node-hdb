@@ -63,7 +63,6 @@ TestDB.prototype.dropImages = function dropImages(cb) {
   doNothing(cb);
 };
 
-
 TestDB.prototype.createReadNumbersProc = function createReadNumbersProc(cb) {
   doNothing(cb);
 };
