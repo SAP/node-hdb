@@ -63,22 +63,6 @@ TestDB.prototype.dropImages = function dropImages(cb) {
   doNothing(cb);
 };
 
-TestDB.prototype.createDateTable = function createDateTable(columns, cb) {
-  doNothing(cb);
-}
-
-TestDB.prototype.dropDateTable = function dropDateTable(cb) {
-  doNothing(cb);
-}
-
-TestDB.prototype.createTextTable = function createTextTable(cb) {
-  doNothing(cb);
-}
-
-TestDB.prototype.dropTextTable = function dropTextTable(cb) {
-  doNothing(cb);
-}
-
 TestDB.prototype.createReadNumbersProc = function createReadNumbersProc(cb) {
   doNothing(cb);
 };

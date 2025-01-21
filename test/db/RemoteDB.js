@@ -60,22 +60,6 @@ RemoteDB.prototype.dropNumbers = function dropNumbers(cb) {
   this.dropTable('NUMBERS', cb);
 };
 
-RemoteDB.prototype.createDateTable = function createDateTable(columns, cb) {
-  this.createTable('DATE_TABLE', columns, null, cb);
-}
-
-RemoteDB.prototype.dropDateTable = function dropDateTable(cb) {
-  this.dropTable('DATE_TABLE', cb);
-}
-
-RemoteDB.prototype.createTextTable = function createTextTable(columns, cb) {
-  this.createTable('TEXT_TABLE', columns, null, cb);
-}
-
-RemoteDB.prototype.dropTextTable = function dropTextTable(cb) {
-  this.dropTable('TEXT_TABLE', cb);
-}
-
 RemoteDB.prototype.createTable = function createTable(tablename, columns,
   values, cb) {
   var self = this;
