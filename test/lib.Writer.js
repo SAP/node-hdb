@@ -129,6 +129,18 @@ describe('Lib', function () {
       });
     });
 
+    it('should write boolean type', function (done) {
+      var test = data.BOOLEAN;
+      var writer = Writer.create(test);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should get WriteLobRequest', function (done) {
       var writer = new Writer([TypeCode.BLOB]);
       var stream = new lib.util.stream.Readable();
@@ -580,6 +592,16 @@ describe('Lib', function () {
     it('should raise wrong input type error for SHORTTEXT', function () {
       var writer = new Writer([TypeCode.SHORTTEXT]);
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
+    });
+
+    it('should raise wrong input type error for BINTEXT', function () {
+      var writer = new Writer([TypeCode.BINTEXT]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+    });
+
+    it('should raise wrong input type error for BOOLEAN', function () {
+      var writer = new Writer([TypeCode.BOOLEAN]);
+      Writer.prototype.setValues.bind(writer, [Buffer.from("01", "hex")]).should.throw();
     });
 
   });
