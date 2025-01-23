@@ -16,9 +16,10 @@
 
 var async = require('async');
 // Set the data format version necessary for the data types
-var db = require('../db')({dataFormatSupport: 4});
+var db = require('../db')({dataFormatSupport: 5});
 var RemoteDB = require('../db/RemoteDB');
 var lorem = require('../fixtures/lorem');
+var util = require('../../lib/util');
 
 var describeRemoteDB = db instanceof RemoteDB ? describe : describe.skip;
 var isRemoteDB = db instanceof RemoteDB;
@@ -29,38 +30,15 @@ describe('db', function () {
   var client = db.client;
 
   /*
-    Tests the insertion and selection of valid data entries of a data type
-    - tableName: Name of the db table
-    - values: Values to insert as an array
-    - dataTypeCode: Expected data type code from a select all query of the table
+    Performs the sql query and ensures the result is as expected
+    - sql: Sql query to execute
+    - dataTypeCode: Expected data type code(s) from a select all query of the table
     - expected: Expected data values from select query
     - done: Done callback to end test
   */
-  function testDataTypeValid(tableName, values, dataTypeCode, expected, done) {
+  function validateDataSql(sql, dataTypeCode, expected, done) {
     var statement;
-    function prepareInsert(cb) {
-      var sql = `insert into ${tableName} values (?)`;
-      client.prepare(sql, function (err, ps) {
-        statement = ps;
-        cb(err);
-      });
-    }
-
-    function insert(cb) {
-      statement.exec(values, function (rowsAffected) {
-        statement.drop();
-        cb();
-      });
-    }
-
     function prepareSelect(cb) {
-      var sql;
-      if (dataTypeCode == 51 || dataTypeCode == 52) {
-        // Default order by is not allowed for TEXT and SHORTTEXT
-        sql = `select * from ${tableName} order by TO_VARCHAR(A)`;
-      } else {
-        sql = `select * from ${tableName} order by A`;
-      }
       client.prepare(sql, function (err, ps) {
         if (err) done(err);
         statement = ps;
@@ -71,7 +49,12 @@ describe('db', function () {
     function select(cb) {
       var metadata = statement.resultSetMetadata;
       metadata.should.have.length(1);
-      metadata[0].should.have.property('dataType', dataTypeCode);
+      if (util.isNumber(dataTypeCode)) {
+        metadata[0].should.have.property('dataType', dataTypeCode);
+      } else {
+        metadata[0].should.have.property('dataType').which.is.oneOf(dataTypeCode);
+      }
+      
       statement.exec([], function (err, rows) {
         if (err) {
           return done(err);
@@ -88,8 +71,54 @@ describe('db', function () {
         cb();
       });
     }
+
+    async.waterfall([prepareSelect, select, drop], done);
+  }
+
+  /*
+    Tests the insertion and selection of valid data entries of a data type with a 
+    specific query
+    - tableName: Name of the db table
+    - sql: Sql query to execute
+    - values: Values to insert as an array
+    - dataTypeCode: Expected data type code(s) from a select all query of the table
+    - expected: Expected data values from select query
+    - done: Done callback to end test
+  */
+  function testDataTypeValidSql(tableName, sql, values, dataTypeCode, expected, done) {
+    var statement;
+    function prepareInsert(cb) {
+      var sql = `insert into ${tableName} values (?)`;
+      client.prepare(sql, function (err, ps) {
+        statement = ps;
+        cb(err);
+      });
+    }
+
+    function insert(cb) {
+      statement.exec(values, function (rowsAffected) {
+        statement.drop();
+        cb();
+      });
+    }
     
-    async.waterfall([prepareInsert, insert, prepareSelect, select, drop], done);
+    async.waterfall([prepareInsert, insert, validateDataSql.bind(null, sql, dataTypeCode, expected)], done);
+  }
+
+  // Abstraction over the custom select script above to use a generic select
+  function testDataTypeValid(tableName, values, dataTypeCode, expected, done) {
+    var sql;
+    if (dataTypeCode == 51 || dataTypeCode == 52) {
+      // Default order by is not allowed for TEXT and SHORTTEXT
+      sql = `select * from ${tableName} order by TO_VARCHAR(A)`;
+    } else if ([53, 74, 75].includes(dataTypeCode)) {
+      // Default order by is not allowed for BINTEXT, ST_GEOMETRY, and ST_POINT as well
+      sql = `select * from ${tableName} order by TO_VARBINARY(A)`;
+    } else {
+      sql = `select * from ${tableName} order by A`;
+    }
+    
+    testDataTypeValidSql(tableName, sql, values, dataTypeCode, expected, done);
   }
 
   /*
@@ -127,27 +156,34 @@ describe('db', function () {
   }
 
   // Functions used to setup and drop tables only when the db is a RemoteDB
-  function setUpTableRemoteDB(tableName, columns, done) {
-    if (isRemoteDB) {
-      db.createTable.bind(db)(tableName, columns, null, done);
-    } else {
-      done();
+  function setUpTableRemoteDB(tableName, columns, dataFormatRequired) {
+    // Returns a closure which has access to the parameters above and the 'this'
+    // argument will be the describe context when used in a mocha before hook
+    return function setUpTableClosure(done) {
+      if (isRemoteDB && db.getDataFormatVersion2() >= dataFormatRequired) {
+        db.createTable.bind(db)(tableName, columns, null, done);
+      } else {
+        this.skip();
+        done();
+      }
     }
   }
 
-  function dropTableRemoteDB(tableName, done) {
-    if (isRemoteDB) {
-      db.dropTable.bind(db)(tableName, done);
-    } else {
-      done();
+  function dropTableRemoteDB(tableName, dataFormatRequired) {
+    return function dropTableClosure(done) {
+      if (isRemoteDB && db.getDataFormatVersion2() >= dataFormatRequired) {
+        db.dropTable.bind(db)(tableName, done);
+      } else {
+        done();
+      }
     }
   }
 
   describeRemoteDB('DATES', function () {
     describeRemoteDB('DAYDATE', function () {
-      // Setup a daydate table only if the db is a RemoteDB
-      before(setUpTableRemoteDB.bind(null, 'DAYDATE_TABLE', ['A DAYDATE']));
-      after(dropTableRemoteDB.bind(null, 'DAYDATE_TABLE'));
+      // Setup a daydate table only if the db is a RemoteDB and dataFormatVersion is at least 4
+      before(setUpTableRemoteDB('DAYDATE_TABLE', ['A DAYDATE'], 4));
+      after(dropTableRemoteDB('DAYDATE_TABLE', 4));
 
       it('should return valid date via callback', function (done) {
         var insertValues = [
@@ -175,8 +211,8 @@ describe('db', function () {
     });
 
     describeRemoteDB('SECONDDATE', function () {
-      before(setUpTableRemoteDB.bind(null, 'SECONDDATE_TABLE', ['A SECONDDATE']));
-      after(dropTableRemoteDB.bind(null, 'SECONDDATE_TABLE'));
+      before(setUpTableRemoteDB('SECONDDATE_TABLE', ['A SECONDDATE'], 4));
+      after(dropTableRemoteDB('SECONDDATE_TABLE', 4));
 
       it('should return valid dates via callback', function (done) {
         var insertValues = [
@@ -207,8 +243,8 @@ describe('db', function () {
     });
 
     describeRemoteDB('LONGDATE', function () {
-      before(setUpTableRemoteDB.bind(null, 'LONGDATE_TABLE', ['A LONGDATE']));
-      after(dropTableRemoteDB.bind(null, 'LONGDATE_TABLE'));
+      before(setUpTableRemoteDB('LONGDATE_TABLE', ['A LONGDATE'], 4));
+      after(dropTableRemoteDB('LONGDATE_TABLE', 4));
 
       it('should return valid dates via callback', function (done) {
         var insertValues = [
@@ -240,8 +276,8 @@ describe('db', function () {
     });
 
     describeRemoteDB('SECONDTIME', function () {
-      before(setUpTableRemoteDB.bind(null, 'SECONDTIME_TABLE', ['A SECONDTIME']));
-      after(dropTableRemoteDB.bind(null, 'SECONDTIME_TABLE'));
+      before(setUpTableRemoteDB('SECONDTIME_TABLE', ['A SECONDTIME'], 4));
+      after(dropTableRemoteDB('SECONDTIME_TABLE', 4));
 
       it('should return valid times via callback', function (done) {
         var insertValues = [
@@ -283,25 +319,32 @@ describe('db', function () {
       done();
     });
 
-    function setUpTable(tableName, columns, done) {
-      if (skipTests) {
-        done();
-      } else {
-        db.createTable.bind(db)(tableName, columns, null, done);
+    function setUpTable(tableName, columns, dataFormatRequired) {
+      // Returns a closure which has access to the parameters above and the 'this'
+      // argument will be the describe context when used in a mocha before hook
+      return function setUpTableClosure(done) {
+        if (skipTests || db.getDataFormatVersion2() < dataFormatRequired) {
+          this.skip();
+          done();
+        } else {
+          db.createTable.bind(db)(tableName, columns, null, done);
+        }
       }
     }
-  
-    function dropTable(tableName, done) {
-      if (skipTests) {
-        done();
-      } else {
-        db.dropTable.bind(db)(tableName, done);
+
+    function dropTable(tableName, dataFormatRequired) {
+      return function dropTableClosure(done) {
+        if (skipTests || db.getDataFormatVersion2() < dataFormatRequired) {
+          done();
+        } else {
+          db.dropTable.bind(db)(tableName, done);
+        }
       }
     }
 
     describe('ALPHANUM', function () {
-      before(setUpTable.bind(null, 'ALPHANUM_TABLE', ['A ALPHANUM(16)']));
-      after(dropTable.bind(null, 'ALPHANUM_TABLE'));
+      before(setUpTable('ALPHANUM_TABLE', ['A ALPHANUM(16)'], 4));
+      after(dropTable('ALPHANUM_TABLE', 4));
 
       it('should return valid alphanums via callback', function (done) {
         var insertValues = [
@@ -379,8 +422,8 @@ describe('db', function () {
     }
 
     describe('TEXT', function () {
-      before(setUpTable.bind(null, 'TEXT_TABLE', ['A TEXT']));
-      after(dropTable.bind(null, 'TEXT_TABLE'));
+      beforeEach(setUpTable('TEXT_TABLE', ['A TEXT'], 4));
+      afterEach(dropTable('TEXT_TABLE', 4));
 
       it('should insert and return valid text via callback', function (done) {
         var insertValues = [
@@ -401,8 +444,8 @@ describe('db', function () {
     });
 
     describe('SHORTTEXT', function () {
-      before(setUpTable.bind(null, 'SHORTTEXT_TABLE', ['A SHORTTEXT(50)']));
-      after(dropTable.bind(null, 'SHORTTEXT_TABLE'));
+      beforeEach(setUpTable('SHORTTEXT_TABLE', ['A SHORTTEXT(50)'], 4));
+      afterEach(dropTable('SHORTTEXT_TABLE', 4));
 
       it('should insert and return valid text via callback', function (done) {
         var insertValues = [
@@ -425,6 +468,86 @@ describe('db', function () {
         var invalidTestData = [{value: 'Too large in length (51)---------------------------',
           errMessage: 'inserted value too large for column: Failed in "A" column with the value \'Too large in length (51)---------------------------\''}];
         async.each(invalidTestData, testDataTypeError.bind(null, 'SHORTTEXT_TABLE'), done);
+      });
+    });
+  });
+
+  describeRemoteDB('Spatial', function () {
+    describeRemoteDB('ST_GEOMETRY', function (done) {
+      beforeEach(setUpTableRemoteDB('ST_GEOMETRY_TABLE', ['A ST_GEOMETRY'], 5));
+      afterEach(dropTableRemoteDB('ST_GEOMETRY_TABLE', 5));
+
+      it('should return valid ST_GEOMETRY types', function (done) {
+        var values = [
+          null,
+          Buffer.from("0103000000020000000400000000000000000014c00000000"
+            + "0000014c0000000000000144000000000000014c00000000000000000"
+            + "000000000000144000000000000014c000000000000014c0050000000"
+            + "0000000000000c000000000000000c000000000000000c00000000000"
+            + "000000000000000000004000000000000000000000000000000040000"
+            + "00000000000c000000000000000c000000000000000c0", "hex"),
+          Buffer.from("0106000000020000000103000000020000000400000000000"
+            + "000000014c000000000000014c0000000000000144000000000000014"
+            + "c00000000000000000000000000000144000000000000014c00000000"
+            + "0000014c00500000000000000000000c000000000000000c000000000"
+            + "000000c00000000000000000000000000000004000000000000000000"
+            + "00000000000004000000000000000c000000000000000c00000000000"
+            + "0000c0010300000001000000040000000000000000002440000000000"
+            + "00014c00000000000002e400000000000001440000000000000144000"
+            + "00000000001440000000000000244000000000000014c0", "hex"),
+          Buffer.from("01ed0300000200000001ea030000020000000000000000002"
+            + "440000000000000244000000000000024400000000000002840000000"
+            + "0000002840000000000000284001ea030000020000000000000000002"
+            + "c40000000000000244000000000000024400000000000003040000000"
+            + "00000028400000000000002840", "hex"),
+        ];
+        var insertValues = values.map(function (val) { return [val]; });
+        var expected = values.map(function (val) { return {A: val}; });
+        testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, 74, expected, done);
+      });
+
+      it('should return valid EWKT conversions', function (done) {
+        var insertValues = [
+          Buffer.from("0108000000030000000000000000000000000000000000000"
+            + "0000000000000f03f000000000000f03f000000000000000000000000"
+            + "00000040", "hex")
+        ];
+        var expected = [{EWKTEXT: Buffer.from("SRID=0;CIRCULARSTRING (0 0,1 1,0 2)", "utf8")}];
+        testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [25, 26], expected, done);
+      });
+
+      it('should raise input type error', function (done) {
+        var invalidValues = ['String is not supported in this driver', 12345];
+        // Add the same expected error message to the values
+        var invalidTestData = invalidValues.map(function (testValue) {
+          return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for BINARY type"};
+        });
+        async.each(invalidTestData, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
+      });
+    });
+
+    describeRemoteDB('ST_POINT', function (done) {
+      beforeEach(setUpTableRemoteDB('ST_POINT_TABLE', ['A ST_POINT'], 5));
+      afterEach(dropTableRemoteDB('ST_POINT_TABLE', 5));
+
+      it('should return valid ST_POINT types', function (done) {
+        var values = [
+          null,
+          Buffer.from("010100000000000000000024400000000000003440", "hex"),
+          Buffer.from("010100000083b2f2ffadfaa3430564e1fc74b64643", "hex"),
+        ];
+        var insertValues = values.map(function (val) { return [val]; });
+        var expected = values.map(function (val) { return {A: val}; });
+        testDataTypeValid('ST_POINT_TABLE', insertValues, 75, expected, done);
+      });
+
+      it('should raise input type error', function (done) {
+        var invalidValues = ['String spatial input is not supported in this driver', 12345];
+        // Add the same expected error message to the values
+        var invalidTestData = invalidValues.map(function (testValue) {
+          return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for BINARY type"};
+        });
+        async.each(invalidTestData, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
       });
     });
   });
