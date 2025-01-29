@@ -594,6 +594,16 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
+    it('should raise wrong input type error for ST_GEOMETRY', function () {
+      var writer = new Writer([TypeCode.ST_GEOMETRY]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+    });
+
+    it('should raise wrong input type error for ST_POINT', function () {
+      var writer = new Writer([TypeCode.ST_POINT]);
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+    });
+
     it('should raise wrong input type error for BINTEXT', function () {
       var writer = new Writer([TypeCode.BINTEXT]);
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
