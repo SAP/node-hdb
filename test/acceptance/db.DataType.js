@@ -542,10 +542,10 @@ describe('db', function () {
         it('should raise input type error', function (done) {
           var invalidTestData = [
             {
-              value: 'String is not supported in this option',
+              value: 'Strings must be hex in this option',
               errMessage: 'spatial error: Unexpected end of WKB at position 0: type_code=12, index=1'
             },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Wrong input for BINARY type'}
+            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
           ];
           async.each(invalidTestData, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
         });
@@ -559,20 +559,27 @@ describe('db', function () {
           var values = [
             null,
             Buffer.from("010100000000000000000024400000000000003440", "hex"),
+            '0101000000000000c078e91b400000000000b6a5c0',
             Buffer.from("010100000083b2f2ffadfaa3430564e1fc74b64643", "hex"),
           ];
           var insertValues = values.map(function (val) { return [val]; });
-          var expected = values.map(function (val) { return {A: val}; });
+          var expected = values.map(function (val) {
+            if (util.isString(val)) {
+              return {A: Buffer.from(val, "hex")};
+            } else {
+              return {A: val};
+            }
+          });
           testDataTypeValid('ST_POINT_TABLE', insertValues, 75, expected, done);
         });
   
         it('should raise input type error', function (done) {
           var invalidTestData = [
             {
-              value: 'String spatial input is not supported in this option',
+              value: 'Strings must be hex in this option',
               errMessage: 'spatial error: Unexpected end of WKB at position 0: type_code=12, index=1'
             },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Wrong input for BINARY type'}
+            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
           ];
           async.each(invalidTestData, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
         });
@@ -669,7 +676,7 @@ describe('db', function () {
               errMessage: "spatial error: Invalid or unsupported geometry type '010100000000000000000000000000000000000000' at "
               + "position 0 of WKT 010100000000000000000000000000000000000000: type_code=29, index=1"
             },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string'}
+            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
           ];
           async.each(invalidTestData, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
         });
@@ -682,11 +689,13 @@ describe('db', function () {
         it('should return valid ST_POINT types', function (done) {
           var insertValues = [
             [null],
+            [Buffer.from("010100000000000000000000400000000000000840", "hex")],
             ['Point (-10 0)'],
             ['Point (0.5 0.5)'],
           ];
           var expected = [
             {A: null},
+            {A: Buffer.from("010100000000000000000000400000000000000840", "hex")},
             {A: Buffer.from("010100000000000000000024c00000000000000000", "hex")},
             {A: Buffer.from("0101000000000000000000e03f000000000000e03f", "hex")}
           ];
@@ -700,7 +709,7 @@ describe('db', function () {
               errMessage: "spatial error: Invalid or unsupported geometry type '010100000000000000000024c00000000000000000' at "
               + "position 0 of WKT 010100000000000000000024c00000000000000000: type_code=29, index=1"
             },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string'},
+            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'},
             {
               value: 'Point Z(10 20 30)',
               errMessage: "spatial error: exception 1620502: The geometry type 'ST_Point' with dimension 'XYZ' is not allowed in "
