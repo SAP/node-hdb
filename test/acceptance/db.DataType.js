@@ -16,7 +16,7 @@
 
 var async = require('async');
 // Set the data format version necessary for the data types
-var db = require('../db')({dataFormatSupport: 5});
+var db = require('../db')({dataFormatSupport: 7});
 var RemoteDB = require('../db/RemoteDB');
 var lorem = require('../fixtures/lorem');
 var util = require('../../lib/util');
@@ -307,7 +307,7 @@ describe('db', function () {
     });
   });
 
-  describeRemoteDB('ALPHANUM, TEXT, SHORTTEXT (only tested on on-premise HANA)', function () {
+  describeRemoteDB('ALPHANUM, TEXT, SHORTTEXT, BINTEXT (only tested on on-premise HANA)', function () {
     var skipTests = false;
     before(function (done) {
       var version = db.getHANAFullVersion();
@@ -468,6 +468,34 @@ describe('db', function () {
         var invalidTestData = [{value: 'Too large in length (51)---------------------------',
           errMessage: 'inserted value too large for column: Failed in "A" column with the value \'Too large in length (51)---------------------------\''}];
         async.each(invalidTestData, testDataTypeError.bind(null, 'SHORTTEXT_TABLE'), done);
+      });
+    });
+
+    describe('BINTEXT', function () {
+      beforeEach(setUpTable('BINTEXT_TABLE', ['A BINTEXT'], 6));
+      afterEach(dropTable('BINTEXT_TABLE', 6));
+
+      it('should insert and return valid text via callback', function (done) {
+        var insertValues = [
+          [Buffer.from("Here is a regular string", "utf-8")],
+          [Buffer.alloc(0)],
+          [null],
+        ];
+        var expected = [{A: null}, {A: Buffer.alloc(0)}, {A: Buffer.from("Here is a regular string", "utf-8")}];
+        testDataTypeValid('BINTEXT_TABLE', insertValues, 53, expected, done);
+      });
+
+      it('should insert binary data', function (done) {
+        var expected = [{A: Buffer.from("6162636465666768696a6b6c6d6e6fc3a1", "hex")}];
+        function insert(cb) {
+          client.exec("INSERT INTO BINTEXT_TABLE VALUES(x'6162636465666768696a6b6c6d6e6fc3a1')", function (err, rowsAffected) {
+            if (err) {
+              done(err);
+            }
+            cb();
+          });
+        }
+        async.waterfall([insert, validateDataSql.bind(null, "select * from BINTEXT_TABLE", 53, expected)], done);
       });
     });
   });
@@ -719,6 +747,43 @@ describe('db', function () {
           async.each(invalidTestData, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
         });
       });
+    });
+  });
+
+  describeRemoteDB('BOOLEAN', function () {
+    before(setUpTableRemoteDB('BOOLEAN_TABLE', ['A BOOLEAN'], 7));
+    after(dropTableRemoteDB('BOOLEAN_TABLE', 7));
+
+    it('should add valid booleans using different parameter types', function (done) {
+      var insertValues = [
+        [true],
+        [null],
+        [false],
+        [1],
+        [10.5],
+        [0],
+        ['TRUE'],
+        ['FAlsE'],
+        ['UNknOwn'],
+        ['1'],
+        ['0'],
+        [''],
+      ];
+      // 3 null, 4 false, 5 true
+      var expected = [];
+      for (let i = 0; i < 3; i++) expected.push({A: null});
+      for (let i = 0; i < 4; i++) expected.push({A: false});
+      for (let i = 0; i < 5; i++) expected.push({A: true});
+      testDataTypeValid('BOOLEAN_TABLE', insertValues, 28, expected, done);
+    });
+
+    it('should raise input type error', function (done) {
+      var invalidValues = ['String not boolean', Buffer.from("01", "hex")];
+      // Add the same expected error message to the values
+      var invalidTestData = invalidValues.map(function (testValue) {
+        return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for BOOLEAN type"};
+      });
+      async.each(invalidTestData, testDataTypeError.bind(null, 'BOOLEAN_TABLE'), done);
     });
   });
 });
