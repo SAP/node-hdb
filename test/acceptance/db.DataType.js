@@ -29,14 +29,27 @@ describe('db', function () {
   after(db.end.bind(db));
   var client = db.client;
 
+  // Stores all the columns names of the current table beyond the automatically
+  // added ID column
+  var curTableCols;
+
+  // Sets the curTableCols based on the columns passed into a createTable function
+  function setCurTableCols(columns) {
+    curTableCols = [];
+    for(var i = 0; i < columns.length; i++) {
+      curTableCols.push(columns[i].substring(0, columns[i].indexOf(' ')));
+    }
+  }
+
   /*
     Performs the sql query and ensures the result is as expected
     - sql: Sql query to execute
-    - dataTypeCode: Expected data type code(s) from a select all query of the table
+    - dataTypeCodes: An array of the expected data type code(s) for each column from 
+      a select all query of the table
     - expected: Expected data values from select query
     - done: Done callback to end test
   */
-  function validateDataSql(sql, dataTypeCode, expected, done) {
+  function validateDataSql(sql, dataTypeCodes, expected, done) {
     var statement;
     function prepareSelect(cb) {
       client.prepare(sql, function (err, ps) {
@@ -48,11 +61,13 @@ describe('db', function () {
 
     function select(cb) {
       var metadata = statement.resultSetMetadata;
-      metadata.should.have.length(1);
-      if (util.isNumber(dataTypeCode)) {
-        metadata[0].should.have.property('dataType', dataTypeCode);
-      } else {
-        metadata[0].should.have.property('dataType').which.is.oneOf(dataTypeCode);
+      metadata.should.have.length(dataTypeCodes.length);
+      for (var i = 0; i < dataTypeCodes.length; i++) {
+        if (util.isNumber(dataTypeCodes[i])) {
+          metadata[i].should.have.property('dataType', dataTypeCodes[i]);
+        } else {
+          metadata[i].should.have.property('dataType').which.is.oneOf(dataTypeCodes[i]);
+        }
       }
       
       statement.exec([], function (err, rows) {
@@ -81,14 +96,15 @@ describe('db', function () {
     - tableName: Name of the db table
     - sql: Sql query to execute
     - values: Values to insert as an array
-    - dataTypeCode: Expected data type code(s) from a select all query of the table
+    - dataTypeCodes: An array of the expected data type code(s) for each column from 
+      a select all query of the table
     - expected: Expected data values from select query
     - done: Done callback to end test
   */
-  function testDataTypeValidSql(tableName, sql, values, dataTypeCode, expected, done) {
+  function testDataTypeValidSql(tableName, sql, values, dataTypeCodes, expected, done) {
     var statement;
     function prepareInsert(cb) {
-      var sql = `insert into ${tableName} values (?)`;
+      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values (?)`;
       client.prepare(sql, function (err, ps) {
         statement = ps;
         cb(err);
@@ -102,23 +118,14 @@ describe('db', function () {
       });
     }
     
-    async.waterfall([prepareInsert, insert, validateDataSql.bind(null, sql, dataTypeCode, expected)], done);
+    async.waterfall([prepareInsert, insert, validateDataSql.bind(null, sql, dataTypeCodes, expected)], done);
   }
 
   // Abstraction over the custom select script above to use a generic select
-  function testDataTypeValid(tableName, values, dataTypeCode, expected, done) {
-    var sql;
-    if (dataTypeCode == 51 || dataTypeCode == 52) {
-      // Default order by is not allowed for TEXT and SHORTTEXT
-      sql = `select * from ${tableName} order by TO_VARCHAR(A)`;
-    } else if ([53, 74, 75].includes(dataTypeCode)) {
-      // Default order by is not allowed for BINTEXT, ST_GEOMETRY, and ST_POINT as well
-      sql = `select * from ${tableName} order by TO_VARBINARY(A)`;
-    } else {
-      sql = `select * from ${tableName} order by A`;
-    }
+  function testDataTypeValid(tableName, values, dataTypeCodes, expected, done) {
+    var sql = `select ${curTableCols.join(',')} from ${tableName} order by ID`;
     
-    testDataTypeValidSql(tableName, sql, values, dataTypeCode, expected, done);
+    testDataTypeValidSql(tableName, sql, values, dataTypeCodes, expected, done);
   }
 
   /*
@@ -132,7 +139,7 @@ describe('db', function () {
   function testDataTypeError(tableName, testData, callback) {
     var statement;
     function prepare(cb) {
-      var sql = `insert into ${tableName} values (?)`;
+      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values (?)`;
       client.prepare(sql, function (err, ps) {
         statement = ps;
         cb(err);
@@ -161,7 +168,9 @@ describe('db', function () {
     // argument will be the describe context when used in a mocha before hook
     return function setUpTableClosure(done) {
       if (isRemoteDB && db.getDataFormatVersion2() >= dataFormatRequired) {
-        db.createTable.bind(db)(tableName, columns, null, done);
+        // Tables have an ID column auto generated to preserve order between elements
+        setCurTableCols(columns);
+        db.createTable.bind(db)(tableName, ['ID INT GENERATED BY DEFAULT AS IDENTITY'].concat(columns), null, done);
       } else {
         this.skip();
         done();
@@ -197,9 +206,9 @@ describe('db', function () {
           ['1582-10-04'],
           ['1582-10-10'],
         ];
-        var expected = [{A: null}, {A: "0001-01-01"}, {A: "1582-10-04"}, {A: "1582-10-15"}, {A: "1582-10-20"},
-          {A: "1990-12-31"}, {A: "2001-02-12"}, {A: "2023-05-04"}, {A: "9999-12-31"}];
-        testDataTypeValid('DAYDATE_TABLE', insertValues, 63, expected, done);
+        var expected = [{A: '2023-05-04'}, {A: '1990-12-31'}, {A: '0001-01-01'}, {A: '2001-02-12'},
+          {A: '9999-12-31'}, {A: null}, {A: '1582-10-15'}, {A: '1582-10-04'}, {A: '1582-10-20'}];
+        testDataTypeValid('DAYDATE_TABLE', insertValues, [63], expected, done);
       });
 
       it('should raise input type error', function (done) {
@@ -227,9 +236,10 @@ describe('db', function () {
           ['1582-10-04 23:59:59'],
           ['1582-10-10 12:00:00'],
         ];
-        var expected = [{A: null}, {A: "0001-01-01 00:00:00"}, {A: "1582-10-04 23:59:59"}, {A: "1582-10-15 00:00:00"}, {A: "1582-10-20 12:00:00"},
-          {A: "1990-12-03 10:20:29"}, {A: "2000-02-29 23:59:59"}, {A: "2011-01-01 11:12:13"}, {A: "2025-01-13 04:27:32"}, {A: "9999-12-31 23:59:59"}];
-        testDataTypeValid('SECONDDATE_TABLE', insertValues, 62, expected, done);
+        var expected = [{A: '2025-01-13 04:27:32'}, {A: '1990-12-03 10:20:29'}, {A: '0001-01-01 00:00:00'},
+          {A: '2011-01-01 11:12:13'}, {A: '2000-02-29 23:59:59'}, {A: '9999-12-31 23:59:59'}, {A: null},
+          {A: '1582-10-15 00:00:00'}, {A: '1582-10-04 23:59:59'}, {A: '1582-10-20 12:00:00'}];
+        testDataTypeValid('SECONDDATE_TABLE', insertValues, [62], expected, done);
       });
 
       it('should raise input type error', function (done) {
@@ -259,10 +269,11 @@ describe('db', function () {
           ['1582-10-04 23:59:59.5819212'],
           ['1582-10-10 12:00:00'],
         ];
-        var expected = [{A: null}, {A: "0001-01-01 00:00:00.000000000"}, {A: "1582-10-04 23:59:59.581921200"}, {A: "1582-10-15 00:00:00.123456700"},
-          {A: "1582-10-20 12:00:00.000000000"}, {A: "1990-12-03 10:20:29.000000000"}, {A: "2000-02-29 23:59:59.999999900"},
-          {A: "2011-01-01 11:12:13.167832000"}, {A: "2025-01-13 04:27:32.789123400"}, {A: "9999-12-31 23:59:59.999999900"}];
-        testDataTypeValid('LONGDATE_TABLE', insertValues, 61, expected, done);
+        var expected = [{A: '2025-01-13 04:27:32.789123400'}, {A: '1990-12-03 10:20:29.000000000'},
+          {A: '0001-01-01 00:00:00.000000000'}, {A: '2011-01-01 11:12:13.167832000'}, {A: '2000-02-29 23:59:59.999999900'},
+          {A: '9999-12-31 23:59:59.999999900'}, {A: null}, {A: '1582-10-15 00:00:00.123456700'},
+          {A: '1582-10-04 23:59:59.581921200'}, {A: '1582-10-20 12:00:00.000000000'}];
+        testDataTypeValid('LONGDATE_TABLE', insertValues, [61], expected, done);
       });
 
       it('should raise input type error', function (done) {
@@ -290,10 +301,12 @@ describe('db', function () {
           // ['9:9:9 AM'],
           // ['3:28:03 PM']
         ];
-        var expected = [{A: null}, {A: "00:00:00"}, {A: "04:27:32"}, {A: "10:20:29"}, {A: "11:12:13"}, {A: "23:59:59"}];
+        var expected = [{A: '04:27:32'}, {A: '10:20:29'}, {A: '00:00:00'}, {A: '11:12:13'},
+          {A: '23:59:59'}, {A: null}];
         // When AM / PM are added, the result should instead be
-        // var expected = [{A: null}, {A: "00:00:00"}, {A: "04:27:32"}, {A: "09:09:09"}, {A: "10:20:29"}, {A: "11:12:13"}, {A: "15:28:03"}, {A: "23:59:59"}];
-        testDataTypeValid('SECONDTIME_TABLE', insertValues, 64, expected, done);
+        // var expected = [{A: '04:27:32'}, {A: '10:20:29'}, {A: '00:00:00'}, {A: '11:12:13'},
+        //   {A: '23:59:59'}, {A: null}, {A: '09:09:09'}, {A: '15:28:03'}];
+        testDataTypeValid('SECONDTIME_TABLE', insertValues, [64], expected, done);
       });
 
       it('should raise input type error', function (done) {
@@ -327,7 +340,8 @@ describe('db', function () {
           this.skip();
           done();
         } else {
-          db.createTable.bind(db)(tableName, columns, null, done);
+          setCurTableCols(columns);
+          db.createTable.bind(db)(tableName, ['ID INT GENERATED BY DEFAULT AS IDENTITY'].concat(columns), null, done);
         }
       }
     }
@@ -354,8 +368,8 @@ describe('db', function () {
           [''],
           [null],
         ];
-        var expected = [{A: null}, {A: ""}, {A: "0000000000012893"}, {A: "9017123461226781"}, {A: "ABC123"}];
-        testDataTypeValid('ALPHANUM_TABLE', insertValues, 55, expected, done);
+        var expected = [{A: 'ABC123'}, {A: '9017123461226781'}, {A: '0000000000012893'}, {A: ''}, {A: null}];
+        testDataTypeValid('ALPHANUM_TABLE', insertValues, [55], expected, done);
       });
   
       it('should raise input type error', function (done) {
@@ -368,7 +382,7 @@ describe('db', function () {
     function testFuzzySearch(tableName, dataTypeCode, done) {
       var statement;
       function prepareInsert(cb) {
-        var sql = `insert into ${tableName} values (?)`;
+        var sql = `insert into ${tableName} (A) values (?)`;
         client.prepare(sql, function (err, ps) {
           if (err) {
             done(err);
@@ -399,8 +413,9 @@ describe('db', function () {
 
       function select(cb) {
         var metadata = statement.resultSetMetadata;
-        metadata.should.have.length(1);
-        metadata[0].should.have.property('dataType', dataTypeCode);
+        metadata.should.have.length(2);
+        metadata[0].should.have.property('dataType', 3);
+        metadata[1].should.have.property('dataType', dataTypeCode);
         statement.exec(['xSAP Corp Walldorf', 0.7], function (err, rows) {
           if (err) {
             return done(err);
@@ -431,11 +446,14 @@ describe('db', function () {
           ['!@#$%^&*()-_=`~|}{\\:"\'<>,.?/1234567890'],
           [lorem.LONG],
           [''],
+          [Buffer.from('Buffers can also be inserted for text', 'utf8')],
           [null],
         ];
-        var expected = [{A: null}, {A: Buffer.from('', "utf-8")}, {A: Buffer.from('!@#$%^&*()-_=`~|}{\\:"\'<>,.?/1234567890', "utf-8")},
-          {A: Buffer.from(lorem.LONG, "utf-8")}, {A: Buffer.from('Some regular length strings', "utf-8")}];
-        testDataTypeValid('TEXT_TABLE', insertValues, 51, expected, done);
+        var expected = [{A: Buffer.from('Some regular length strings', "utf-8")},
+          {A: Buffer.from('!@#$%^&*()-_=`~|}{\\:"\'<>,.?/1234567890', "utf-8")}, {A: Buffer.from(lorem.LONG, "utf-8")},
+          {A: Buffer.from('', "utf-8")}, {A: Buffer.from('Buffers can also be inserted for text', "utf8")},
+          {A: null}];
+        testDataTypeValid('TEXT_TABLE', insertValues, [51], expected, done);
       });
   
       it('should support fuzzy search', function (done) {
@@ -455,9 +473,9 @@ describe('db', function () {
           [''],
           [null],
         ];
-        var expected = [{A: null}, {A: ''}, {A: '!@#$%^&*()-_=`~|}{\\:"\'<>,.?/1234567890'},
-          {A: '50 length-----------------------------------------'}, {A: 'Some regular length strings'}];
-        testDataTypeValid('SHORTTEXT_TABLE', insertValues, 52, expected, done);
+        var expected = [{A: 'Some regular length strings'}, {A: '!@#$%^&*()-_=`~|}{\\:"\'<>,.?/1234567890'}, 
+          {A: '50 length-----------------------------------------'}, {A: ''}, {A: null}];
+        testDataTypeValid('SHORTTEXT_TABLE', insertValues, [52], expected, done);
       });
   
       it('should support fuzzy search', function (done) {
@@ -479,23 +497,26 @@ describe('db', function () {
         var insertValues = [
           [Buffer.from("Here is a regular string", "utf-8")],
           [Buffer.alloc(0)],
+          ['Strings can also be used as input'],
+          [''],
           [null],
         ];
-        var expected = [{A: null}, {A: Buffer.alloc(0)}, {A: Buffer.from("Here is a regular string", "utf-8")}];
-        testDataTypeValid('BINTEXT_TABLE', insertValues, 53, expected, done);
+        var expected = [{A: Buffer.from("Here is a regular string", "utf-8")}, {A: Buffer.alloc(0)},
+          {A: Buffer.from("Strings can also be used as input", "utf-8")}, {A: Buffer.from("", "utf-8")}, {A: null}];
+        testDataTypeValid('BINTEXT_TABLE', insertValues, [53], expected, done);
       });
 
       it('should insert binary data', function (done) {
-        var expected = [{A: Buffer.from("6162636465666768696a6b6c6d6e6fc3a1", "hex")}];
+        var expected = [{ID: 1, A: Buffer.from("6162636465666768696a6b6c6d6e6fc3a1", "hex")}];
         function insert(cb) {
-          client.exec("INSERT INTO BINTEXT_TABLE VALUES(x'6162636465666768696a6b6c6d6e6fc3a1')", function (err, rowsAffected) {
+          client.exec("INSERT INTO BINTEXT_TABLE VALUES(1, x'6162636465666768696a6b6c6d6e6fc3a1')", function (err, rowsAffected) {
             if (err) {
               done(err);
             }
             cb();
           });
         }
-        async.waterfall([insert, validateDataSql.bind(null, "select * from BINTEXT_TABLE", 53, expected)], done);
+        async.waterfall([insert, validateDataSql.bind(null, "select * from BINTEXT_TABLE", [3, 53], expected)], done);
       });
     });
   });
@@ -539,7 +560,7 @@ describe('db', function () {
               return {A: val};
             }
           });
-          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, 74, expected, done);
+          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, [74], expected, done);
         });
   
         it('should return valid EWKT conversions', function (done) {
@@ -549,7 +570,7 @@ describe('db', function () {
               + "00000040", "hex")
           ];
           var expected = [{EWKTEXT: Buffer.from("SRID=0;CIRCULARSTRING (0 0,1 1,0 2)", "utf8")}];
-          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [25, 26], expected, done);
+          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [[25, 26]], expected, done);
         });
 
         it('should insert and return large ST_GEOMETRY types', function (done) {
@@ -564,7 +585,7 @@ describe('db', function () {
 
           var insertValues = [[hexStr]];
           var expected = [{A: Buffer.from(hexStr, 'hex')}];
-          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, 74, expected, done);
+          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, [74], expected, done);
         });
   
         it('should raise input type error', function (done) {
@@ -598,7 +619,7 @@ describe('db', function () {
               return {A: val};
             }
           });
-          testDataTypeValid('ST_POINT_TABLE', insertValues, 75, expected, done);
+          testDataTypeValid('ST_POINT_TABLE', insertValues, [75], expected, done);
         });
   
         it('should raise input type error', function (done) {
@@ -661,7 +682,7 @@ describe('db', function () {
               + "000144000000000000014400000000000000840000000000000244000"
               + "000000000014c00000000000000040", "hex")}
           ];
-          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, 74, expected, done);
+          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, [74], expected, done);
         });
   
         it('should return valid EWKT conversions', function (done) {
@@ -673,7 +694,7 @@ describe('db', function () {
             {EWKTEXT: Buffer.from("SRID=4326;LINESTRING ZM (0 0 3 6,5 10 4 8)", "utf8")},
             {EWKTEXT: Buffer.from("SRID=4326;MULTIPOINT ZM ((10 10 12 1),(12 12 14 1),(14 10 10 1))", "utf8")},
           ];
-          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [25, 26], expected, done);
+          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [[25, 26]], expected, done);
         });
 
         it('should insert and return large ST_GEOMETRY types', function (done) {
@@ -694,7 +715,7 @@ describe('db', function () {
 
           var insertValues = [[lines]];
           var expected = [{EWKTEXT: Buffer.from("SRID=4326;" + lines, "utf8")}];
-          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [25, 26], expected, done);
+          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [[25, 26]], expected, done);
         });
   
         it('should raise input type error', function (done) {
@@ -727,7 +748,7 @@ describe('db', function () {
             {A: Buffer.from("010100000000000000000024c00000000000000000", "hex")},
             {A: Buffer.from("0101000000000000000000e03f000000000000e03f", "hex")}
           ];
-          testDataTypeValid('ST_POINT_TABLE', insertValues, 75, expected, done);
+          testDataTypeValid('ST_POINT_TABLE', insertValues, [75], expected, done);
         });
   
         it('should raise input type error', function (done) {
@@ -769,12 +790,10 @@ describe('db', function () {
         ['0'],
         [''],
       ];
-      // 3 null, 4 false, 5 true
-      var expected = [];
-      for (let i = 0; i < 3; i++) expected.push({A: null});
-      for (let i = 0; i < 4; i++) expected.push({A: false});
-      for (let i = 0; i < 5; i++) expected.push({A: true});
-      testDataTypeValid('BOOLEAN_TABLE', insertValues, 28, expected, done);
+      var expected = [{A: true}, {A: null}, {A: false}, {A: true}, {A: true},
+        {A: false}, {A: true}, {A: false}, {A: null}, {A: true},
+        {A: false}, {A: null}];
+      testDataTypeValid('BOOLEAN_TABLE', insertValues, [28], expected, done);
     });
 
     it('should raise input type error', function (done) {
