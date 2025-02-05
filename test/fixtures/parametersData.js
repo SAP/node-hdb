@@ -432,6 +432,131 @@ exports.DECIMAL = {
   ]
 };
 
+exports.FIXED = {
+  part: {
+    argumentCount: 1,
+    buffer: new Buffer(
+      '510000000000000000' + // 0, frac 3
+      '51115227828b2f506d' + // 7876848024501572113, frac 0
+      '5182749409bb6f0cd1' + // -3383206370951793534, frac 0
+      '5144d6120000000000' + // 0.12345, frac 7 => 1234500
+      '51bc29edffffffffff' + // -0.12345, frac 7 => -1234500
+      '51ae6a1a0000000000' + // 17.312458, frac 5 => 1731246
+      '515295e5ffffffffff' + // -17.312458, frac 5 => -1731246
+      '51e9ffffffffffffff' + // -0.000232, frac 5 => -23
+      '52a4df8a3bcc59c6385d608c11' + // 5430949848529524638928789412, frac 0
+      '52c184ae52fbc87d7fd8af61b2' + // -24021734553744354424755682111, frac 0
+      '5244d612000000000000000000' + // 0.12345, frac 7 => 1234500
+      '52bc29edffffffffffffffffff' + // -0.12345, frac 7 => -1234500
+      '52ae6a1a000000000000000000' + // 17.312458, frac 5 => 1731246
+      '525295e5ffffffffffffffffff' + // -17.312458, frac 5 => -1731246
+      '52e9ffffffffffffffffffffff' + // -0.000232, frac 5 => -23
+      '4c7b000000000000000000000000000000' + // 123, frac 0
+      '4c800b257d6e8e3a2db59e667ee5c4ed00' + // 1234567890123456789012345678910000000, frac 0
+      '4c008d8d1caf6fb63becccfd0f094fb6f6' + // -1234567890123456789012345678910000000, frac 1
+      '4c3ae20100000000000000000000000000' + // 0.012345, frac 7 => 123450
+      '4cc61dfeffffffffffffffffffffffffff' + // -0.012345, frac 7 => -123450
+      '4c1a851e00000000000000000000000000' + // 2000.15429, frac 3 => 2000154
+      '4ce67ae1ffffffffffffffffffffffffff' + // -2000.15429, frac 3 => -2000154
+      '4c7af97809000000000000000000000000' + // 15892312.998, frac 1 => 158923130
+      '4c860687f6ffffffffffffffffffffffff' + // -15892312.998, frac 1 => 158923130
+      '4c01000000000000000000000000000000' + // 0.9, frac 0 => 1
+      '4cffffffffffffffffffffffffffffffff' + // -0.9, frac 0 => -1
+      '4c00000000000000000000000000000000' + // 0.000099999, frac 1 => 0
+      '4cffffffff3f228a097ac4865aa84c3b4b', 'hex') // 99999999999999999999999999999999999999, frac 0
+  },
+  types: [
+    TypeCode.FIXED8,
+    TypeCode.FIXED8,
+    TypeCode.FIXED8,
+    TypeCode.FIXED8,
+    TypeCode.FIXED8,
+    TypeCode.FIXED8,
+    TypeCode.FIXED8,
+    TypeCode.FIXED8,
+    TypeCode.FIXED12,
+    TypeCode.FIXED12,
+    TypeCode.FIXED12,
+    TypeCode.FIXED12,
+    TypeCode.FIXED12,
+    TypeCode.FIXED12,
+    TypeCode.FIXED12,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+    TypeCode.FIXED16,
+  ],
+  fractions: [
+    3,
+    0,
+    0,
+    7,
+    7,
+    5,
+    5,
+    5,
+    0,
+    0,
+    7,
+    7,
+    5,
+    5,
+    5,
+    0,
+    0,
+    1,
+    7,
+    7,
+    3,
+    3,
+    1,
+    1,
+    0,
+    0,
+    1,
+    0,
+  ],
+  values: [
+    0,
+    '7876848024501572113',
+    '-3383206370951793534',
+    '0.12345',
+    '-0.12345',
+    '17.312458',
+    '-17.312458',
+    '-0.000232',
+    '5430949848529524638928789412',
+    '-24021734553744354424755682111',
+    '0.12345',
+    '-0.12345',
+    '17.312458',
+    '-17.312458',
+    '-0.000232',
+    123,
+    "1234567890123456789012345678910000000",
+    "-1234567890123456789012345678910000000",
+    "0.012345",
+    "-0.012345",
+    "2000.15429",
+    "-2000.15429",
+    "15892312.998",
+    "-15892312.998",
+    "0.9",
+    "-0.9",
+    "0.000099999",
+    "99999999999999999999999999999999999999",
+  ]
+}
+
 exports.DATETIME = {
   part: {
     argumentCount: 1,

@@ -16,7 +16,7 @@
 
 var async = require('async');
 // Set the data format version necessary for the data types
-var db = require('../db')({dataFormatSupport: 7});
+var db = require('../db')({dataFormatSupport: 8});
 var RemoteDB = require('../db/RemoteDB');
 var lorem = require('../fixtures/lorem');
 var util = require('../../lib/util');
@@ -803,6 +803,122 @@ describe('db', function () {
         return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for BOOLEAN type"};
       });
       async.each(invalidTestData, testDataTypeError.bind(null, 'BOOLEAN_TABLE'), done);
+    });
+  });
+
+  describeRemoteDB('FIXED', function () {
+    describeRemoteDB('FIXED8', function () {
+      before(setUpTableRemoteDB('FIXED8_TABLE', ['A DECIMAL(15, 5)'], 8));
+      after(dropTableRemoteDB('FIXED8_TABLE', 8));
+
+      it('should insert and return valid FIXED8 decimals', function (done) {
+        var insertValues = [
+          [123456],
+          [-10000.123456],
+          ['1234.56789101234567'],
+          ['-1289128378.00000'],
+          ['9999.992'],
+          ['9999999999.999989'],
+          [null],
+          [0],
+        ];
+        var expected = [{A: '123456.00000'}, {A: '-10000.12346'}, {A: '1234.56789'}, {A: '-1289128378.00000'}, {A: '9999.99200'},
+          {A: '9999999999.99999'}, {A: null}, {A: '0.00000'}];
+        testDataTypeValid('FIXED8_TABLE', insertValues, [81], expected, done);
+      });
+
+      it('should raise input type error', function (done) {
+        var invalidTestData = [
+          // Overflows 15 digit precision with 5 decimal places
+          {value: '10000000000', errMessage: 'numeric overflow: Failed in "A" column with the value 10000000000.00000'},
+          {value: '-10000000000', errMessage: 'numeric overflow: Failed in "A" column with the value -10000000000.00000'},
+          {value: '-9999999999.999999', errMessage: 'numeric overflow: Failed in "A" column with the value -10000000000.00000'},
+          // Exceed 8 byte representation
+          {value: '9223372036854775808', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED8 type'},
+          {value: '-8103103283140113886353743219674022396', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED8 type'},
+        ];
+        async.each(invalidTestData, testDataTypeError.bind(null, 'FIXED8_TABLE'), done);
+      });
+    });
+
+    describeRemoteDB('FIXED12', function () {
+      before(setUpTableRemoteDB('FIXED12_TABLE', ['A DECIMAL(23, 5)'], 8));
+      after(dropTableRemoteDB('FIXED12_TABLE', 8));
+
+      it('should insert and return valid FIXED12 decimals', function (done) {
+        var insertValues = [
+          [9007199254740991],
+          [-7289481923.5612479],
+          ['61274182.56789101234567'],
+          ['-128127498912.00000'],
+          ['999999999999999999.992'],
+          ['999999999999999999.999989'],
+          [null],
+          [0],
+        ];
+        var expected = [{A: '9007199254740991.00000'}, {A: '-7289481923.56125'}, {A: '61274182.56789'}, {A: '-128127498912.00000'},
+          {A: '999999999999999999.99200'}, {A: '999999999999999999.99999'}, {A: null}, {A: '0.00000'}];
+        testDataTypeValid('FIXED12_TABLE', insertValues, [82], expected, done);
+      });
+
+      it('should raise input type error', function (done) {
+        var invalidTestData = [
+          // Overflows 23 digit precision with 5 decimal places
+          {value: '1000000000000000000', errMessage: 'numeric overflow: Failed in "A" column with the value 1000000000000000000.00000'},
+          {value: '-1000000000000000000', errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000.00000'},
+          {value: '-999999999999999999.999999', errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000.00000'},
+          // Exceed 12 byte representation
+          {value: '39614081257132168796771975168', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED12 type'},
+          {value: '-89542859971670557702231615814500106944', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED12 type'},
+        ];
+        async.each(invalidTestData, testDataTypeError.bind(null, 'FIXED12_TABLE'), done);
+      });
+    });
+
+    describeRemoteDB('FIXED16', function () {
+      before(setUpTableRemoteDB('FIXED16_TABLE', ['A DECIMAL(35, 5)'], 8));
+      after(dropTableRemoteDB('FIXED16_TABLE', 8));
+
+      it('should insert and return valid FIXED16 decimals', function (done) {
+        var insertValues = [
+          ['682104294101148412963771036529'],
+          ['-964060612622724383174786442765.465905'],
+          [18724.230],
+          [-123456.903],
+          ['8312612546512631264781627841.7819453'],
+          ['-257283749723.00000'],
+          ['999999999999999999999999999999.992'],
+          ['999999999999999999999999999999.999989'],
+          [null],
+          [0],
+        ];
+        var expected = [{A: '682104294101148412963771036529.00000'}, {A: '-964060612622724383174786442765.46591'},
+          {A: '18724.23000'}, {A: '-123456.90300'}, {A: '8312612546512631264781627841.78195'}, {A: '-257283749723.00000'},
+          {A: '999999999999999999999999999999.99200'}, {A: '999999999999999999999999999999.99999'}, {A: null}, {A: '0.00000'}];
+        testDataTypeValid('FIXED16_TABLE', insertValues, [76], expected, done);
+      });
+
+      it('should raise input type error', function (done) {
+        var invalidTestData = [
+          // Overflows 35 digit precision with 5 decimal places
+          {
+            value: '1000000000000000000000000000000',
+            errMessage: 'numeric overflow: Failed in "A" column with the value 1000000000000000000000000000000.00000'
+          },
+          {
+            value: '-1000000000000000000000000000000',
+            errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000000000000000.00000'
+          },
+          {
+            value: '-999999999999999999999999999999.999999',
+            errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000000000000000.00000'
+          },
+          // Overflows maximum 38 digit precision with 5 decimals
+          {value: '9999999999999999999999999999999999', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED16 type'},
+          {value: '-9999999999999999999999999999999999', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED16 type'},
+        ];
+        async.each(invalidTestData, testDataTypeError.bind(null, 'FIXED16_TABLE'), done);
+      });
     });
   });
 });
