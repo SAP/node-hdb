@@ -17,6 +17,7 @@
 var async = require('async');
 var db = require('../db')();
 var RemoteDB = require('../db/RemoteDB');
+var isRemoteDB = db instanceof RemoteDB;
 var util = require('../../lib/util');
 var hanaDynatrace = require('../../extension/Dynatrace');
 var dynatraceSDK; // either the real @dynatrace/oneagent-sdk Dynatrace SDK or the mock one
@@ -410,8 +411,21 @@ describeDynatrace('db', function () {
     });
 
     describeDynatrace('using table', function () {
-      beforeEach(db.createTable.bind(db, 'TEST_DYNATRACE', ['ID INT UNIQUE NOT NULL'], null));
-      afterEach(db.dropTable.bind(db, 'TEST_DYNATRACE'));
+      beforeEach(function (done) {
+        if (isRemoteDB) {
+          db.createTable.bind(db)('TEST_DYNATRACE', ['ID INT UNIQUE NOT NULL'], null, done);
+        } else {
+          this.skip();
+          done();
+        }
+      });
+      afterEach(function (done) {
+        if (isRemoteDB) {
+          db.dropTable.bind(db)('TEST_DYNATRACE', done);
+        } else {
+          done();
+        }
+      });
 
       it('should trace a client insert', function (done) {
         var destInfo = getDestInfoForDynatrace();
