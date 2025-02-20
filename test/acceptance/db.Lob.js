@@ -19,10 +19,12 @@ var path = require('path');
 var util = require('util');
 var crypto = require('crypto');
 var async = require('async');
+var stream = require('stream');
 var db = require('../db')();
 var RemoteDB = require('../db/RemoteDB');
 
 var describeRemoteDB = db instanceof RemoteDB ? describe : describe.skip;
+var isRemoteDB = db instanceof RemoteDB;
 
 if (!Buffer.prototype.equals) {
   Buffer.prototype.equals = function (buffer) {
@@ -212,6 +214,88 @@ describe('db', function () {
         });
       });
     });
+  });
+
+  describeRemoteDB('Readable stream input (issue 215)', function () {
+    this.timeout(3000);
+
+    beforeEach(function (done) {
+      if (isRemoteDB) {
+        db.createTable.bind(db)('STREAM_BLOB_TABLE', ['"ID" INT NOT NULL',
+          '"NAME" NVARCHAR(256) NOT NULL', '"IMG" BLOB', '"LOGO" BLOB', '"DESCR" NCLOB',
+          'PRIMARY KEY ("ID")'], null, done);
+      } else {
+        this.skip();
+        done();
+      }
+    });
+    afterEach(function (done) {
+      if (isRemoteDB) {
+        db.dropTable.bind(db)('STREAM_BLOB_TABLE', done);
+      } else {
+        done();
+      }
+    });
+
+    var dirname = path.join(__dirname, '..', 'fixtures', 'img');
+
+    function testInsertReadableStream(inputStream, expected, done) {
+      var statement;
+      function prepareInsert(cb) {
+        client.prepare('INSERT INTO STREAM_BLOB_TABLE VALUES (?, ?, ?, ?, ?)', function (err, ps) {
+          if (err) done(err);
+          statement = ps;
+          cb(err);
+        });
+      }
+
+      function insert(cb) {
+        statement.exec([
+          1,
+          'SAP AG',
+          fs.createReadStream(path.join(dirname, 'logo.png')),
+          inputStream,
+          Buffer.from('SAP headquarters located in Walldorf, Germany', 'ascii')
+        ], function (err, rowsAffected) {
+          if (err) done(err);
+          statement.drop();
+          cb(err);
+        });
+      }
+
+      function select(cb) {
+        client.exec('SELECT * FROM STREAM_BLOB_TABLE', function (err, rows) {
+          if (err) done(err);
+          rows.should.have.length(1);
+          rows.should.eql([{
+            ID: 1,
+            NAME: 'SAP AG',
+            IMG: fs.readFileSync(path.join(dirname, 'logo.png')),
+            LOGO: expected,
+            DESCR: Buffer.from('SAP headquarters located in Walldorf, Germany', 'ascii')
+          }]);
+          cb();
+        });
+      }
+
+      async.waterfall([prepareInsert, insert, select], done);
+    }
+
+    it('should insert from a stream.Readable with 3 buffers', function (done) {
+      var expected = Buffer.from("012", "ascii");
+      var inputStream = stream.Readable.from([...Array(3).keys()].map(i => Buffer.from(`${i % 10}`)));
+      testInsertReadableStream(inputStream, expected, done);
+    });
+
+    it('should insert from a stream.Readable with a buffer larger than the packet size', function (done) {
+      var buffer = Buffer.alloc(client._connection.packetSize + 1);
+      for (var i = 0; i < buffer.length; i++) {
+        buffer[i] = i % 10;
+      }
+      var inputStream = stream.Readable.from([buffer]);
+      testInsertReadableStream(inputStream, buffer, done);
+    });
+
   });
 });
 
