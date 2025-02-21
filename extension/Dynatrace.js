@@ -62,13 +62,14 @@ function _dynatraceResultSetCallback(tracer, cb) {
 
     // With DB calls, the first argument can potentially be output parameters
     // In that case, we consider the next parameter
-    if (typeof resultSet === 'object' && resultSet !== null && !(resultSet instanceof ResultSet)) {
+    if (typeof resultSet === 'object' && resultSet !== null && !(resultSet instanceof ResultSet)
+      && !Array.isArray(resultSet)) {
       resultSet = args[1];
     }
 
     if (err) {
       tracer.error(err);
-    } else if(resultSet) {
+    } else if(resultSet instanceof ResultSet) {
       const rowCount = resultSet.getRowCount();
       // A negative rowCount means the number of rows is unknown.
       // This happens if the client hasn't received the last fetch chunk yet (with default server configuration,
@@ -76,6 +77,10 @@ function _dynatraceResultSetCallback(tracer, cb) {
       if(rowCount >= 0) {
         tracer.setResultData({rowsReturned: rowCount});
       }
+    } else if (resultSet !== undefined) {
+      tracer.setResultData({
+        rowsReturned: (resultSet && resultSet.length) || resultSet
+      });
     }
     tracer.end(cb, err, ...args);
   };

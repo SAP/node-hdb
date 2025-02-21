@@ -466,22 +466,39 @@ describeDynatrace('db', function () {
         });
       });
 
-      it('should trace a statement batch exec', function (done) {
+      function testStatementBatchInsert(useExec, done) {
         var destInfo = getDestInfoForDynatrace();
         var sql = 'INSERT INTO TEST_DYNATRACE VALUES(?)';
+        var statement;
+
+        function validateInsert(err, rowsAffected) {
+          if (err) done(err);
+          rowsAffected.should.eql([1, 1, 1, 1]);
+          verifyDynatraceData(destInfo, sql, 4);
+          client.exec('SELECT COUNT(*) FROM TEST_DYNATRACE', {rowsAsArray: true}, function (err, rows) {
+            if (err) done(err);
+            rows[0][0].should.equal(4);
+            cleanup(statement, done);
+          });
+        }
+
         client.prepare(sql, function (err, stmt) {
           if (err) done(err);
-          stmt.exec([[1], [2], [3], [4]], function (err, rowsAffected) {
-            if (err) done(err);
-            rowsAffected.should.eql([1, 1, 1, 1]);
-            verifyDynatraceData(destInfo, sql, 4);
-            client.exec('SELECT COUNT(*) FROM TEST_DYNATRACE', {rowsAsArray: true}, function (err, rows) {
-              if (err) done(err);
-              rows[0][0].should.equal(4);
-              cleanup(stmt, done);
-            });
-          });
+          statement = stmt;
+          if (useExec) {
+            statement.exec([[1], [2], [3], [4]], validateInsert);
+          } else {
+            statement.execute([[1], [2], [3], [4]], validateInsert);
+          }
         });
+      }
+
+      it('should trace a statement batch exec', function (done) {
+        testStatementBatchInsert(true, done);
+      });
+
+      it('should trace a statement batch execute', function (done) {
+        testStatementBatchInsert(false, done);
       });
 
       it('should trace a statement batch exec error', function (done) {
