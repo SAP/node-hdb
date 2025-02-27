@@ -229,7 +229,7 @@ describeDynatrace('db', function () {
       async.waterfall([prepare, testExecStatement(['1']), testExecStatement(['2']), dropStatement], done);
     });
 
-    it('should trace a client execute', function (done) {
+    it('should trace a client execute with a result set with 10 rows', function (done) {
       var destInfo = getDestInfoForDynatrace();
       var sql = 'SELECT TOP 10 * FROM OBJECTS';
       client.execute(sql, function (err, rs) {
@@ -271,16 +271,16 @@ describeDynatrace('db', function () {
       });
     }
 
-    it('should trace a execute with a result set with 1 row', function (done) {
+    it('should trace a statement execute with a result set with 1 row', function (done) {
       testDynatraceExecuteNRows(1, done);
     });
-    it('should trace a execute with a result set with 32 rows', function (done) {
+    it('should trace a statement execute with a result set with 32 rows', function (done) {
       testDynatraceExecuteNRows(32, done);
     });
-    it('should trace a execute with a result set with 33 rows', function (done) {
+    it('should trace a statement execute with a result set with 33 rows', function (done) {
       testDynatraceExecuteNRows(33, done);
     });
-    it('should trace a execute with a result set with 0 rows', function (done) {
+    it('should trace a statement execute with a result set with 0 rows', function (done) {
       var destInfo = getDestInfoForDynatrace();
       var sql = 'SELECT 3 FROM DUMMY WHERE 1 = 0';
       client.prepare(sql, function (err, stmt) {

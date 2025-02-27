@@ -48,6 +48,9 @@ function _dynatraceResultCallback(tracer, cb) {
     if (err) {
       tracer.error(err);
     } else if(results !== undefined) {
+      // In 0.19.12, results will typically be an array, but for non-batch insert / 
+      // delete / update, results will be a number. This may be changed later to 
+      // match hana-client which returns rows affected as a number even for batches.
       tracer.setResultData({
         rowsReturned: (results && results.length) || results
       });
@@ -78,6 +81,7 @@ function _dynatraceResultSetCallback(tracer, cb) {
         tracer.setResultData({rowsReturned: rowCount});
       }
     } else if (resultSet !== undefined) {
+      // Same as above, sometimes resultSet can be a number for non-batch insert / delete / update
       tracer.setResultData({
         rowsReturned: (resultSet && resultSet.length) || resultSet
       });
@@ -120,7 +124,10 @@ function _DynatraceStmt(stmt, conn, sql) {
 function _prepareStmtUsingDynatrace(conn, prepareFn) {
   // args = [sql, options, callback] --> options is optional
   return function (...args) {
-    const cb = args[args.length - 1];
+    var cb;
+    if (args.length > 0 && typeof args[args.length - 1] === 'function') {
+        cb = args[args.length - 1];
+    }
     var sql = args[0];
     if(typeof(sql) !== 'string') {
         sql = ''; // prepare will fail, but need sql for when the error is traced
@@ -166,8 +173,6 @@ function dynatraceConnection(conn, destinationInfo) {
     return conn;
   }
   conn._dbInfo = dbInfo;
-  // hana-client does not like decorating.
-  // because of that, we need to override the fn and pass the original fn for execution
   const originalExecFn = conn.exec;
   conn.exec = _ExecuteWrapperFn(conn, conn, originalExecFn, _dynatraceResultCallback);
   const originalExecuteFn = conn.execute;
