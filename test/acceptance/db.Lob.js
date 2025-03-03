@@ -296,6 +296,19 @@ describe('db', function () {
       testInsertReadableStream(inputStream, buffer, done);
     });
 
+    it('should insert from a strict high water mark stream', function (done) {
+      // Tests that packets can be created incrementally without reading the entire packet at once
+      var bufferLen = Math.floor(client._connection.packetSize * 2.5);
+      var expected = Buffer.alloc(bufferLen);
+      for (var i = 0; i < bufferLen; i++) {
+        expected[i] = i % 10 + 48; // ascii
+      }
+      var srcStream = stream.Readable.from([...Array(bufferLen).keys()].map(i => Buffer.from(`${i % 10}`)));
+      var transformStream = new StrictMemoryTransform(1024);
+      srcStream.pipe(transformStream);
+      testInsertReadableStream(transformStream, expected, done);
+    });
+
   });
 });
 
@@ -303,4 +316,26 @@ function MD5(data) {
   var hash = crypto.createHash('md5');
   hash.update(data);
   return hash.digest('hex').toUpperCase();
+}
+
+util.inherits(StrictMemoryTransform, stream.Transform);
+
+// Stream that stores a maximum of bufferLimit data in the internal buffer
+// Only works with streams that read byte by byte
+function StrictMemoryTransform(bufferLimit, options) {
+  this._bufferLimit = bufferLimit;
+  stream.Transform.call(this, options);
+}
+
+StrictMemoryTransform.prototype._transform = function _transform(chunk, encoding, cb) {
+  var self = this;
+  function tryPush() {
+    if (self.readableLength < self._bufferLimit) {
+      self.push(chunk);
+      cb();
+    } else {
+      setImmediate(tryPush);
+    }
+  }
+  tryPush();
 }
