@@ -77,6 +77,16 @@ function readUInt128(hex) {
   return bignum.readUInt128LE(new Buffer(hex, 'hex'), 0);
 }
 
+function readDec16(hex) {
+  return bignum.readDec16LE(new Buffer(hex, "hex"), 0);
+}
+
+function writeDec16(value) {
+  var buffer = new Buffer(2);
+  bignum.writeDec16LE(buffer, value, 0);
+  return buffer.toString('hex');
+}
+
 describe('Util', function () {
 
   describe('#Int64', function () {
@@ -465,6 +475,95 @@ describe('Util', function () {
       readFIXED16('ce8c7580d137e942e72fcc885a55f89c', 16).should.eql('-13163337877988720494258.0388155611575090');
       readFIXED16('00000000000000000000000000000080', 29).should.eql('-1701411834.60469231731687303715884105728');
       readFIXED16('ffffffffffffffffffffffffffffffff', 0).should.eql('-1');
+    });
+  });
+
+  describe('#Decimal16', function () {
+    it('should read special values', function () {
+      readDec16("0000").should.equal(0);
+      readDec16("0080").should.equal(0);
+      readDec16("007C").should.equal(Infinity);
+      readDec16("00FC").should.equal(-Infinity);
+      readDec16("017C").should.be.NaN();
+      readDec16("007E").should.be.NaN();
+      readDec16("00FE").should.be.NaN();
+      readDec16("FFFF").should.be.NaN();
+    });
+
+    it('should read positive numbers', function () {
+      readDec16("003C").should.equal(1);
+      readDec16("487A").should.equal(51456);
+      readDec16("4E5A").should.equal(201.75);
+      readDec16("F545").should.equal(5.95703125);
+      readDec16("6025").should.equal(0.02099609375);
+      readDec16("6A18").should.equal(0.002155303955078125);
+      readDec16("FF03").should.equal(0.00006097555160522461);
+      readDec16("0100").should.equal(5.960464477539063e-8);
+      readDec16("FF7B").should.equal(65504);
+    });
+
+    it('should read negative numbers', function () {
+      readDec16("00BC").should.equal(-1);
+      readDec16("7DF9").should.equal(-44960);
+      readDec16("26DD").should.equal(-329.5);
+      readDec16("D3D1").should.equal(-46.59375);
+      readDec16("14C1").should.equal(-2.5390625);
+      readDec16("16B2").should.equal(-0.190185546875);
+      readDec16("C79D").should.equal(-0.005641937255859375);
+      readDec16("E28F").should.equal(-0.0004811286926269531);
+      readDec16("FF83").should.equal(-0.00006097555160522461);
+      readDec16("0180").should.equal(-5.960464477539063e-8);
+      readDec16("FFFB").should.equal(-65504);
+    });
+
+    it('should write special values', function () {
+      writeDec16(0).should.equal("0000");
+      writeDec16(Infinity).should.equal("007c");
+      writeDec16(-Infinity).should.equal("00fc");
+      // Exceed max value
+      writeDec16(65525).should.equal("007c");
+      writeDec16(-65525).should.equal("00fc");
+      // Smaller than smallest subnormal
+      writeDec16(2.98023225e-08).should.equal("0000");
+      writeDec16(-2.98023225e-08).should.equal("0080");
+      writeDec16(NaN).should.equal("007e");
+    });
+
+    it('should write positive numbers', function () {
+      writeDec16(1).should.equal("003c");
+      writeDec16(29370.67608).should.equal("2c77");
+      writeDec16(2349.75188).should.equal("9768");
+      writeDec16(375.383).should.equal("de5d");
+      writeDec16(53.098625).should.equal("a352");
+      writeDec16(5.25966403).should.equal("4245");
+      writeDec16(0.36067469).should.equal("c535");
+      writeDec16(0.01).should.equal("1f21");
+      writeDec16(0.005481234).should.equal("9d1d");
+      writeDec16(64400).should.equal("dc7b");
+      writeDec16(64432).should.equal("de7b");
+      writeDec16(0.000060975552).should.equal("ff03");
+      writeDec16(5.960464477539063e-8).should.equal("0100");
+      writeDec16(65504).should.equal("ff7b");
+      writeDec16(65519).should.equal("ff7b");
+    });
+
+    it('should write negative numbers', function () {
+      writeDec16(-1).should.equal("00bc");
+      writeDec16(-63056.71).should.equal("b3fb");
+      writeDec16(-4778.2248).should.equal("abec");
+      writeDec16(-131.0761).should.equal("19d8");
+      writeDec16(-2.0531413).should.equal("1bc0");
+      writeDec16(-0.842).should.equal("bcba");
+      writeDec16(-0.07665778).should.equal("e8ac");
+      writeDec16(-0.04734).should.equal("0faa");
+      writeDec16(-0.000349921).should.equal("bc8d");
+      writeDec16(-0.0000579627878).should.equal("cc83");
+      writeDec16(-64400).should.equal("dcfb");
+      writeDec16(-64432).should.equal("defb");
+      writeDec16(-0.000060975552).should.equal("ff83");
+      writeDec16(-5.960464477539063e-8).should.equal("0180");
+      writeDec16(-65504).should.equal("fffb");
+      writeDec16(-65519).should.equal("fffb");
     });
   });
 
