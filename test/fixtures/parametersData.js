@@ -105,10 +105,11 @@ exports.ALL_TYPES = {
       '3E6DB3C0DB0E000000' +
       '40EDB00000' +
       '3DBFB3AF519B36DB08' +
-      // offset 195
-      '1b06c8000000e2000000' +
-      '19060b000000aa010000' +
-      '1a060b000000b5010000',
+      '1C02' +
+      // offset 197
+      '1b06c8000000e4000000' +
+      '19060b000000ac010000' +
+      '1a060b000000b7010000',
       'hex'), blob, clob, nclob])
   },
   types: [
@@ -141,6 +142,7 @@ exports.ALL_TYPES = {
     TypeCode.SECONDDATE,
     TypeCode.SECONDTIME,
     TypeCode.LONGDATE,
+    TypeCode.BOOLEAN,
     TypeCode.BLOB,
     TypeCode.CLOB,
     TypeCode.NCLOB
@@ -175,6 +177,7 @@ exports.ALL_TYPES = {
     '2023-04-04 12:34:52',
     '12:34:52',
     '2023-04-04 12:34:52.1357246',
+    true,
     blob,
     clob,
     nclob
@@ -494,5 +497,25 @@ exports.DATETIME = {
     '09:41:12',
     '23:59:59',
     '00:00:00'
+  ]
+};
+
+exports.BOOLEAN = {
+  part: {
+    argumentCount: 1,
+    buffer: new Buffer(
+      '1C02' +
+      '9C' +
+      '1C00', 'hex')
+  },
+  types: [
+    TypeCode.BOOLEAN,
+    TypeCode.BOOLEAN,
+    TypeCode.BOOLEAN,
+  ],
+  values: [
+    true,
+    null,
+    false
   ]
 };

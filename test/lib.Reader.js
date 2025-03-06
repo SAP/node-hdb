@@ -375,6 +375,19 @@ describe('Lib', function () {
       reader.readAlphanum().should.equal('123456');
       reader.hasMore().should.equal(false);
     });
+
+    it('should read a Boolean', function () {
+      var buffer = new Buffer([
+        0x01,
+        0x00,
+        0x02,
+      ]);
+      var reader = new lib.Reader(buffer);
+      (reader.readBoolean() === null).should.be.ok;
+      reader.readBoolean().should.equal(false);
+      reader.readBoolean().should.equal(true);
+      reader.hasMore().should.equal(false);
+    });
   });
 
   it('should read a BLob', function () {
