@@ -76,7 +76,8 @@ describe('Lib', function () {
         }
       }, function done(err) {
         err.should.be.an.instanceOf(Error);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should raise an error correctly', function (next) {
@@ -97,10 +98,11 @@ describe('Lib', function () {
         }]
       }, function done(err) {
         err.should.be.an.instanceOf(Error);
+        next();
       },
       false);
       task.writer._types = undefined;
-      task.run(next);
+      task.runTest();
     });
 
     it('should run a batch task with INT type', function (next) {
@@ -122,7 +124,8 @@ describe('Lib', function () {
       }, function done(err, reply) {
         (!err).should.be.ok;
         reply.rowsAffected.should.eql([1, 1, 1]);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should run a large batch task', function (next) {
@@ -147,7 +150,8 @@ describe('Lib', function () {
       }, function done(err, reply) {
         (!err).should.be.ok;
         reply.rowsAffected.should.eql(rowsAffected);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it(
@@ -233,7 +237,8 @@ describe('Lib', function () {
         }, function done(err, reply) {
           (!err).should.be.ok;
           reply.rowsAffected.should.eql([1, 1, 1, 1]);
-        }).run(next);
+          next();
+        }).runTest();
       });
 
     it('should run a single failing task with INT type', function (next) {
@@ -244,7 +249,8 @@ describe('Lib', function () {
         }]
       }, function done(err) {
         err.should.be.an.instanceOf(Error);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should run a single task with BLOB type', function (next) {
@@ -280,7 +286,8 @@ describe('Lib', function () {
         (!err).should.be.ok;
         reply.rowsAffected.should.eql([1]);
         reply.writeLobReply[0].should.eql(locatorId);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should run a single failing task with BLOB type ', function (next) {
@@ -305,7 +312,8 @@ describe('Lib', function () {
         }]
       }, function done(err) {
         err.should.be.an.instanceOf(Error);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should fail to bind parameters if insufficient space left in packet', function(next) {
@@ -321,7 +329,8 @@ describe('Lib', function () {
         }, function done(err) {
           err.should.be.an.instanceOf(Error);
           err.message.should.equal('Failed to set parameters, maximum packet size exceeded.');
-        }).run(cb);
+          cb();
+        }).runTest();
       }
 
       function succeedWithBinding(cb) {
@@ -337,7 +346,8 @@ describe('Lib', function () {
           }]
         }, function done(err) {
           (!err).should.be.ok;
-        }).run(cb);
+          cb();
+        }).runTest();
       }
 
       failToBind(() => {
@@ -399,7 +409,8 @@ describe('Lib', function () {
         }]
       }, function done(err) {
         (!err).should.be.ok;
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should run a task with one stream parameter with read stream error between writeLOB chunks', function (next) {
@@ -431,7 +442,8 @@ describe('Lib', function () {
         }]
       }, function done(err) {
         err.should.be.an.instanceOf(Error);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should run a task with multiple stream parameters with read stream error between writeLOB chunks', function (next) {
@@ -482,7 +494,8 @@ describe('Lib', function () {
         }]
       }, function done(err) {
         err.should.be.an.instanceOf(Error);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should run a task with read stream error before parameters bound', function (next) {
@@ -502,7 +515,8 @@ describe('Lib', function () {
         replies: []
       }, function done(err) {
         err.should.be.an.instanceOf(Error);
-      }).run(next);
+        next();
+      }).runTest();
     });
 
     it('should accumulate rows affected', function () {
@@ -570,31 +584,87 @@ describe('Lib', function () {
       });
     });
 
-    it('should sendExecute with error', function (done) {
-      var task = createExecuteTask();
+    it('should run getExecuteRequest with error', function (next) {
       var error = new Error('error');
+      var task = createExecuteTask({
+        parameters: {
+          types: [TypeCode.INT],
+          values: [1]
+        },
+        replies: []
+      }, function done(err) {
+        err.should.equal(error);
+        next();
+      });
       task.getParameters = function (availableSize, availableSizeForLOBs, cb) {
         availableSize.should.equal(40);
         availableSizeForLOBs.should.equal(40);
         cb(error);
       };
-      task.sendExecute(function (err) {
+      task.runTest();
+    });
+
+    it('should run getWriteLobRequest with error', function (next) {
+      var buffer = Buffer.alloc(64);
+      var locatorId = Buffer.from([1, 0, 0, 0, 0, 0, 0, 0]);
+      var error = new Error('error');
+      var task = createExecuteTask({
+        parameters: {
+          types: [TypeCode.BLOB],
+          values: [buffer]
+        },
+        replies: [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            writeLobReply: [locatorId]
+          }]
+        }, {
+          type: MessageType.ROLLBACK,
+          args: [null, {}]
+        }]
+      }, function done(err) {
         err.should.equal(error);
-        done();
+        next();
       });
+      task.writer.getWriteLobRequest = function (availableSize, cb) {
+        availableSize.should.equal(64);
+        cb(error);
+      };
+      task.runTest();
+    });
+
+    it('should sendExecute with error', function (done) {
+      var task = createExecuteTask();
+      var error = new Error('error');
+      task.connection.send = function (msg, cb) {
+        cb(error);
+      };
+      task.sendExecute(
+        Buffer.alloc(0),
+        function (err) { // finalize
+          err.should.equal(error);
+          done();
+        },
+        function () {
+          done(new Error("Should call finalize immediately, not callback"));
+        });
     });
 
     it('should sendWriteLobRequest with error', function (done) {
       var task = createExecuteTask();
       var error = new Error('error');
-      task.writer.getWriteLobRequest = function (availableSize, cb) {
-        availableSize.should.equal(64);
+      task.connection.send = function (msg, cb) {
         cb(error);
       };
-      task.sendWriteLobRequest(function (err) {
-        err.should.equal(error);
-        done();
-      });
+      task.sendWriteLobRequest(
+        Buffer.alloc(0),
+        function (err) { // finalize
+          err.should.equal(error);
+          done();
+        },
+        function () {
+          done(new Error("Should call finalize immediately, not callback"));
+        });
     });
 
     it('should provide cesu-8 configuration in execute', function(done) {
@@ -632,12 +702,16 @@ function createExecuteTask(options, cb, checkReplies) {
   options.availableSizeForLobs = undefined;
   options.replies = undefined;
   if (checkReplies === undefined) checkReplies = true;
-  return ExecuteTask.create(connection, options, function () {
+  var task = ExecuteTask.create(connection, options, function () {
     if (checkReplies) {
       connection.replies.should.have.length(0);
     }
     cb.apply(null, arguments);
   });
+  task.runTest = function () {
+    this.connection.enqueue(this);
+  }
+  return task;
 }
 
 function Connection(size, sizeForLobs, replies) {
@@ -645,6 +719,7 @@ function Connection(size, sizeForLobs, replies) {
   this.sizeForLobs = sizeForLobs;
   this.replies = replies || [];
   this.useCesu8 = true;
+  this.queue = new util.Queue(true);
 }
 
 Connection.prototype.send = function (msg, cb) {
@@ -657,6 +732,15 @@ Connection.prototype.send = function (msg, cb) {
     cb.apply(null, reply.args);
   });
 };
+
+Connection.prototype.enqueue = function enqueue(task, cb) {
+  // The task will always be the same ExecuteTask enqueuing itself
+  this.queue.push(task);
+};
+
+Connection.prototype.blockQueue = function blockQueue(blockingTask) {
+  this.queue.block(blockingTask);
+}
 
 Connection.prototype.getAvailableSize = function (forLobs = false) {
   if(forLobs) {

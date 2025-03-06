@@ -310,6 +310,164 @@ describe('db', function () {
     });
 
   });
+
+  describeRemoteDB('stream write lob from read lob (issue 233)', function () {
+    this.timeout(10000);
+    beforeEach(function (done) {
+      if (isRemoteDB) {
+        db.createTable.bind(db)('TEST_STREAM_BLOB_DEST', ['A BLOB'], null, function (err) {
+          if (err) done(err);
+          db.createTable.bind(db)('TEST_STREAM_BLOB_SRC', ['A BLOB'], null, done);
+        });
+      } else {
+        this.skip();
+        done();
+      }
+    });
+    afterEach(function (done) {
+      if (isRemoteDB) {
+        db.dropTable.bind(db)('TEST_STREAM_BLOB_DEST', function (err) {
+          db.dropTable.bind(db)('TEST_STREAM_BLOB_SRC', done);
+        });
+      } else {
+        done();
+      }
+    });
+
+    var dirname = path.join(__dirname, '..', 'fixtures', 'img');
+
+    it('should write a blob streamed from the database', function (done) {
+      var statement;
+      var resultAdapter = new ResultAdapter();
+      var buffer = Buffer.alloc(2 * client._connection.packetSize);
+      for (var i = 0; i < buffer.length; i++) {
+        buffer[i] = i % 25;
+      }
+      function prepareSourceInsert(cb) {
+        client.prepare('INSERT INTO TEST_STREAM_BLOB_SRC VALUES (?)', function (err, ps) {
+          if (err) done(err);
+          statement = ps;
+          cb(err);
+        });
+      }
+
+      function sourceInsert(cb) {
+        statement.exec([buffer], function (err, rowsAffected) {
+          if (err) done(err);
+          statement.drop();
+          cb(err);
+        });
+      }
+
+      function sourceSelect(cb) {
+        client.execute('SELECT * FROM TEST_STREAM_BLOB_SRC', function (err, rs) {
+          if (err) done(err);
+          var objectStream = rs.createObjectStream();
+          objectStream.pipe(resultAdapter);
+          cb();
+        });
+      }
+
+      function prepareDestInsert(cb) {
+        client.prepare('INSERT INTO TEST_STREAM_BLOB_DEST VALUES (?)', function (err, ps) {
+          if (err) done(err);
+          statement = ps;
+          cb(err);
+        });
+      }
+
+      function destInsert(cb) {
+        statement.exec([resultAdapter], function (err, rowsAffected) {
+          if (err) done(err);
+          statement.drop();
+          cb(err);
+        })
+      }
+
+      function destSelect(cb) {
+        client.exec('SELECT * FROM TEST_STREAM_BLOB_DEST', function (err, rows) {
+          if (err) done(err);
+          rows.should.have.length(1);
+          rows.should.eql([{A: buffer}]);
+          cb(err);
+        })
+      }
+
+      async.waterfall([prepareSourceInsert, sourceInsert, sourceSelect, prepareDestInsert,
+        destInsert, destSelect], done);
+    });
+
+    it('should write a blob streamed from the database while another exec is enqueued', function (done) {
+      var statement;
+      var resultAdapter = new ResultAdapter();
+      var buffer = Buffer.alloc(2 * client._connection.packetSize);
+      for (var i = 0; i < buffer.length; i++) {
+        buffer[i] = i % 25;
+      }
+      function prepareSourceInsert(cb) {
+        client.prepare('INSERT INTO TEST_STREAM_BLOB_SRC VALUES (?)', function (err, ps) {
+          if (err) done(err);
+          statement = ps;
+          cb(err);
+        });
+      }
+
+      function sourceInsert(cb) {
+        statement.exec([buffer], function (err, rowsAffected) {
+          if (err) done(err);
+          statement.drop();
+          cb(err);
+        });
+      }
+
+      function sourceSelect(cb) {
+        client.execute('SELECT * FROM TEST_STREAM_BLOB_SRC', function (err, rs) {
+          if (err) done(err);
+          var objectStream = rs.createObjectStream();
+          objectStream.pipe(resultAdapter);
+          cb();
+        });
+      }
+
+      function insertTwiceAndSelect(cb) {
+        var callbackNum = 1;
+        client.prepare('INSERT INTO TEST_STREAM_BLOB_DEST VALUES (?)', function (err, stmt1) { // First
+          if (err) done(err);
+          callbackNum.should.equal(1);
+          callbackNum++;
+          stmt1.exec([resultAdapter], function (err, rowsAffected) { // Third
+            if (err) done(err);
+            rowsAffected.should.equal(1);
+            callbackNum.should.equal(3);
+            callbackNum++;
+            stmt1.drop();
+            client.exec('SELECT * FROM TEST_STREAM_BLOB_DEST', function (err, rows) { // Fifth
+              if (err) done(err);
+              callbackNum.should.equal(5);
+              callbackNum++;
+              rows.should.have.length(1);
+              rows.should.eql([{A: buffer}]);
+              cb(err);
+            });
+          });
+        });
+        client.prepare('INSERT INTO TEST_STREAM_BLOB_SRC VALUES (?)', function (err, stmt2) { // Second
+          if (err) done(err);
+          callbackNum.should.equal(2);
+          callbackNum++;
+          stmt2.exec([fs.createReadStream(path.join(dirname, 'lobby.jpg'))], function (err, rowsAffected) { // Fourth
+            if (err) done(err);
+            rowsAffected.should.equal(1);
+            callbackNum.should.equal(4);
+            callbackNum++;
+            stmt2.drop();
+          });
+        });
+      }
+
+      async.waterfall([prepareSourceInsert, sourceInsert, sourceSelect, insertTwiceAndSelect], done);
+    });
+  });
 });
 
 function MD5(data) {
@@ -338,4 +496,23 @@ StrictMemoryTransform.prototype._transform = function _transform(chunk, encoding
     }
   }
   tryPush();
+}
+
+util.inherits(ResultAdapter, stream.Transform);
+
+function ResultAdapter() {
+  stream.Transform.call(this, { objectMode: true });
+}
+
+// Transform will not call back until the data is completely consumed
+ResultAdapter.prototype._transform = function _transform(data, encoding, cb) {
+    var stream = data.A.createReadStream();
+    stream.on('readable', function(){
+        var content;
+        while((content = stream.read()) != null){
+          this.push(content);
+        }
+    }.bind(this));
+    stream.on('end', cb);
+    stream.on('error', cb);
 }
