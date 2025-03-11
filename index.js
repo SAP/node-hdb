@@ -20,3 +20,4 @@ exports.Stringifier = lib.Stringifier;
 exports.createJSONStringifier = lib.createJSONStringifier;
 exports.iconv = require('iconv-lite');
 exports.isDynatraceSupported = lib.isDynatraceSupported;
+exports.isOpenTelemetrySupported = lib.isOpenTelemetrySupported;
