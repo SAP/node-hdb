@@ -92,10 +92,15 @@ describeExtTrace('db', function () {
     if (mockExtTrace) {
       db.end.bind(db)(done);
     } else {
+      this.timeout(15000);
       // Real external trace, stop the web request
       request.end();
-      server.close();
-      db.end.bind(db)(done);
+      // When using real external trace, give some time for the trace backend
+      // to log results
+      setTimeout(function () {
+        server.close();
+        db.end.bind(db)(done);
+      }, 10000);
     }
   });
   // If the db is undefined, we will skip the tests
