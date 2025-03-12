@@ -828,6 +828,8 @@ describe('db', function () {
       });
 
       it('should raise input type error', function (done) {
+        // Overflow validations are done one at a time, and some are done on the server, so this test can take longer
+        this.timeout(3000);
         var invalidTestData = [
           // Overflows 15 digit precision with 5 decimal places
           {value: '10000000000', errMessage: 'numeric overflow: Failed in "A" column with the value 10000000000.00000'},
@@ -862,6 +864,8 @@ describe('db', function () {
       });
 
       it('should raise input type error', function (done) {
+        // Same as before, some overflow validations are on the server, so this test can take longer
+        this.timeout(3000);
         var invalidTestData = [
           // Overflows 23 digit precision with 5 decimal places
           {value: '1000000000000000000', errMessage: 'numeric overflow: Failed in "A" column with the value 1000000000000000000.00000'},
@@ -899,6 +903,8 @@ describe('db', function () {
       });
 
       it('should raise input type error', function (done) {
+        // Same as before, some overflow validations are on the server, so this test can take longer
+        this.timeout(3000);
         var invalidTestData = [
           // Overflows 35 digit precision with 5 decimal places
           {
