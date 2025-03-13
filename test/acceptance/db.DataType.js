@@ -104,7 +104,8 @@ describe('db', function () {
   function testDataTypeValidSql(tableName, sql, values, dataTypeCodes, expected, done) {
     var statement;
     function prepareInsert(cb) {
-      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values (?)`;
+      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values `
+      + `(${Array(curTableCols.length).fill('?').join(',')})`;
       client.prepare(sql, function (err, ps) {
         statement = ps;
         cb(err);
@@ -139,7 +140,8 @@ describe('db', function () {
   function testDataTypeError(tableName, testData, callback) {
     var statement;
     function prepare(cb) {
-      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values (?)`;
+      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values `
+      + `(${Array(curTableCols.length).fill('?').join(',')})`;
       client.prepare(sql, function (err, ps) {
         statement = ps;
         cb(err);
