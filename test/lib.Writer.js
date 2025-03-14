@@ -325,8 +325,64 @@ describe('Lib', function () {
         done();
       });
     });
+    
+    it('should get Parameters where multiple chunks are taken',
+      function(done) {
+        var writer = new Writer({ types: [TypeCode.BLOB] });
+        var stream = lib.util.stream.Readable.from([Buffer.from("1", "ascii"), Buffer.from("2", "ascii"),
+          Buffer.from("3", "ascii"), Buffer.from("4", "ascii")]);
+        var size = 14; // 10 for header, and 4 for buffer
+        writer.setValues([stream]);
+        writer.getParameters(size, function (err, buffer) {
+          buffer.should.have.length(size);
+          buffer.slice(10).toString('ascii').should.equal(
+            '1234');
+            stream.listenerCount('readable').should.equal(0);
+            // When the buffer exactly fits like here, there must be another write lob
+            // request where the stream is closed and the error listener to forward 
+            // errors is removed
+            stream.listenerCount('error').should.equal(1);
+            stream.listenerCount('end').should.equal(0);
+          done();
+        });
+      });
 
-    it('should get WriteLobRequest where buffer excatly fits',
+    it('should get Parameters where the buffer is too large for one packet',
+      function (done) {
+        var writer = new Writer({ types: [TypeCode.BLOB] });
+        var inputBuffer = Buffer.from('larger than 5', 'ascii');
+        var stream = lib.util.stream.Readable.from([inputBuffer]);
+        var size = 15; // header is 10, buffer only has space for 5
+        
+        writer.setValues([stream]);
+        writer.getParameters(size, function (err, buffer) {
+          buffer.should.have.length(size);
+          buffer.slice(10).toString('ascii').should.equal(
+            'large');
+          stream.listenerCount('readable').should.equal(0);
+          // This source stream is wrapped because it is in object mode, so there 
+          // should be a error listener to forward errors to the wrapping stream
+          stream.listenerCount('error').should.equal(1);
+          stream.listenerCount('end').should.equal(0);
+
+          // simulate write lob reply
+          writer.update([Buffer.from([1, 2, 3, 4, 5, 6, 7, 8])]);
+
+          var remainingSize = 21 + inputBuffer.length - 5;
+          writer.getWriteLobRequest(remainingSize, function (err, part) {
+            part.argumentCount.should.equal(1);
+            part.buffer.should.have.length(remainingSize);
+            part.buffer.slice(21).toString('ascii').should.equal(
+              'r than 5');
+            stream.listenerCount('readable').should.equal(0);
+            stream.listenerCount('error').should.equal(0);
+            stream.listenerCount('end').should.equal(0);
+            done();
+          });
+        });
+      });
+
+    it('should get WriteLobRequest where buffer exactly fits',
       function (
         done) {
         var writer = new Writer({ types: [TypeCode.BLOB] });

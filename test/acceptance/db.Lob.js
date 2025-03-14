@@ -19,10 +19,12 @@ var path = require('path');
 var util = require('util');
 var crypto = require('crypto');
 var async = require('async');
+var stream = require('stream');
 var db = require('../db')();
 var RemoteDB = require('../db/RemoteDB');
 
 var describeRemoteDB = db instanceof RemoteDB ? describe : describe.skip;
+var isRemoteDB = db instanceof RemoteDB;
 
 if (!Buffer.prototype.equals) {
   Buffer.prototype.equals = function (buffer) {
@@ -213,10 +215,127 @@ describe('db', function () {
       });
     });
   });
+
+  describeRemoteDB('Readable stream input (issue 215)', function () {
+    this.timeout(3000);
+
+    beforeEach(function (done) {
+      if (isRemoteDB) {
+        db.createTable.bind(db)('STREAM_BLOB_TABLE', ['"ID" INT NOT NULL',
+          '"NAME" NVARCHAR(256) NOT NULL', '"IMG" BLOB', '"LOGO" BLOB', '"DESCR" NCLOB',
+          'PRIMARY KEY ("ID")'], null, done);
+      } else {
+        this.skip();
+        done();
+      }
+    });
+    afterEach(function (done) {
+      if (isRemoteDB) {
+        db.dropTable.bind(db)('STREAM_BLOB_TABLE', done);
+      } else {
+        done();
+      }
+    });
+
+    var dirname = path.join(__dirname, '..', 'fixtures', 'img');
+
+    function testInsertReadableStream(inputStream, expected, done) {
+      var statement;
+      function prepareInsert(cb) {
+        client.prepare('INSERT INTO STREAM_BLOB_TABLE VALUES (?, ?, ?, ?, ?)', function (err, ps) {
+          if (err) done(err);
+          statement = ps;
+          cb(err);
+        });
+      }
+
+      function insert(cb) {
+        statement.exec([
+          1,
+          'SAP AG',
+          fs.createReadStream(path.join(dirname, 'logo.png')),
+          inputStream,
+          Buffer.from('SAP headquarters located in Walldorf, Germany', 'ascii')
+        ], function (err, rowsAffected) {
+          if (err) done(err);
+          statement.drop();
+          cb(err);
+        });
+      }
+
+      function select(cb) {
+        client.exec('SELECT * FROM STREAM_BLOB_TABLE', function (err, rows) {
+          if (err) done(err);
+          rows.should.have.length(1);
+          rows.should.eql([{
+            ID: 1,
+            NAME: 'SAP AG',
+            IMG: fs.readFileSync(path.join(dirname, 'logo.png')),
+            LOGO: expected,
+            DESCR: Buffer.from('SAP headquarters located in Walldorf, Germany', 'ascii')
+          }]);
+          cb();
+        });
+      }
+
+      async.waterfall([prepareInsert, insert, select], done);
+    }
+
+    it('should insert from a stream.Readable with 3 buffers', function (done) {
+      var expected = Buffer.from("012", "ascii");
+      var inputStream = stream.Readable.from([...Array(3).keys()].map(i => Buffer.from(`${i % 10}`)));
+      testInsertReadableStream(inputStream, expected, done);
+    });
+
+    it('should insert from a stream.Readable with a buffer larger than the packet size', function (done) {
+      var buffer = Buffer.alloc(client._connection.packetSize + 1);
+      for (var i = 0; i < buffer.length; i++) {
+        buffer[i] = i % 10;
+      }
+      var inputStream = stream.Readable.from([buffer]);
+      testInsertReadableStream(inputStream, buffer, done);
+    });
+
+    it('should insert from a strict high water mark stream', function (done) {
+      // Tests that packets can be created incrementally without reading the entire packet at once
+      var bufferLen = Math.floor(client._connection.packetSize * 2.5);
+      var expected = Buffer.alloc(bufferLen);
+      for (var i = 0; i < bufferLen; i++) {
+        expected[i] = i % 10 + 48; // ascii
+      }
+      var srcStream = stream.Readable.from([...Array(bufferLen).keys()].map(i => Buffer.from(`${i % 10}`)));
+      var transformStream = new StrictMemoryTransform(1024);
+      srcStream.pipe(transformStream);
+      testInsertReadableStream(transformStream, expected, done);
+    });
+
+  });
 });
 
 function MD5(data) {
   var hash = crypto.createHash('md5');
   hash.update(data);
   return hash.digest('hex').toUpperCase();
+}
+
+util.inherits(StrictMemoryTransform, stream.Transform);
+
+// Stream that stores a maximum of bufferLimit data in the internal buffer
+// Only works with streams that read byte by byte
+function StrictMemoryTransform(bufferLimit, options) {
+  this._bufferLimit = bufferLimit;
+  stream.Transform.call(this, options);
+}
+
+StrictMemoryTransform.prototype._transform = function _transform(chunk, encoding, cb) {
+  var self = this;
+  function tryPush() {
+    if (self.readableLength < self._bufferLimit) {
+      self.push(chunk);
+      cb();
+    } else {
+      setImmediate(tryPush);
+    }
+  }
+  tryPush();
 }

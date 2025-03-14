@@ -104,7 +104,8 @@ describe('db', function () {
   function testDataTypeValidSql(tableName, sql, values, dataTypeCodes, expected, done) {
     var statement;
     function prepareInsert(cb) {
-      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values (?)`;
+      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values `
+      + `(${Array(curTableCols.length).fill('?').join(',')})`;
       client.prepare(sql, function (err, ps) {
         statement = ps;
         cb(err);
@@ -139,7 +140,8 @@ describe('db', function () {
   function testDataTypeError(tableName, testData, callback) {
     var statement;
     function prepare(cb) {
-      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values (?)`;
+      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values `
+      + `(${Array(curTableCols.length).fill('?').join(',')})`;
       client.prepare(sql, function (err, ps) {
         statement = ps;
         cb(err);
@@ -517,6 +519,21 @@ describe('db', function () {
           });
         }
         async.waterfall([insert, validateDataSql.bind(null, "select * from BINTEXT_TABLE", [3, 53], expected)], done);
+      });
+
+      it('should raise input type error', function (done) {
+        // Character conversion validations are done on the server one at a time, so this test will take longer
+        this.timeout(3000);
+        var invalidValues = [Buffer.from('61c7', 'hex'), Buffer.from('c7', 'hex'), Buffer.from('f09f9880f09f9988', 'hex'),
+          Buffer.from('010100000083b2f2ffadfaa3430564e1fc74b64643', 'hex'), false, 123];
+        var invalidTestData = invalidValues.map(function (testValue) {
+          if (Buffer.isBuffer(testValue)) {
+            return {value: testValue, errMessage: "fatal error: invalid CESU-8 encoding for Unicode string"};
+          } else {
+            return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for LOB type"};
+          }
+        });
+        async.each(invalidTestData, testDataTypeError.bind(null, 'BINTEXT_TABLE'), done);
       });
     });
   });
