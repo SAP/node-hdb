@@ -29,7 +29,7 @@ describe('Util', function () {
     });
 
     it('should validate ZEROS', function () {
-      util.ZEROS.should.have.length(38);
+      util.ZEROS.should.have.length(39);
     });
 
     it('should add left padding up to length 2', function () {

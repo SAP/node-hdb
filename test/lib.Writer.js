@@ -498,12 +498,18 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
       Writer.prototype.setValues.bind(writer, ['']).should.throw();
       // Overflow of 8 bytes representation
-      Writer.prototype.setValues.bind(writer, ['9223372036854775808']).should.throw("Wrong input for FIXED8 type");
-      Writer.prototype.setValues.bind(writer, ['-9223372036854775809']).should.throw("Wrong input for FIXED8 type");
+      var overflow0 = ['9223372036854775808', '-9223372036854775809', '99e+17', '-99e+17', '1e19', '-1e19',
+        '0.01e+21', '-.01e+21'];
+      for (var i = 0; i < overflow0.length; i++) {
+        Writer.prototype.setValues.bind(writer, [overflow0[i]]).should.throw("Wrong input for FIXED8 type");
+      }
       // Overflow of 8 bytes representation after shifting to match decimal
       var fracWriter = new Writer({ types: [TypeCode.FIXED8], fractions: [2] });
-      Writer.prototype.setValues.bind(fracWriter, ['100000000000000000']).should.throw("Wrong input for FIXED8 type");
-      Writer.prototype.setValues.bind(fracWriter, ['-100000000000000000']).should.throw("Wrong input for FIXED8 type");
+      var overflow2 = ['100000000000000000', '-100000000000000000', '99e15', '-99e+15', '1e+17', '-1e+17',
+        '.01e+19', '-0.01e19'];
+      for (var i = 0; i < overflow2.length; i++) {
+        Writer.prototype.setValues.bind(fracWriter, [overflow2[i]]).should.throw("Wrong input for FIXED8 type");
+      }
     });
 
     it('should raise wrong input type error for FIXED12', function () {
@@ -513,12 +519,18 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
       Writer.prototype.setValues.bind(writer, ['']).should.throw();
       // Overflow of 12 bytes representation
-      Writer.prototype.setValues.bind(writer, ['39614081257132168796771975168']).should.throw("Wrong input for FIXED12 type");
-      Writer.prototype.setValues.bind(writer, ['-39614081257132168796771975169']).should.throw("Wrong input for FIXED12 type");
+      var overflow0 = ['39614081257132168796771975168', '-39614081257132168796771975169', '99e+27', '-99e+27',
+        '1e29', '-1e29', '0.01e+31', '-.01e+31'];
+      for (var i = 0; i < overflow0.length; i++) {
+        Writer.prototype.setValues.bind(writer, [overflow0[i]]).should.throw("Wrong input for FIXED12 type");
+      }
       // Overflow of 12 bytes representation after shifting to match decimal
       var fracWriter = new Writer({ types: [TypeCode.FIXED12], fractions: [2] });
-      Writer.prototype.setValues.bind(fracWriter, ['1000000000000000000000000000']).should.throw("Wrong input for FIXED12 type");
-      Writer.prototype.setValues.bind(fracWriter, ['-1000000000000000000000000000']).should.throw("Wrong input for FIXED12 type");
+      var overflow2 = ['1000000000000000000000000000', '-1000000000000000000000000000', '99e25', '-99e+25',
+        '1e+27', '-1e+27', '.01e+29', '-0.01e29'];
+      for (var i = 0; i < overflow2.length; i++) {
+        Writer.prototype.setValues.bind(fracWriter, [overflow2[i]]).should.throw("Wrong input for FIXED12 type");
+      }
     });
 
     it('should raise wrong input type error for FIXED16', function () {
@@ -527,13 +539,21 @@ describe('Lib', function () {
       // Regex does not match
       Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
       Writer.prototype.setValues.bind(writer, ['']).should.throw();
+      // Overflow of 38 digit precision limit
+      var overflow0 = ['99e+37', '-99e+37', '1e38', '-1e38', '0.01e+40', '-.01e+40'];
+      for (var i = 0; i < overflow0.length; i++) {
+        Writer.prototype.setValues.bind(writer, [overflow0[i]]).should.throw("Wrong input for FIXED16 type");
+      }
       // Overflow of 16 bytes representation
       Writer.prototype.setValues.bind(writer, ['170141183460469231731687303715884105728']).should.throw("Wrong input for FIXED16 type");
       Writer.prototype.setValues.bind(writer, ['-170141183460469231731687303715884105729']).should.throw("Wrong input for FIXED16 type");
       // Overflow of 16 bytes representation after shifting to match decimal
       var fracWriter = new Writer({ types: [TypeCode.FIXED16], fractions: [2] });
-      Writer.prototype.setValues.bind(fracWriter, ['10000000000000000000000000000000000000']).should.throw("Wrong input for FIXED16 type");
-      Writer.prototype.setValues.bind(fracWriter, ['-10000000000000000000000000000000000000']).should.throw("Wrong input for FIXED16 type");
+      var overflow2 = ['10000000000000000000000000000000000000', '-10000000000000000000000000000000000000',
+        '99e+35', '-99e35', '1e37', '-1e+37', '.01e+39', '-0.01e+39'];
+      for (var i = 0; i < overflow2.length; i++) {
+        Writer.prototype.setValues.bind(fracWriter, [overflow2[i]]).should.throw("Wrong input for FIXED16 type");
+      }
     });
 
     it('should raise wrong input type error for DATE', function () {
