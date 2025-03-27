@@ -35,7 +35,9 @@ try {
 }
 
 function getOptions(testOptions) {
-  return libUtil.extend(options || localOptions, testOptions);
+  // Create a shallow copy of the options to avoid persisting options across tests
+  var optionsCopy = options || localOptions;
+  return libUtil.extend(optionsCopy, testOptions);
 }
 
 function create(testOptions) {
