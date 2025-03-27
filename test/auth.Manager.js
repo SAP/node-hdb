@@ -14,6 +14,8 @@
 'use strict';
 /* jshint expr:true */
 var os = require('os');
+var fs = require('fs');
+var path = require('path');
 var lib = require('../lib');
 var auth = lib.auth;
 var PartKind = lib.common.PartKind;
@@ -455,6 +457,170 @@ zQIDAQAB
 
   });
 
+  describe('#X.509', function () {
+    var method = 'X509';
+    var dirname = path.join(__dirname, 'fixtures', 'auth', 'x509');
+    var clientPem = fs.readFileSync(path.join(dirname, 'test_x509_user.pem'), 'utf8');
+    var clientKey = fs.readFileSync(path.join(dirname, 'c1a_test.key'), 'utf8');
+
+    var serverNonce = Buffer.from('8e9204f25b077dc1b4ab5ef650faea10f345157873e68e2a28989c00342e9634' +
+                                  '54ae0a90f2339368efcf8c7806c28edba206c329c306d7aba98b23d3f1be3755', 'hex');
+    // To decrease the size of the precomputed buffer text in this test file, the certificate DERs are computed
+    // in real time (PEM -> DER is simply base64 to binary conversion)
+    var clientCert = fs.readFileSync(path.join(dirname, 'c1a_test.crt'), 'utf8');
+    var interCert = fs.readFileSync(path.join(dirname, 'c1a_inter.crt'), 'utf8');
+    var rootCert = fs.readFileSync(path.join(dirname, 'c1_rootCA.crt'), 'utf8');
+    var certificateList = [clientCert, interCert, rootCert];
+    var derList = certificateList.map(function (certStr) {
+      certStr = certStr.replace('-----BEGIN CERTIFICATE-----', '');
+      certStr = certStr.replace('-----END CERTIFICATE-----', '');
+      return Buffer.from(certStr, 'base64');
+    });
+    var clientProof = Buffer.from(
+      '0300' + // number of fields
+      'f69903' + // length indicator for client cert (921 bytes)
+      derList[0].toString('hex') + // client cert
+      'f6600d' + // length indicator for cert chain subparameters (3424 bytes)
+      '0300' + // number of fields
+      'f69903' + // length indicator for client cert (921 bytes)
+      derList[0].toString('hex') + // client cert
+      'f67d04' + // length indicator for inter cert (1149 bytes)
+      derList[1].toString('hex') + // inter cert
+      'f63f05' + // length indicator for root cert (1343 bytes)
+      derList[2].toString('hex') + // root cert
+      'f60001' + // length indicator for signature (256 bytes)
+      '19772d14464da2b229e94f9daa8197a422d1fe87efa7cedfb51960cd9f06da28f5c74ada75a75e3594d7d1b18f0fafc9d8018' +
+      '6b9f6269e5c8173b9a4f8f36fef9b104780c880dee509eff21a23566e5fa902868aba2cbaefa711c8a32a0d2ba012aca26db1' +
+      '3c4566821a520643c10e495737e66adc21fba58df4d12d70d9bbe3b9ba5767cbe430a0bf5bafbaa947a1b579e185645bd8a28' +
+      'acb60e5e897d8c798235d5b2902ccc6dfcca9ad207dda3aaee1a2735c5fee7089f7b5d5cc0dc3a496f7210edd8386b99c0b8b' +
+      'd5b4e15ac6950b0280f5980767ee0958b9fe039c84d781108a230d63c00e955ac66c85c87c9f0763a832e67d2646b88e65bb0' +
+      '04eacff', // signature
+    'hex');
+    var sessionCookie = new Buffer('fcac0f42', 'hex');
+
+    it('should get the corresponding authentication method instance', function () {
+      var manager = auth.createManager({
+        user: null,
+        password: Buffer.from(clientPem)
+      });
+      var authMethod = manager.getMethod(method);
+      // Unlike the other authentication methods, X.509 certificate data is stored as strings
+      // so that it can be parsed to extract the certificate chain
+      (typeof authMethod.authenticationX509 === 'string').should.be.true;
+      authMethod.authenticationX509.should.equal(clientPem);
+    });
+
+    it('should authenticate and connect successfully', function (done) {
+      var manager = auth.createManager({
+        authenticationX509: clientPem
+      });
+      manager.user.should.equal('');
+      manager._authMethods.should.have.length(1);
+      var authMethod = manager._authMethods[0];
+      authMethod.name.should.equal(method);
+      authMethod.authenticationX509.should.equal(clientPem);
+      // initial data
+      var initialData = authMethod.initialData();
+      initialData.should.eql(emptyBuffer);
+      initialData = manager.initialData();
+      initialData.should.eql(['', method, emptyBuffer]);
+      // initialize manager
+      manager.initialize([method, serverNonce], function(err) {
+        if (err) done(err);
+        manager._authMethod.should.equal(authMethod);
+        // final data
+        var finalData = authMethod.finalData();
+        finalData.should.eql(clientProof);
+        finalData = manager.finalData();
+        finalData.should.eql(['', method, clientProof]);
+        // finalize manager
+        manager.finalize([method, sessionCookie]);
+        manager.sessionCookie.should.equal(sessionCookie);
+        done();
+      });
+    });
+
+    it('should allow some authentication methods to fail if another succeeds', function () {
+      var clientChallenge = Buffer.from('e488a0e8bb46052bacf97c37b64da426bdaba4f0549f9d376791203d6f017a6a'
+        + 'fb187f2484ad4082ff2cac5fd81d1d01c4668410a2381d1bd9942ec6def53836', 'hex');
+      var ldapClientChallenge = new Buffer(
+        '0200' +
+        // client nonce = clientChallenge
+        '40' +
+        'e488a0e8bb46052bacf97c37b64da426bdaba4f0549f9d376791203d6f017a6a' +
+        'fb187f2484ad4082ff2cac5fd81d1d01c4668410a2381d1bd9942ec6def53836' +
+        // supported capabilities
+        '08' +
+        '0100000000000000',
+        'hex');
+      var manager = auth.createManager({
+        authenticationX509: clientCert, // no private key, will cause an error
+        user: 'user',
+        password: 'password',
+        clientChallenge: clientChallenge
+      });
+      manager.user.should.equal('user');
+      manager._authMethods.should.have.length(3);
+      // initial data
+      var initialData = manager.initialData();
+      initialData.should.eql(['user', 'LDAP', ldapClientChallenge, 'SCRAMPBKDF2SHA256', clientChallenge,
+        'SCRAMSHA256', clientChallenge]);
+    });
+
+    it('should raise an error with invalid X.509 certificates', function (done) {
+      var invalidClientPem = clientPem;
+      // Replace first BEGIN CERTIFICATE header
+      invalidClientPem = invalidClientPem.replace('-----BEGIN CERTIFICATE-----', '----- BEGIN CERTIFICATE -----');
+      var manager = auth.createManager({
+        authenticationX509: invalidClientPem
+      });
+      manager.initialize([method, serverNonce], function (err) {
+        err.should.be.instanceof(Error);
+        err.message.should.equal('Invalid X.509 certificate in certificate chain');
+        done();
+      });
+    });
+
+    it('should raise an error if the authenticationX509 property is invalid', function () {
+      var errMessage = 'No authentication method found. X.509: Invalid value for connect property ' +
+        'authenticationX509: Please ensure you have supplied a valid X.509 certificate or file name';
+      auth.createManager.bind(null, {authenticationX509: 'fileNotFound.pem'}).should.throw(errMessage);
+    });
+
+    it('should raise an error when only provided public key', function () {
+      var errMessage = "No authentication method found. X.509: Could not load private key";
+      auth.createManager.bind(null, {authenticationX509: rootCert}).should.throw(errMessage);
+    });
+
+    it('should raise an error when only provided private key', function () {
+      var errMessage = "No authentication method found. X.509: No X.509 certificate found";
+      auth.createManager.bind(null, {authenticationX509: clientKey}).should.throw(errMessage);
+    });
+
+    it('should raise an error with incorrect private key password', function () {
+      var encryptedClientKey = fs.readFileSync(path.join(dirname, 'c1a_test_encrypted.key'), 'utf8');
+      var encryptedClientPem = encryptedClientKey + clientCert + interCert + rootCert;
+      var connectOptions = {
+        authenticationX509: encryptedClientPem,
+        authenticationX509Password: 'wrong'
+      };
+      var errData = {
+        message: "No authentication method found. X.509: Could not load private key "
+        + "(likely wrong password to decrypt private key)",
+        'X.509': {
+          code: 'ERR_OSSL_BAD_DECRYPT'
+        }
+      };
+      auth.createManager.bind(null, connectOptions).should.throw(errData);
+    });
+
+    it('should raise an error with an expired certificate', function () {
+      var expiredClientCert = fs.readFileSync(path.join(dirname, 'c1a_test_expired.crt'), 'utf8');
+      var expiredClientPem = clientKey + expiredClientCert + interCert + rootCert;
+      var errMessage = "No authentication method found. X.509: X.509 certificate has expired";
+      auth.createManager.bind(null, {authenticationX509: expiredClientPem}).should.throw(errMessage);
+    });
+  });
 
   describe('#Mananger', function () {
 
