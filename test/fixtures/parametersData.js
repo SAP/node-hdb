@@ -446,6 +446,10 @@ exports.DATETIME = {
       '3eb9830a990e000000' +
       '3e0100000000000000' +
       '3e80db887749000000' +
+      '3e80db887749000000' +
+      '3e81fd409f0b000000' +
+      '3e353019df0e000000' +
+      '3e0ea6b3c40e000000' +
       '8e' +
       '3f9e120b00' +
       '3f439d0600' +
@@ -454,7 +458,16 @@ exports.DATETIME = {
       '8f' +
       '4039880000' +
       '4080510100' +
-      '4001000000', 'hex')
+      '4001000000' +
+      '40b53e0000' +
+      '408e9d0000' +
+      '4080510100' +
+      '10338c0105830a24db' +
+      '10e887071e920b0e45' +
+      '10d2870b11932f3219' +
+      '0f830a24db' +
+      '0f920b0e45' +
+      '0f932f3219', 'hex')
   },
   types: [
     TypeCode.LONGDATE,
@@ -467,6 +480,10 @@ exports.DATETIME = {
     TypeCode.SECONDDATE,
     TypeCode.SECONDDATE,
     TypeCode.SECONDDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.SECONDDATE,
+    TypeCode.SECONDDATE,
     TypeCode.DAYDATE,
     TypeCode.DAYDATE,
     TypeCode.DAYDATE,
@@ -476,6 +493,15 @@ exports.DATETIME = {
     TypeCode.SECONDTIME,
     TypeCode.SECONDTIME,
     TypeCode.SECONDTIME,
+    TypeCode.SECONDTIME,
+    TypeCode.SECONDTIME,
+    TypeCode.SECONDTIME,
+    TypeCode.TIMESTAMP,
+    TypeCode.TIMESTAMP,
+    TypeCode.TIMESTAMP,
+    TypeCode.TIME,
+    TypeCode.TIME,
+    TypeCode.TIME,
   ],
   values: [
     null,
@@ -488,6 +514,10 @@ exports.DATETIME = {
     '1987-10-16 09:41:12',
     '0001-01-01 00:00:00',
     '9999-12-31 23:59:59',
+    '9999-12-31 23:59:59.999999999999',
+    '1582-10-15 00:00:00.890123',
+    '2025-01-13 04:27:32.7891234',
+    '2011-01-01 11:12:13.167832',
     null,
     '1987-10-16',
     '1187-10-16',
@@ -496,7 +526,16 @@ exports.DATETIME = {
     null,
     '09:41:12',
     '23:59:59',
-    '00:00:00'
+    '00:00:00',
+    '04:27:32.7891234',
+    '11:12:13.167832',
+    '23:59:59.9999999',
+    '3123-02-05T03:10:56.1',
+    '2024-08-30T18:11:17.678',
+    '2002-12-17T19:47:06.45059',
+    '03:10:56.1',
+    '18:11:17.678',
+    '19:47:06.45059',
   ]
 };
 
