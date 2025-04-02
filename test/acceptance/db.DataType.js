@@ -242,6 +242,7 @@ describe('db', function () {
     }
   }
 
+  // DFV 4 types also includes BINTEXT (DFV 6) to group it within the on-premise HANA only types
   describeRemoteDB('DFV 4 types', function () {
     // DAYDATE
     var daydateInsertValues = [
@@ -746,114 +747,182 @@ describe('db', function () {
 
   describeRemoteDB('Spatial', function () {
     describeRemoteDB('default spatialTypes', function () {
-      describeRemoteDB('ST_GEOMETRY', function () {
-        beforeEach(setUpTable('ST_GEOMETRY_TABLE', ['A ST_GEOMETRY'], 5));
-        afterEach(dropTable('ST_GEOMETRY_TABLE', 5));
-  
-        it('should return valid ST_GEOMETRY types', function (done) {
-          var values = [
-            null,
-            '010100000000000000000000000000000000000000',
-            Buffer.from("0103000000020000000400000000000000000014c00000000"
-              + "0000014c0000000000000144000000000000014c00000000000000000"
-              + "000000000000144000000000000014c000000000000014c0050000000"
-              + "0000000000000c000000000000000c000000000000000c00000000000"
-              + "000000000000000000004000000000000000000000000000000040000"
-              + "00000000000c000000000000000c000000000000000c0", "hex"),
-            Buffer.from("0106000000020000000103000000020000000400000000000"
-              + "000000014c000000000000014c0000000000000144000000000000014"
-              + "c00000000000000000000000000000144000000000000014c00000000"
-              + "0000014c00500000000000000000000c000000000000000c000000000"
-              + "000000c00000000000000000000000000000004000000000000000000"
-              + "00000000000004000000000000000c000000000000000c00000000000"
-              + "0000c0010300000001000000040000000000000000002440000000000"
-              + "00014c00000000000002e400000000000001440000000000000144000"
-              + "00000000001440000000000000244000000000000014c0", "hex"),
-            Buffer.from("01ed0300000200000001ea030000020000000000000000002"
-              + "440000000000000244000000000000024400000000000002840000000"
-              + "0000002840000000000000284001ea030000020000000000000000002"
-              + "c40000000000000244000000000000024400000000000003040000000"
-              + "00000028400000000000002840", "hex"),
-          ];
-          var insertValues = values.map(function (val) { return [val]; });
-          var expected = values.map(function (val) {
-            if (util.isString(val)) {
-              return {A: Buffer.from(val, "hex")};
-            } else {
-              return {A: val};
-            }
+      // ST_GEOMETRY (default spatialTypes)
+      var geometryValuesDFV5 = [
+        null,
+        '010100000000000000000000000000000000000000',
+        Buffer.from("0103000000020000000400000000000000000014c00000000"
+          + "0000014c0000000000000144000000000000014c00000000000000000"
+          + "000000000000144000000000000014c000000000000014c0050000000"
+          + "0000000000000c000000000000000c000000000000000c00000000000"
+          + "000000000000000000004000000000000000000000000000000040000"
+          + "00000000000c000000000000000c000000000000000c0", "hex"),
+        Buffer.from("0106000000020000000103000000020000000400000000000"
+          + "000000014c000000000000014c0000000000000144000000000000014"
+          + "c00000000000000000000000000000144000000000000014c00000000"
+          + "0000014c00500000000000000000000c000000000000000c000000000"
+          + "000000c00000000000000000000000000000004000000000000000000"
+          + "00000000000004000000000000000c000000000000000c00000000000"
+          + "0000c0010300000001000000040000000000000000002440000000000"
+          + "00014c00000000000002e400000000000001440000000000000144000"
+          + "00000000001440000000000000244000000000000014c0", "hex"),
+        Buffer.from("01ed0300000200000001ea030000020000000000000000002"
+          + "440000000000000244000000000000024400000000000002840000000"
+          + "0000002840000000000000284001ea030000020000000000000000002"
+          + "c40000000000000244000000000000024400000000000003040000000"
+          + "00000028400000000000002840", "hex"),
+      ];
+      var geometryInsertValuesDFV5 = geometryValuesDFV5.map(function (val) { return [val]; });
+      var geometryExpected = geometryValuesDFV5.map(function (val) {
+        if (util.isString(val)) {
+          return {A: Buffer.from(val, "hex")};
+        } else {
+          return {A: val};
+        }
+      });
+      // In DFV1, the parameter type becomes BINARY, so string input is not allowed
+      var geometryInsertValuesDFV1 = geometryExpected.map(function (row) { return [row.A]; });
+      // EWKT conversion
+      var geometryEWKTInsertValues = [
+        Buffer.from("0108000000030000000000000000000000000000000000000"
+          + "0000000000000f03f000000000000f03f000000000000000000000000"
+          + "00000040", "hex")
+      ];
+      var geometryEWKTExpected = [{EWKTEXT: Buffer.from("SRID=0;CIRCULARSTRING (0 0,1 1,0 2)", "utf8")}];
+      // Large ST_GEOMETRY
+      // Generate a multiline's hex that is 29282 bytes
+      var hexStr = "0105000000910100000";
+      for (var i = 0; i < 400; i++) {
+        hexStr += "1020000000400000000000000000000000000000000000000000000000000000000000000"
+                + "0000f03f000000000000f03f000000000000f03f000000000000f03f00000000000000000";
+      }
+      hexStr += "1020000000400000000000000000000000000000000000000000000000000000000000000"
+              + "0000f03f000000000000f03f000000000000f03f000000000000f03f0000000000000000";
+      var geometryLargeInsertValuesDFV5 = [[hexStr]];
+      // In DFV1, only buffers are supported as input
+      var geometryLargeInsertValuesDFV1 = [[Buffer.from(hexStr, 'hex')]];
+      var geometryLargeExpected = [{A: Buffer.from(hexStr, 'hex')}];
+      // Invalid ST_GEOMETRY
+      var geometryInvalidTestDataDFV5 = [
+        {
+          value: 'Strings must be hex in this option',
+          errMessage: 'spatial error: Unexpected end of WKB at position 0: type_code=12, index=1'
+        },
+        {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
+      ];
+      var geometryInvalidTestDataDFV1 = [
+        {
+          value: Buffer.from('Strings must be hex in this option', 'hex'),
+          errMessage: 'spatial error: Unexpected end of WKB at position 0: type_code=12, index=1'
+        },
+        {value: 12345, errMessage: 'Cannot set parameter at row: 1. Wrong input for BINARY type'}
+      ];
+
+      // ST_POINT (default spatialTypes)
+      var pointValuesDFV5 = [
+        null,
+        Buffer.from("010100000000000000000024400000000000003440", "hex"),
+        '0101000000000000c078e91b400000000000b6a5c0',
+        Buffer.from("010100000083b2f2ffadfaa3430564e1fc74b64643", "hex"),
+      ];
+      var pointInsertValuesDFV5 = pointValuesDFV5.map(function (val) { return [val]; });
+      var pointExpected = pointValuesDFV5.map(function (val) {
+        if (util.isString(val)) {
+          return {A: Buffer.from(val, "hex")};
+        } else {
+          return {A: val};
+        }
+      });
+      // In DFV1, the parameter type becomes BINARY, so string input is not allowed
+      var pointInsertValuesDFV1 = pointExpected.map(function (row) { return [row.A]; });
+
+      // Invalid ST_POINT
+      // Keep the same tests as in ST_GEOMETRY
+      var pointInvalidTestDataDFV5 = geometryInvalidTestDataDFV5.slice();
+      var pointInvalidTestDataDFV1 = geometryInvalidTestDataDFV1.slice();
+      // Add a test for a ST_POINT that does not match
+      var mismatchPointInvalidTest = {
+        value: Buffer.from('01e9030000000000000000244000000000000034400000000000003e40', 'hex'),
+        errMessage: "spatial error: exception 1620502: The geometry type 'ST_Point' with dimension 'XYZ' is not allowed in column "
+        + "of type ST_POINT due to column constraints, which only allows 2-dimensional ST_Point types\n: type_code=12, index=1"
+      };
+      pointInvalidTestDataDFV1.push(mismatchPointInvalidTest);
+      pointInvalidTestDataDFV5.push(mismatchPointInvalidTest);
+
+      describeRemoteDB('DFV >= 5', function () {
+        describeRemoteDB('ST_GEOMETRY', function () {
+          beforeEach(setUpTable('ST_GEOMETRY_TABLE', ['A ST_GEOMETRY'], 5));
+          afterEach(dropTable('ST_GEOMETRY_TABLE', 5));
+    
+          it('should return valid ST_GEOMETRY types', function (done) {
+            testDataTypeValid('ST_GEOMETRY_TABLE', geometryInsertValuesDFV5, [74], geometryExpected, done);
           });
-          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, [74], expected, done);
-        });
+    
+          it('should return valid EWKT conversions', function (done) {
+            testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE",
+              geometryEWKTInsertValues, [[25, 26]], geometryEWKTExpected, done);
+          });
   
-        it('should return valid EWKT conversions', function (done) {
-          var insertValues = [
-            Buffer.from("0108000000030000000000000000000000000000000000000"
-              + "0000000000000f03f000000000000f03f000000000000000000000000"
-              + "00000040", "hex")
-          ];
-          var expected = [{EWKTEXT: Buffer.from("SRID=0;CIRCULARSTRING (0 0,1 1,0 2)", "utf8")}];
-          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [[25, 26]], expected, done);
+          it('should insert and return large ST_GEOMETRY types', function (done) {
+            testDataTypeValid('ST_GEOMETRY_TABLE', geometryLargeInsertValuesDFV5, [74], geometryLargeExpected, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(geometryInvalidTestDataDFV5, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
+          });
         });
-
-        it('should insert and return large ST_GEOMETRY types', function (done) {
-          // Generate a multiline's hex that is 29282 bytes
-          var hexStr = "0105000000910100000";
-          for (var i = 0; i < 400; i++) {
-            hexStr += "1020000000400000000000000000000000000000000000000000000000000000000000000"
-                    + "0000f03f000000000000f03f000000000000f03f000000000000f03f00000000000000000";
-          }
-          hexStr += "1020000000400000000000000000000000000000000000000000000000000000000000000"
-                  + "0000f03f000000000000f03f000000000000f03f000000000000f03f0000000000000000";
-
-          var insertValues = [[hexStr]];
-          var expected = [{A: Buffer.from(hexStr, 'hex')}];
-          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, [74], expected, done);
-        });
-  
-        it('should raise input type error', function (done) {
-          var invalidTestData = [
-            {
-              value: 'Strings must be hex in this option',
-              errMessage: 'spatial error: Unexpected end of WKB at position 0: type_code=12, index=1'
-            },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
-          ];
-          async.each(invalidTestData, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
+    
+        describeRemoteDB('ST_POINT', function () {
+          beforeEach(setUpTable('ST_POINT_TABLE', ['A ST_POINT'], 5));
+          afterEach(dropTable('ST_POINT_TABLE', 5));
+    
+          it('should return valid ST_POINT types', function (done) {
+            testDataTypeValid('ST_POINT_TABLE', pointInsertValuesDFV5, [75], pointExpected, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(pointInvalidTestDataDFV5, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
+          });
         });
       });
-  
-      describeRemoteDB('ST_POINT', function () {
-        beforeEach(setUpTable('ST_POINT_TABLE', ['A ST_POINT'], 5));
-        afterEach(dropTable('ST_POINT_TABLE', 5));
-  
-        it('should return valid ST_POINT types', function (done) {
-          var values = [
-            null,
-            Buffer.from("010100000000000000000024400000000000003440", "hex"),
-            '0101000000000000c078e91b400000000000b6a5c0',
-            Buffer.from("010100000083b2f2ffadfaa3430564e1fc74b64643", "hex"),
-          ];
-          var insertValues = values.map(function (val) { return [val]; });
-          var expected = values.map(function (val) {
-            if (util.isString(val)) {
-              return {A: Buffer.from(val, "hex")};
-            } else {
-              return {A: val};
-            }
+
+      describeRemoteDB('DFV 1', function () {
+        before(changeDataFormatSupport(1));
+        after(changeDataFormatSupport(ORGINAL_DATA_FORMAT));
+
+        describeRemoteDB('ST_GEOMETRY', function () {
+          beforeEach(setUpTable('ST_GEOMETRY_TABLE', ['A ST_GEOMETRY'], 1));
+          afterEach(dropTable('ST_GEOMETRY_TABLE', 1));
+    
+          it('should return valid ST_GEOMETRY types', function (done) {
+            testDataTypeValid('ST_GEOMETRY_TABLE', geometryInsertValuesDFV1, [13], geometryExpected, done);
           });
-          testDataTypeValid('ST_POINT_TABLE', insertValues, [75], expected, done);
-        });
+    
+          it('should return valid EWKT conversions', function (done) {
+            testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE",
+              geometryEWKTInsertValues, [[25, 26]], geometryEWKTExpected, done);
+          });
   
-        it('should raise input type error', function (done) {
-          var invalidTestData = [
-            {
-              value: 'Strings must be hex in this option',
-              errMessage: 'spatial error: Unexpected end of WKB at position 0: type_code=12, index=1'
-            },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
-          ];
-          async.each(invalidTestData, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
+          it('should insert and return large ST_GEOMETRY types', function (done) {
+            testDataTypeValid('ST_GEOMETRY_TABLE', geometryLargeInsertValuesDFV1, [13], geometryLargeExpected, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(geometryInvalidTestDataDFV1, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
+          });
+        });
+    
+        describeRemoteDB('ST_POINT', function () {
+          beforeEach(setUpTable('ST_POINT_TABLE', ['A ST_POINT'], 1));
+          afterEach(dropTable('ST_POINT_TABLE', 1));
+    
+          it('should return valid ST_POINT types', function (done) {
+            testDataTypeValid('ST_POINT_TABLE', pointInsertValuesDFV1, [13], pointExpected, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(pointInvalidTestDataDFV1, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
+          });
         });
       });
     });
@@ -866,166 +935,276 @@ describe('db', function () {
         })
       });
 
-      describeRemoteDB('ST_GEOMETRY', function () {
-        beforeEach(setUpTable('ST_GEOMETRY_TABLE', ['A ST_GEOMETRY(4326)'], 5));
-        afterEach(dropTable('ST_GEOMETRY_TABLE', 5));
+      // ST_GEOMETRY (spatialTypes 1)
+      var geometryInsertValuesDFV5 = [
+        [null],
+        [Buffer.from("010100000000000000000024400000000000002440", "hex")],
+        ['MultiLineString ((10 10, 12 12), (14 10, 16 12))'],
+        ['GeometryCollection (LineString(5 10, 10 12, 15 10), Polygon ((10 -5, 15 5, 5 5, 10 -5)))'],
+        ['MultiPolygon Z(((-5 -5 4, 5 -5 7, 0 5 1, -5 -5 4), (-2 -2 9, -2 0 4, 2 0 4, 2 -2 1, -2 -2 9)), ((10 -5 2, 15 5 2, 5 5 3, 10 -5 2)))'],
+      ];
+      var geometryExpected = [
+        {A: null},
+        {A: Buffer.from("010100000000000000000024400000000000002440", "hex")},
+        {A: Buffer.from("010500000002000000010200000002000000000000000"
+          + "000244000000000000024400000000000002840000000000000284001"
+          + "02000000020000000000000000002c400000000000002440000000000"
+          + "00030400000000000002840", "hex")},
+        {A: Buffer.from("010700000002000000010200000003000000000000000"
+          + "000144000000000000024400000000000002440000000000000284000"
+          + "00000000002e400000000000002440010300000001000000040000000"
+          + "00000000000244000000000000014c00000000000002e400000000000"
+          + "001440000000000000144000000000000014400000000000002440000"
+          + "00000000014c0", "hex")},
+        {A: Buffer.from("01ee0300000200000001eb03000002000000040000000"
+          + "0000000000014c000000000000014c000000000000010400000000000"
+          + "00144000000000000014c00000000000001c400000000000000000000"
+          + "0000000001440000000000000f03f00000000000014c0000000000000"
+          + "14c000000000000010400500000000000000000000c00000000000000"
+          + "0c0000000000000224000000000000000c00000000000000000000000"
+          + "000000104000000000000000400000000000000000000000000000104"
+          + "0000000000000004000000000000000c0000000000000f03f00000000"
+          + "000000c000000000000000c0000000000000224001eb0300000100000"
+          + "004000000000000000000244000000000000014c00000000000000040"
+          + "0000000000002e4000000000000014400000000000000040000000000"
+          + "000144000000000000014400000000000000840000000000000244000"
+          + "000000000014c00000000000000040", "hex")}
+      ];
+      // Even in spatialTypes 1, DFV 1 only supports buffers since the parameter type
+      // becomes BINARY
+      var geometryInsertValuesDFV1 = geometryExpected.map(function (row) {
+        return [row.A];
+      });
+      // EWKT conversion
+      var geometryEWKTInsertValuesDFV5 = [
+        ['LineString ZM(0 0 3 6, 5 10 4 8)'],
+        ['MultiPoint ZM((10 10 12 1), (12 12 14 1), (14 10 10 1))'],
+      ];
+      var geometryEWKTExpectedDFV5 = [
+        {EWKTEXT: Buffer.from("SRID=4326;LINESTRING ZM (0 0 3 6,5 10 4 8)", "utf8")},
+        {EWKTEXT: Buffer.from("SRID=4326;MULTIPOINT ZM ((10 10 12 1),(12 12 14 1),(14 10 10 1))", "utf8")},
+      ];
+      // Large ST_GEOMETRY
+      var xMax = 30;
+      var yMax = 30;
+
+      // Generate multilines that are 21,155 bytes long
+      var lines = "MULTILINESTRING ((0 0,0 1,1 1,1 0)";
+      for (var x = 0; x < xMax; x++) {
+        var x1 = x + 1;
+        for (var y = 0; y < yMax; y++) {
+          var y1 = y + 1;
+          lines += ",(" + x + " " + y + "," + x + " " + y1 + "," + y1 + " " + x1
+            + "," + x1 + " " + y + ")";
+        }
+      }
+      lines += ")";
+      var geometryLargeInsertValuesDFV5 = [[lines]];
+      var geometryLargeExpectedDFV5 = [{EWKTEXT: Buffer.from("SRID=4326;" + lines, "utf8")}];
+      // Invalid ST_GEOMETRY
+      var geometryInvalidTestDataDFV5 = [
+        {
+          value: '010100000000000000000000000000000000000000',
+          errMessage: "spatial error: Invalid or unsupported geometry type '010100000000000000000000000000000000000000' at "
+          + "position 0 of WKT 010100000000000000000000000000000000000000: type_code=29, index=1"
+        },
+        {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
+      ];
+      var geometryInvalidTestDataDFV1 = [
+        {
+          value: 'MultiLineString ((10 10, 12 12), (14 10, 16 12))', // Check that strings are not valid input in DFV 1
+          errMessage: "Cannot set parameter at row: 1. Wrong input for BINARY type"
+        },
+        {value: 12345, errMessage: 'Cannot set parameter at row: 1. Wrong input for BINARY type'}
+      ];
+
+      // ST_POINT (spatialTypes 1)
+      var pointInsertValuesDFV5 = [
+        [null],
+        [Buffer.from("010100000000000000000000400000000000000840", "hex")],
+        ['Point (-10 0)'],
+        ['Point (0.5 0.5)'],
+      ];
+      var pointExpected = [
+        {A: null},
+        {A: Buffer.from("010100000000000000000000400000000000000840", "hex")},
+        {A: Buffer.from("010100000000000000000024c00000000000000000", "hex")},
+        {A: Buffer.from("0101000000000000000000e03f000000000000e03f", "hex")}
+      ];
+      // Same as before, even in spatialTypes 1, DFV 1 only supports buffers
+      var pointInsertValuesDFV1 = pointExpected.map(function (row) {
+        return [row.A];
+      });
+      // Invalid ST_POINT
+      var pointInvalidTestDataDFV5 = [
+        {
+          value: '010100000000000000000024c00000000000000000',
+          errMessage: "spatial error: Invalid or unsupported geometry type '010100000000000000000024c00000000000000000' at "
+          + "position 0 of WKT 010100000000000000000024c00000000000000000: type_code=29, index=1"
+        },
+        {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'},
+        {
+          value: 'Point Z(10 20 30)',
+          errMessage: "spatial error: exception 1620502: The geometry type 'ST_Point' with dimension 'XYZ' is not allowed in "
+          + "column of type ST_POINT due to column constraints, which only allows 2-dimensional ST_Point types\n: type_code=29, index=1"
+        }
+      ];
+      var pointInvalidTestDataDFV1 = [
+        // Check that strings are not valid input in DFV 1
+        {value: 'Point (25 25)', errMessage: "Cannot set parameter at row: 1. Wrong input for BINARY type"},
+        {value: 12345, errMessage: 'Cannot set parameter at row: 1. Wrong input for BINARY type'},
+        {
+          value: Buffer.from('01e9030000000000000000244000000000000034400000000000003e40', 'hex'),
+          errMessage: "spatial error: exception 1620502: The geometry type 'ST_Point' with dimension 'XYZ' is not allowed in "
+          + "column of type ST_POINT due to column constraints, which only allows 2-dimensional ST_Point types\n: type_code=12, index=1"
+        }
+      ];
+
+      describeRemoteDB('DFV >= 5', function () {
+        describeRemoteDB('ST_GEOMETRY', function () {
+          beforeEach(setUpTable('ST_GEOMETRY_TABLE', ['A ST_GEOMETRY(4326)'], 5));
+          afterEach(dropTable('ST_GEOMETRY_TABLE', 5));
+    
+          it('should return valid ST_GEOMETRY types', function (done) {
+            testDataTypeValid('ST_GEOMETRY_TABLE', geometryInsertValuesDFV5, [74], geometryExpected, done);
+          });
+    
+          it('should return valid EWKT conversions', function (done) {
+            testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE",
+              geometryEWKTInsertValuesDFV5, [[25, 26]], geometryEWKTExpectedDFV5, done);
+          });
   
-        it('should return valid ST_GEOMETRY types', function (done) {
-          var insertValues = [
-            [null],
-            [Buffer.from("010100000000000000000024400000000000002440", "hex")],
-            ['MultiLineString ((10 10, 12 12), (14 10, 16 12))'],
-            ['GeometryCollection (LineString(5 10, 10 12, 15 10), Polygon ((10 -5, 15 5, 5 5, 10 -5)))'],
-            ['MultiPolygon Z(((-5 -5 4, 5 -5 7, 0 5 1, -5 -5 4), (-2 -2 9, -2 0 4, 2 0 4, 2 -2 1, -2 -2 9)), ((10 -5 2, 15 5 2, 5 5 3, 10 -5 2)))'],
-          ];
-          var expected = [
-            {A: null},
-            {A: Buffer.from("010100000000000000000024400000000000002440", "hex")},
-            {A: Buffer.from("010500000002000000010200000002000000000000000"
-              + "000244000000000000024400000000000002840000000000000284001"
-              + "02000000020000000000000000002c400000000000002440000000000"
-              + "00030400000000000002840", "hex")},
-            {A: Buffer.from("010700000002000000010200000003000000000000000"
-              + "000144000000000000024400000000000002440000000000000284000"
-              + "00000000002e400000000000002440010300000001000000040000000"
-              + "00000000000244000000000000014c00000000000002e400000000000"
-              + "001440000000000000144000000000000014400000000000002440000"
-              + "00000000014c0", "hex")},
-            {A: Buffer.from("01ee0300000200000001eb03000002000000040000000"
-              + "0000000000014c000000000000014c000000000000010400000000000"
-              + "00144000000000000014c00000000000001c400000000000000000000"
-              + "0000000001440000000000000f03f00000000000014c0000000000000"
-              + "14c000000000000010400500000000000000000000c00000000000000"
-              + "0c0000000000000224000000000000000c00000000000000000000000"
-              + "000000104000000000000000400000000000000000000000000000104"
-              + "0000000000000004000000000000000c0000000000000f03f00000000"
-              + "000000c000000000000000c0000000000000224001eb0300000100000"
-              + "004000000000000000000244000000000000014c00000000000000040"
-              + "0000000000002e4000000000000014400000000000000040000000000"
-              + "000144000000000000014400000000000000840000000000000244000"
-              + "000000000014c00000000000000040", "hex")}
-          ];
-          testDataTypeValid('ST_GEOMETRY_TABLE', insertValues, [74], expected, done);
+          it('should insert and return large ST_GEOMETRY types', function (done) {
+            testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE",
+              geometryLargeInsertValuesDFV5, [[25, 26]], geometryLargeExpectedDFV5, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(geometryInvalidTestDataDFV5, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
+          });
         });
   
-        it('should return valid EWKT conversions', function (done) {
-          var insertValues = [
-            ['LineString ZM(0 0 3 6, 5 10 4 8)'],
-            ['MultiPoint ZM((10 10 12 1), (12 12 14 1), (14 10 10 1))'],
-          ];
-          var expected = [
-            {EWKTEXT: Buffer.from("SRID=4326;LINESTRING ZM (0 0 3 6,5 10 4 8)", "utf8")},
-            {EWKTEXT: Buffer.from("SRID=4326;MULTIPOINT ZM ((10 10 12 1),(12 12 14 1),(14 10 10 1))", "utf8")},
-          ];
-          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [[25, 26]], expected, done);
-        });
-
-        it('should insert and return large ST_GEOMETRY types', function (done) {
-          var xMax = 30;
-          var yMax = 30;
-
-          // Generate multilines that are 21,155 bytes long
-          var lines = "MULTILINESTRING ((0 0,0 1,1 1,1 0)";
-          for (var x = 0; x < xMax; x++) {
-            var x1 = x + 1;
-            for (var y = 0; y < yMax; y++) {
-              var y1 = y + 1;
-              lines += ",(" + x + " " + y + "," + x + " " + y1 + "," + y1 + " " + x1
-                + "," + x1 + " " + y + ")";
-            }
-          }
-          lines += ")";
-
-          var insertValues = [[lines]];
-          var expected = [{EWKTEXT: Buffer.from("SRID=4326;" + lines, "utf8")}];
-          testDataTypeValidSql('ST_GEOMETRY_TABLE', "SELECT A.ST_AsEWKT() EWKTEXT FROM ST_GEOMETRY_TABLE", insertValues, [[25, 26]], expected, done);
-        });
-  
-        it('should raise input type error', function (done) {
-          var invalidTestData = [
-            {
-              value: '010100000000000000000000000000000000000000',
-              errMessage: "spatial error: Invalid or unsupported geometry type '010100000000000000000000000000000000000000' at "
-              + "position 0 of WKT 010100000000000000000000000000000000000000: type_code=29, index=1"
-            },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'}
-          ];
-          async.each(invalidTestData, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
+        describeRemoteDB('ST_POINT', function () {
+          beforeEach(setUpTable('ST_POINT_TABLE', ['A ST_POINT'], 5));
+          afterEach(dropTable('ST_POINT_TABLE', 5));
+    
+          it('should return valid ST_POINT types', function (done) {
+            testDataTypeValid('ST_POINT_TABLE', pointInsertValuesDFV5, [75], pointExpected, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(pointInvalidTestDataDFV5, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
+          });
         });
       });
 
-      describeRemoteDB('ST_POINT', function () {
-        beforeEach(setUpTable('ST_POINT_TABLE', ['A ST_POINT'], 5));
-        afterEach(dropTable('ST_POINT_TABLE', 5));
-  
-        it('should return valid ST_POINT types', function (done) {
-          var insertValues = [
-            [null],
-            [Buffer.from("010100000000000000000000400000000000000840", "hex")],
-            ['Point (-10 0)'],
-            ['Point (0.5 0.5)'],
-          ];
-          var expected = [
-            {A: null},
-            {A: Buffer.from("010100000000000000000000400000000000000840", "hex")},
-            {A: Buffer.from("010100000000000000000024c00000000000000000", "hex")},
-            {A: Buffer.from("0101000000000000000000e03f000000000000e03f", "hex")}
-          ];
-          testDataTypeValid('ST_POINT_TABLE', insertValues, [75], expected, done);
+      describeRemoteDB('DFV 1', function () {
+        before(changeDataFormatSupport(1));
+        after(changeDataFormatSupport(ORGINAL_DATA_FORMAT));
+
+        describeRemoteDB('ST_GEOMETRY', function () {
+          beforeEach(setUpTable('ST_GEOMETRY_TABLE', ['A ST_GEOMETRY(4326)'], 1));
+          afterEach(dropTable('ST_GEOMETRY_TABLE', 1));
+    
+          it('should return valid ST_GEOMETRY types', function (done) {
+            testDataTypeValid('ST_GEOMETRY_TABLE', geometryInsertValuesDFV1, [13], geometryExpected, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(geometryInvalidTestDataDFV1, testDataTypeError.bind(null, 'ST_GEOMETRY_TABLE'), done);
+          });
         });
   
-        it('should raise input type error', function (done) {
-          var invalidTestData = [
-            {
-              value: '010100000000000000000024c00000000000000000',
-              errMessage: "spatial error: Invalid or unsupported geometry type '010100000000000000000024c00000000000000000' at "
-              + "position 0 of WKT 010100000000000000000024c00000000000000000: type_code=29, index=1"
-            },
-            {value: 12345, errMessage: 'Cannot set parameter at row: 1. Argument must be a string or Buffer'},
-            {
-              value: 'Point Z(10 20 30)',
-              errMessage: "spatial error: exception 1620502: The geometry type 'ST_Point' with dimension 'XYZ' is not allowed in "
-              + "column of type ST_POINT due to column constraints, which only allows 2-dimensional ST_Point types\n: type_code=29, index=1"
-            }
-          ];
-          async.each(invalidTestData, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
+        describeRemoteDB('ST_POINT', function () {
+          beforeEach(setUpTable('ST_POINT_TABLE', ['A ST_POINT'], 1));
+          afterEach(dropTable('ST_POINT_TABLE', 1));
+    
+          it('should return valid ST_POINT types', function (done) {
+            testDataTypeValid('ST_POINT_TABLE', pointInsertValuesDFV1, [13], pointExpected, done);
+          });
+    
+          it('should raise input type error', function (done) {
+            async.each(pointInvalidTestDataDFV1, testDataTypeError.bind(null, 'ST_POINT_TABLE'), done);
+          });
         });
       });
     });
   });
 
-  describeRemoteDB('BOOLEAN', function () {
-    before(setUpTable('BOOLEAN_TABLE', ['A BOOLEAN'], 7));
-    after(dropTable('BOOLEAN_TABLE', 7));
-
-    it('should add valid booleans using different parameter types', function (done) {
-      var insertValues = [
-        [true],
-        [null],
-        [false],
-        [1],
-        [10.5],
-        [0],
-        ['TRUE'],
-        ['FAlsE'],
-        ['UNknOwn'],
-        ['1'],
-        ['0'],
-        [''],
-      ];
-      var expected = [{A: true}, {A: null}, {A: false}, {A: true}, {A: true},
-        {A: false}, {A: true}, {A: false}, {A: null}, {A: true},
-        {A: false}, {A: null}];
-      testDataTypeValid('BOOLEAN_TABLE', insertValues, [28], expected, done);
+  describeRemoteDB('DFV 7 (BOOLEAN)', function () {
+    var booleanInsertValuesDFV7 = [
+      [true],
+      [null],
+      [false],
+      [1],
+      [10.5],
+      [0],
+      ['TRUE'],
+      ['FAlsE'],
+      ['UNknOwn'],
+      ['1'],
+      ['0'],
+      [''],
+    ];
+    var booleanExpectedDFV7 = [{A: true}, {A: null}, {A: false}, {A: true}, {A: true},
+      {A: false}, {A: true}, {A: false}, {A: null}, {A: true},
+      {A: false}, {A: null}];
+    // In DFV1, non number strings are not supported ('true', 'unknown'). There is also a behaviour change
+    // for '' which returns null in DFV7 but 0 (false) in DFV1.
+    var booleanInsertValuesDFV1 = [
+      [true],
+      [null],
+      [false],
+      [1],
+      [10.5],
+      [0],
+      ['1'],
+      ['0'],
+      [''],
+    ];
+    var booleanExpectedDFV1 = [{A: 1}, {A: null}, {A: 0}, {A: 1}, {A: 1}, {A: 0}, {A: 1}, {A: 0}, {A: 0}];
+    var booleanInvalidValuesDFV7 = ['String not boolean', Buffer.from("01", "hex")];
+    // Add the same expected error message to the values
+    var booleanInvalidTestDataDFV7 = booleanInvalidValuesDFV7.map(function (testValue) {
+      return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for BOOLEAN type"};
+    });
+    // In DFV1, the error message is for the TINYINT type and boolean strings like 'true' cannot be added
+    var booleanInvalidValuesDFV1 = ['true', 'String not boolean', Buffer.from("01", "hex")];
+    var booleanInvalidTestDataDFV1 = booleanInvalidValuesDFV1.map(function (testValue) {
+      return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for TINYINT type"};
     });
 
-    it('should raise input type error', function (done) {
-      var invalidValues = ['String not boolean', Buffer.from("01", "hex")];
-      // Add the same expected error message to the values
-      var invalidTestData = invalidValues.map(function (testValue) {
-        return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for BOOLEAN type"};
+    describeRemoteDB('DFV >= 7', function () {
+      describeRemoteDB('BOOLEAN', function () {
+        before(setUpTable('BOOLEAN_TABLE', ['A BOOLEAN'], 7));
+        after(dropTable('BOOLEAN_TABLE', 7));
+
+        it('should add valid booleans using different parameter types', function (done) {
+          testDataTypeValid('BOOLEAN_TABLE', booleanInsertValuesDFV7, [28], booleanExpectedDFV7, done);
+        });
+
+        it('should raise input type error', function (done) {
+          async.each(booleanInvalidTestDataDFV7, testDataTypeError.bind(null, 'BOOLEAN_TABLE'), done);
+        });
       });
-      async.each(invalidTestData, testDataTypeError.bind(null, 'BOOLEAN_TABLE'), done);
+    });
+
+    describeRemoteDB('DFV 1', function () {
+      before(changeDataFormatSupport(1));
+      after(changeDataFormatSupport(ORGINAL_DATA_FORMAT));
+
+      describeRemoteDB('BOOLEAN', function () {
+        before(setUpTable('BOOLEAN_TABLE', ['A BOOLEAN'], 1));
+        after(dropTable('BOOLEAN_TABLE', 1));
+
+        it('should add valid booleans using different parameter types', function (done) {
+          testDataTypeValid('BOOLEAN_TABLE', booleanInsertValuesDFV1, [1], booleanExpectedDFV1, done);
+        });
+
+        it('should raise input type error', function (done) {
+          async.each(booleanInvalidTestDataDFV1, testDataTypeError.bind(null, 'BOOLEAN_TABLE'), done);
+        });
+      });
     });
   });
 
