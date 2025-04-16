@@ -647,7 +647,7 @@ function Connection(size, sizeForLobs, replies) {
   this.useCesu8 = true;
 }
 
-Connection.prototype.send = function (msg, cb) {
+Connection.prototype.send = function (msg, options, cb) {
   var reply = this.replies.shift();
   msg.type.should.equal(reply.type);
   if (typeof reply.checkMessage === 'function') {

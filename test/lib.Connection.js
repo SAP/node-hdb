@@ -46,7 +46,7 @@ function getAuthenticationPart(req) {
   }).shift().args;
 }
 
-function sendAuthenticationRequest(req, done) {
+function sendAuthenticationRequest(req, options, done) {
   var reply = {
     authentication: getAuthenticationPart(req)
   };
@@ -77,7 +77,7 @@ describe('Lib', function () {
       connection.open({}, function () {
         connection.getClientInfo().setProperty('LOCALE', 'en_US');
         connection.getClientInfo().shouldSend(MessageType.EXECUTE).should.eql(true);
-        connection.send(new lib.request.Segment(MessageType.EXECUTE), null);
+        connection.send(new lib.request.Segment(MessageType.EXECUTE), {}, null);
         connection.getClientInfo().shouldSend(MessageType.EXECUTE).should.eql(false);
         connection.getClientInfo().getProperty('LOCALE').should.eql('en_US');
         done();
@@ -221,7 +221,7 @@ describe('Lib', function () {
 
     it('should destroy socket after disconnect', function (done) {
       var connection = createConnection();
-      connection.enqueue = function enqueue(msg, cb) {
+      connection.enqueue = function enqueue(msg, options, cb) {
         msg.type.should.equal(MessageType.DISCONNECT);
         setImmediate(function () {
           cb();
@@ -405,7 +405,8 @@ describe('Lib', function () {
     it('should report error in enqueue when connection is invalid', function (done) {
       var connection = createConnection();
       connection._queue.pause();
-      connection.enqueue(function firstTask() { }, function (err) {
+      var options = {};
+      connection.enqueue(function firstTask() { }, options, function (err) {
         err.code.should.equal('EHDBCLOSE');
         done();
       });
@@ -413,7 +414,7 @@ describe('Lib', function () {
 
     it('should rollback a transaction', function () {
       var connection = createConnection();
-      connection.enqueue = function enqueue(msg, done) {
+      connection.enqueue = function enqueue(msg, options, done) {
         done(msg);
       };
 
@@ -426,7 +427,7 @@ describe('Lib', function () {
 
     it('should commit a transaction', function () {
       var connection = createConnection();
-      connection.enqueue = function enqueue(msg, done) {
+      connection.enqueue = function enqueue(msg, options, done) {
         done(msg);
       };
 
@@ -439,7 +440,7 @@ describe('Lib', function () {
 
     it('should execute a statement', function () {
       var connection = createConnection();
-      connection.enqueue = function enqueue(msg, done) {
+      connection.enqueue = function enqueue(msg, options, done) {
         done(msg);
       };
 
@@ -457,7 +458,7 @@ describe('Lib', function () {
           connection._socket = {
             readyState: 'open'
           };
-          connection.send = function (msg, cb) {
+          connection.send = function (msg, options, cb) {
           var segment = new lib.reply.Segment(segmentData.kind, segmentData.functionCode);
           var part = segmentData.parts[0];
           segment.push(new lib.reply.Part(part.kind, part.attributes, part.argumentCount, part.buffer));
@@ -481,7 +482,7 @@ describe('Lib', function () {
         connection._socket = {
           readyState: 'open'
         };
-        connection.send = function (msg, cb) {
+        connection.send = function (msg, options, cb) {
           cb(new Error('Request was not successful'));
         };
 
@@ -577,7 +578,7 @@ describe('Lib', function () {
     it('should fail to disconnect from the database', function (done) {
       var connection = createConnection();
       var error = new Error('DISCONNECT_ERROR');
-      connection.enqueue = function enqueue(msg, cb) {
+      connection.enqueue = function enqueue(msg, options, cb) {
         msg.type.should.equal(MessageType.DISCONNECT);
         setImmediate(function () {
           cb(error);
@@ -615,6 +616,59 @@ describe('Lib', function () {
         warning.should.equal(replySegment.error);
         done();
       })
+    });
+
+    it('should receive the correct packet after timeout', function (done) {
+      var connection = createConnection();
+      connection._parseReplySegment = function parseReplySegment(reply) {
+        return reply;
+      }
+
+      var messageHeader = Buffer.from(
+        '0000000000000000' + // Session id
+        '00000000' + // Packet count
+        '01000000' + // Varpart length
+        '21000000' + // Varpart size
+        '0100' + // Number of segments
+        '00000000000000000000', // Extra options
+      'hex');
+      // Note that for simplicity the packet body is not valid
+      var firstReply = Buffer.concat([messageHeader, Buffer.from('01', 'hex')]);
+      messageHeader[8] = 1; // Update packet count
+      var secondReply = Buffer.concat([messageHeader, Buffer.from('02', 'hex')]);
+
+      connection.open({}, function (err) {
+        (!!err).should.be.not.ok;
+
+        // Overwrite MockSocket write
+        var firstWrite = true;
+        connection._socket.write = function write() {
+          if (firstWrite) {
+            firstWrite = false;
+          } else {
+            var self = this;
+            setImmediate(function () {
+              self.emit('data', firstReply);
+              self.emit('data', secondReply);
+            });
+          }
+        }
+
+        // Mimic connect
+        connection._queue.resume();
+        connection._state.sessionId = 0;
+
+        // 1 ms timeout
+        connection.isValid(1, function (err, ret) {
+          (!!err).should.be.not.ok;
+          ret.should.be.false(); // MockSocket does not write back yet
+          connection.executeDirect({ command: 'second sql' }, function (err, reply) {
+            if (err) done(err);
+            reply.should.eql(Buffer.from('02', 'hex'));
+            done();
+          });
+        });
+      });
     });
 
     context('cesu-8 support', function() {
