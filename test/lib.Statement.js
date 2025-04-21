@@ -65,6 +65,7 @@ describe('Lib', function () {
       var values = [1];
       statement.execute(values, function (err, rowsAffected) {
         connection.options.should.eql({
+          communicationTimeout: undefined,
           functionCode: statement.functionCode,
           statementId: statement.id,
           parameters: {

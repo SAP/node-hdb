@@ -671,6 +671,24 @@ describe('Lib', function () {
       });
     });
 
+    it('should result in a closed connection readyState after timeout', function (done) {
+      var connection = createConnection();
+
+      connection.open({}, function (err) {
+        (!!err).should.be.not.ok;
+
+        // Overwrite MockSocket write
+        connection._socket.write = function write() { /* Don't send back a packet */ }
+
+        connection.connect({ user: 'user', password: 'pass', communicationTimeout: 1 }, function (err) {
+          err.should.be.instanceOf(Error);
+          err.message.should.equal("Connect failed (connect timeout expired)");
+          connection.readyState.should.equal('closed');
+          done();
+        });
+      });
+    });
+
     context('cesu-8 support', function() {
 
       it('should create a connection with a useCesu8 set correctly', function () {

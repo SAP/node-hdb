@@ -630,7 +630,8 @@ describe('hdb', function () {
       client.exec('sql', options, function (err, reply) {
         should(err === null).be.ok;
         client._connection.options.should.eql({
-          command: 'sql'
+          command: 'sql',
+          communicationTimeout: undefined
         });
         reply.should.equal(connection.replies.executeDirect);
         done();
@@ -661,7 +662,8 @@ describe('hdb', function () {
       }, function (err, reply) {
         should(err === null).be.ok;
         connection.options.should.eql({
-          command: command
+          command: command,
+          communicationTimeout: undefined
         });
         client._result.options.autoFetch.should.be.true;
         reply.should.equal(connection.replies.executeDirect);
@@ -684,7 +686,8 @@ describe('hdb', function () {
       var client = new TestClient();
       var connection = client._connection;
       var options = {
-        command: 'sql'
+        command: 'sql',
+        communicationTimeout: undefined
       };
       client.prepare(options.command, function (err, statement) {
         should(err === null).be.ok;
@@ -703,7 +706,7 @@ describe('hdb', function () {
       };
       client.prepare(options, function (err, statement) {
         (err === null).should.be.ok;
-        connection.options.should.eql(options);
+        connection.options.should.eql(util.extend({communicationTimeout: undefined}, options));
         statement.parameterMetadata.should.equal('parameterMetadata');
         statement.resultSetMetadata.should.equal('metadata');
         done();
