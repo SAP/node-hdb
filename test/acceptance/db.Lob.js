@@ -22,6 +22,8 @@ var async = require('async');
 var stream = require('stream');
 var db = require('../db')();
 var RemoteDB = require('../db/RemoteDB');
+var common = require('../../lib/protocol/common');
+var DEFAULT_PACKET_SIZE = common.DEFAULT_PACKET_SIZE;
 
 var describeRemoteDB = db instanceof RemoteDB ? describe : describe.skip;
 var isRemoteDB = db instanceof RemoteDB;
@@ -52,11 +54,11 @@ describe('db', function () {
   var client = db.client;
   var transaction = client._connection._transaction;
 
+  var dirname = path.join(__dirname, '..', 'fixtures', 'img');
+
   describe('IMAGES', function () {
     before(db.createImages.bind(db));
     after(db.dropImages.bind(db));
-
-    var dirname = path.join(__dirname, '..', 'fixtures', 'img');
 
     it('should return all images via callback', function (done) {
       var sql = 'select * from images order by NAME';
@@ -237,8 +239,6 @@ describe('db', function () {
       }
     });
 
-    var dirname = path.join(__dirname, '..', 'fixtures', 'img');
-
     function testInsertReadableStream(inputStream, expected, done) {
       var statement;
       function prepareInsert(cb) {
@@ -308,7 +308,73 @@ describe('db', function () {
       srcStream.pipe(transformStream);
       testInsertReadableStream(transformStream, expected, done);
     });
+  });
 
+  describeRemoteDB('Quiet close stream', function () {
+    var preparedStatement;
+    before(function (done) {
+      if (isRemoteDB) {
+        db.createTable.bind(db)('STREAM_BLOB_TABLE', ['A BLOB'], null, function (err) {
+          if (err) done(err);
+          client.prepare('INSERT INTO STREAM_BLOB_TABLE VALUES (?)', function (err, stmt) {
+            if (err) done(err);
+            preparedStatement = stmt;
+            done();
+          });
+        });
+      } else {
+        this.skip();
+        done();
+      }
+    });
+    after(function (done) {
+      if (isRemoteDB) {
+        db.dropTable.bind(db)('STREAM_BLOB_TABLE', function () {
+          preparedStatement.drop(done);
+        });
+      } else {
+        done();
+      }
+    });
+
+    function testInsertClosingStream(streamOptions, destroyBefore, expectedErrMessage, done) {
+      var srcStream = fs.createReadStream(path.join(dirname, "lobby.jpg"));
+      var transformStream = new AbortTransform(streamOptions);
+      srcStream.pipe(transformStream);
+      if (destroyBefore) {
+        transformStream.destroy();
+      }
+      preparedStatement.exec([transformStream], function (err) {
+        err.should.be.an.instanceof(Error);
+        err.message.should.equal(expectedErrMessage);
+        done();
+      });
+    }
+
+    var quietCloseErrMessage = "Stream was destroyed before data could be completely consumed";
+
+    it('should raise a destroyed error when given a destroyed stream', function (done) {
+      testInsertClosingStream({maxBytes: 50000}, true, quietCloseErrMessage, done);
+    });
+
+    it('should raise a destroyed error during an initial write lob execute', function (done) {
+      testInsertClosingStream({maxBytes: 50000}, false, quietCloseErrMessage, done);
+    });
+
+    it('should raise a destroyed error when stream is destroyed in between packet sends', function (done) {
+      testInsertClosingStream({maxBytes: DEFAULT_PACKET_SIZE + 1}, false, quietCloseErrMessage, done);
+    });
+
+    it('should raise a destroyed error when stream is destroyed during write lob request', function (done) {
+      testInsertClosingStream({maxBytes: DEFAULT_PACKET_SIZE + 1, throttleFlow: true},
+        false, quietCloseErrMessage, done);
+    });
+
+    it('should raise custom errors provided by user stream', function (done) {
+      var streamError = new Error("Custom stream error");
+      testInsertClosingStream({maxBytes: 50000, customError: streamError}, false,
+        streamError.message, done);
+    });
   });
 });
 
@@ -332,6 +398,39 @@ StrictMemoryTransform.prototype._transform = function _transform(chunk, encoding
   function tryPush() {
     if (self.readableLength < self._bufferLimit) {
       self.push(chunk);
+      cb();
+    } else {
+      setImmediate(tryPush);
+    }
+  }
+  tryPush();
+}
+
+util.inherits(AbortTransform, stream.Transform);
+
+// Stream that will destroy itself once the maximum number of bytes are transformed
+// When throttleFlow is true, the stream will avoid pushing a new chunk before the
+// internal buffer is read
+function AbortTransform(options) {
+  this._maxBytes = options.maxBytes;
+  this._customError = options.customError;
+  this._throttleFlow = options.throttleFlow;
+  this._currentBytes = 0;
+  stream.Transform.call(this, options);
+}
+
+AbortTransform.prototype._transform = function _transform(chunk, encoding, cb) {
+  var self = this;
+  function tryPush() {
+    if (self.readableLength === 0 || !self._throttleFlow) {
+      if (chunk.length + self._currentBytes < self._maxBytes) {
+        self.push(chunk);
+        self._currentBytes += chunk.length;
+      } else {
+        self.push(chunk.slice(0, self._maxBytes - self._currentBytes));
+        self._currentBytes = self._maxBytes;
+        self.destroy(self._customError);
+      }
       cb();
     } else {
       setImmediate(tryPush);

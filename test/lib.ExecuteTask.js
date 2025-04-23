@@ -505,6 +505,105 @@ describe('Lib', function () {
       }).run(next);
     });
 
+    it('should run a task with two stream parameters both with read stream errors between writeLOB chunks', function (next) {
+      var content = new Content(200000);
+      var transform = new TransformWithError(150000, false);
+      var emptyStream = new Readable();
+      transform.on('error', () => {
+        emptyStream.emit('error', new Error("A separate error"));
+        content.unpipe();
+        content.destroy();
+      });
+      content.pipe(transform);
+
+      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+      createExecuteTask({
+        parameters: {
+          types: [TypeCode.BLOB, TypeCode.BLOB],
+          values: [transform, emptyStream]
+        },
+        availableSize : 50000,
+        replies: [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            writeLobReply: [locatorId, locatorId]
+          }]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.ROLLBACK,
+          args: [null, {}]
+        }]
+      }, function done(err) {
+        err.should.be.an.instanceOf(Error);
+        // The error should match with the first stream, since we are reading that one
+        err.message.should.equal("Error in transform");
+      }).run(function () {
+        // Call next in the next iteration of the event loop to check that the done
+        // callback is only called once
+        setImmediate(function () {
+          next();
+        });
+      });
+    });
+
+    function testStreamQuietClose(limit, next) {
+      var content = new Content(200000);
+      var transform = new TransformWithError(limit, false, true); // quietly destroy the stream
+      transform.on('close', () => {
+        content.unpipe();
+        content.destroy();
+      });
+      content.pipe(transform);
+      if (limit === 0) {
+        transform.destroy();
+      }
+      var locatorId = new Buffer([1, 0, 0, 0, 0, 0, 0, 0]);
+
+      var replies;
+      if (limit >= 50000) {
+        replies = [{
+          type: MessageType.EXECUTE,
+          args: [null, {
+            writeLobReply: [locatorId]
+          }]
+        }, {
+          type: MessageType.WRITE_LOB,
+          args: [null, {}]
+        }, {
+          type: MessageType.ROLLBACK,
+          args: [null, {}]
+        }];
+      } else {
+        replies = [];
+      }
+
+      createExecuteTask({
+        parameters: {
+          types: [TypeCode.BLOB],
+          values: [transform]
+        },
+        availableSize : 50000,
+        replies: replies
+      }, function done(err) {
+        err.should.be.an.instanceOf(Error);
+        err.message.should.equal('Stream was destroyed before data could be completely consumed');
+      }).run(next);
+    }
+
+    it('should run a task with a stream parameter already destroyed', function (next) {
+      testStreamQuietClose(0, next);
+    });
+
+    it('should run a task with a stream parameter that quietly closes in initial write lob execute', function (next) {
+      testStreamQuietClose(1, next);
+    });
+
+    it('should run a task with a stream parameter that quietly closes in between write lob chunks', function (next) {
+      testStreamQuietClose(150000, next);
+    });
+
     it('should accumulate rows affected', function () {
       var task = createExecuteTask();
       task.pushReply({});
@@ -689,10 +788,11 @@ class Content extends Readable {
 }
 
 class TransformWithError extends Transform {
-    constructor(limit, errorOnFinal) {
+    constructor(limit, errorOnFinal, quietClose) {
         super();
         this.limit = limit;
         this.errorOnFinal = Boolean(errorOnFinal);
+        this.quietClose = Boolean(quietClose);
     }
 
     _transform(chunk, encoding, callback) {
@@ -700,7 +800,11 @@ class TransformWithError extends Transform {
         if (this.limit > 0) {
             callback(null, chunk);
         } else {
-            callback(new Error('Error in transform'));
+            if (this.quietClose) {
+                this.destroy();
+            } else {
+                callback(new Error('Error in transform'));
+            }
         }
     }
 
