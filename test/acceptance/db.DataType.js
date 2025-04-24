@@ -1149,8 +1149,7 @@ describe('db', function () {
     var booleanExpectedDFV7 = [{A: true}, {A: null}, {A: false}, {A: true}, {A: true},
       {A: false}, {A: true}, {A: false}, {A: null}, {A: true},
       {A: false}, {A: null}];
-    // In DFV1, non number strings are not supported ('true', 'unknown'). There is also a behaviour change
-    // for '' which returns null in DFV7 but 0 (false) in DFV1.
+    // In DFV1, non number strings are not supported ('true', 'unknown').
     var booleanInsertValuesDFV1 = [
       [true],
       [null],
@@ -1368,8 +1367,8 @@ describe('db', function () {
 
     describeRemoteDB('DFV >= 8', function () {
       describeRemoteDB('FIXED8', function () {
-        before(setUpTableRemoteDB('FIXED8_TABLE', ['A DECIMAL(15, 5)'], 8));
-        after(dropTableRemoteDB('FIXED8_TABLE', 8));
+        before(setUpTable('FIXED8_TABLE', ['A DECIMAL(15, 5)'], 8));
+        after(dropTable('FIXED8_TABLE', 8));
   
         it('should insert and return valid FIXED8 decimals', function (done) {
           testDataTypeValid('FIXED8_TABLE', fixed8InsertValues, [81], fixed8Expected, done);
@@ -1383,8 +1382,8 @@ describe('db', function () {
       });
 
       describeRemoteDB('FIXED12', function () {
-        before(setUpTableRemoteDB('FIXED12_TABLE', ['A DECIMAL(23, 5)'], 8));
-        after(dropTableRemoteDB('FIXED12_TABLE', 8));
+        before(setUpTable('FIXED12_TABLE', ['A DECIMAL(23, 5)'], 8));
+        after(dropTable('FIXED12_TABLE', 8));
 
         it('should insert and return valid FIXED12 decimals', function (done) {
           testDataTypeValid('FIXED12_TABLE', fixed12InsertValues, [82], fixed12Expected, done);
@@ -1398,8 +1397,8 @@ describe('db', function () {
       });
 
       describeRemoteDB('FIXED16', function () {
-        before(setUpTableRemoteDB('FIXED16_TABLE', ['A DECIMAL(35, 5)'], 8));
-        after(dropTableRemoteDB('FIXED16_TABLE', 8));
+        before(setUpTable('FIXED16_TABLE', ['A DECIMAL(35, 5)'], 8));
+        after(dropTable('FIXED16_TABLE', 8));
   
         it('should insert and return valid FIXED16 decimals', function (done) {
           testDataTypeValid('FIXED16_TABLE', fixed16InsertValues, [76], fixed16ExpectedDFV8, done);
@@ -1418,8 +1417,8 @@ describe('db', function () {
       after(changeDataFormatSupport(ORGINAL_DATA_FORMAT));
 
       describeRemoteDB('FIXED8', function () {
-        before(setUpTableRemoteDB('FIXED8_TABLE', ['A DECIMAL(15, 5)'], 7));
-        after(dropTableRemoteDB('FIXED8_TABLE', 7));
+        before(setUpTable('FIXED8_TABLE', ['A DECIMAL(15, 5)'], 7));
+        after(dropTable('FIXED8_TABLE', 7));
 
         it('should insert and return valid FIXED8 decimals', function (done) {
           testDataTypeValid('FIXED8_TABLE', fixed8InsertValues, [5], fixed8Expected, done);
@@ -1434,8 +1433,8 @@ describe('db', function () {
       });
 
       describeRemoteDB('FIXED12', function () {
-        before(setUpTableRemoteDB('FIXED12_TABLE', ['A DECIMAL(23, 5)'], 7));
-        after(dropTableRemoteDB('FIXED12_TABLE', 7));
+        before(setUpTable('FIXED12_TABLE', ['A DECIMAL(23, 5)'], 7));
+        after(dropTable('FIXED12_TABLE', 7));
 
         it('should insert and return valid FIXED12 decimals', function (done) {
           testDataTypeValid('FIXED12_TABLE', fixed12InsertValues, [5], fixed12Expected, done);
@@ -1449,8 +1448,8 @@ describe('db', function () {
       });
 
       describeRemoteDB('FIXED16', function () {
-        before(setUpTableRemoteDB('FIXED16_TABLE', ['A DECIMAL(35, 5)'], 7));
-        after(dropTableRemoteDB('FIXED16_TABLE', 7));
+        before(setUpTable('FIXED16_TABLE', ['A DECIMAL(35, 5)'], 7));
+        after(dropTable('FIXED16_TABLE', 7));
   
         it('should insert and return valid FIXED16 decimals', function (done) {
           testDataTypeValid('FIXED16_TABLE', fixed16InsertValues, [5], fixed16ExpectedDFV7, done);
