@@ -49,6 +49,18 @@ function readDecFixed(hex, frac) {
   return bignum.readDecFixed(new Buffer(hex, 'hex'), 0, frac);
 }
 
+function readFIXED8(hex, frac) {
+  return bignum.readFIXED(new Buffer(hex, "hex"), 8, 0, frac);
+}
+
+function readFIXED12(hex, frac) {
+  return bignum.readFIXED(new Buffer(hex, "hex"), 12, 0, frac);
+}
+
+function readFIXED16(hex, frac) {
+  return bignum.readFIXED(new Buffer(hex, "hex"), 16, 0, frac);
+}
+
 function writeDec128(value) {
   var buffer = new Buffer(16);
   bignum.writeDec128(buffer, value, 0);
@@ -421,6 +433,39 @@ describe('Util', function () {
       ).should.equal(4294967295);
     });
 
+  });
+
+  describe('#Fixed8/12/16 (Decimal)', function () {
+    it('should read zero', function () {
+      readFIXED8('0000000000000000', 18).should.eql('0.000000000000000000');
+      readFIXED12('000000000000000000000000', 23).should.eql('0.00000000000000000000000');
+      readFIXED16('00000000000000000000000000000000', 32).should.eql('0.00000000000000000000000000000000');
+    });
+
+    it('should read positive numbers', function () {
+      readFIXED8('64c0600700000000', 2).should.eql('1237812.20');
+      readFIXED8('82f3d3a5440b0000', 9).should.eql('12389.467812738');
+      readFIXED8('7ca35aded929b801', 9).should.eql('123895005.467812732');
+      readFIXED12('00002836bbdf0cb243000000', 0).should.eql('1248761728372172128256');
+      readFIXED12('1402d88a8ea33bf6a4020000', 5).should.eql('124877419488172231.89012');
+      readFIXED12('03e3b5b91f9bfe0ad92f0000', 31).should.eql('0.0000000225954960400013323526915');
+      readFIXED16('2a609b4e579f6a1e9b6bcbda88365577', 4).should.eql('15862058282424280059121667078237633.7450');
+      readFIXED16('ffffffffffffffffffffffffffffff7f', 8).should.eql('1701411834604692317316873037158.84105727');
+      readFIXED16('02000000000000000000000000000000', 21).should.eql('0.000000000000000000002');
+    });
+
+    it('should read negative numbers', function () {
+      readFIXED8('0037d3fdffffffff', 3).should.eql('-36489.472');
+      readFIXED8('0000008afdffffff', 5).should.eql('-105696.46080');
+      readFIXED8('7249fd55efe1adf2', 11).should.eql('-9598627.27503951502');
+      readFIXED8('151897daffffffff', 12).should.eql('-0.000627632107');
+      readFIXED12('1eabe45e3d1ba8f305cb60e1', 5).should.eql('-94770196755916367254674.03490');
+      readFIXED12('00000000ab96a7e01dffffff', 17).should.eql('-41712.22831685278105600');
+      readFIXED12('c702e1f482fe9dd315ffffff', 22).should.eql('-0.4319736233569990671673');
+      readFIXED16('ce8c7580d137e942e72fcc885a55f89c', 16).should.eql('-13163337877988720494258.0388155611575090');
+      readFIXED16('00000000000000000000000000000080', 29).should.eql('-1701411834.60469231731687303715884105728');
+      readFIXED16('ffffffffffffffffffffffffffffffff', 0).should.eql('-1');
+    });
   });
 
 });
