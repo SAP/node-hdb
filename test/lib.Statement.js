@@ -69,7 +69,8 @@ describe('Lib', function () {
           statementId: statement.id,
           parameters: {
             types: [TypeCode.INT],
-            values: values
+            values: values,
+            fractions: [undefined]
           }
         });
         rowsAffected.should.equal(1);
@@ -208,23 +209,28 @@ describe('Lib', function () {
         parameterMetadata: [{
           dataType: TypeCode.TINYINT,
           ioType: IoType.INPUT,
-          name: 'A'
+          name: 'A',
+          fraction: 0
         }, {
           dataType: TypeCode.SMALLINT,
           ioType: IoType.OUTPUT,
-          name: 'B'
+          name: 'B',
+          fraction: 0
         }, {
           dataType: TypeCode.INT,
           ioType: IoType.IN_OUT,
-          name: 'C'
+          name: 'C',
+          fraction: 0
         }, {
           dataType: TypeCode.BIGINT,
           ioType: IoType.INPUT,
-          name: 'D'
+          name: 'D',
+          fraction: 0
         }, {
           dataType: TypeCode.BIGINT,
           ioType: IoType.INPUT,
-          name: 'E'
+          name: 'E',
+          fraction: 0
         }]
       });
       statement._normalizeInputParameters({
@@ -234,7 +240,8 @@ describe('Lib', function () {
         E: undefined
       }).should.eql({
         types: [TypeCode.TINYINT, TypeCode.INT, TypeCode.BIGINT, TypeCode.BIGINT],
-        values: [1, 3, null, undefined]
+        values: [1, 3, null, undefined],
+        fractions: [0, 0, 0, 0]
       });
     });
 
