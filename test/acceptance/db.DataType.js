@@ -1133,8 +1133,7 @@ describe('db', function () {
     var booleanExpectedDFV7 = [{A: true}, {A: null}, {A: false}, {A: true}, {A: true},
       {A: false}, {A: true}, {A: false}, {A: null}, {A: true},
       {A: false}, {A: null}];
-    // In DFV1, non number strings are not supported ('true', 'unknown'). There is also a behaviour change
-    // for '' which returns null in DFV7 but 0 (false) in DFV1.
+    // In DFV1, non number strings are not supported ('true', 'unknown').
     var booleanInsertValuesDFV1 = [
       [true],
       [null],
