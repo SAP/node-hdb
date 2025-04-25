@@ -16,10 +16,12 @@
 
 var async = require('async');
 // Set the data format version necessary for the data types
-var db = require('../db')({dataFormatSupport: 7});
+const ORGINAL_DATA_FORMAT = 9;
+var db = require('../db')({dataFormatSupport: ORGINAL_DATA_FORMAT});
 var RemoteDB = require('../db/RemoteDB');
 var lorem = require('../fixtures/lorem');
 var util = require('../../lib/util');
+const { DEFAULT_PACKET_SIZE } = require('../../lib/protocol/common/Constants');
 
 var describeRemoteDB = db instanceof RemoteDB ? describe : describe.skip;
 var isRemoteDB = db instanceof RemoteDB;
@@ -75,7 +77,22 @@ describe('db', function () {
           return done(err);
         }
         rows.should.have.length(expected.length);
-        rows.should.eql(expected);
+        if (dataTypeCodes.includes(96) && db.getVectorOutputType() === 'Array') {
+          // Check real vector is approximately accurate
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i].A === null) {
+              rows[i].should.eql(expected[i]);
+            } else {
+              rows[i].A.should.have.length(expected[i].A.length);
+              for (var j = 0; j < rows[i].A.length; j++) {
+                rows[i].A[j].should.be.approximately(expected[i].A[j], 0.1);
+              }
+            }
+            
+          }
+        } else {
+          rows.should.eql(expected);
+        }
         cb();
       });
     }
@@ -104,9 +121,9 @@ describe('db', function () {
   function testDataTypeValidSql(tableName, sql, values, dataTypeCodes, expected, done) {
     var statement;
     function prepareInsert(cb) {
-      var sql = `insert into ${tableName} (${curTableCols.join(',')}) values `
+      var insertSql = `insert into ${tableName} (${curTableCols.join(',')}) values `
       + `(${Array(curTableCols.length).fill('?').join(',')})`;
-      client.prepare(sql, function (err, ps) {
+      client.prepare(insertSql, function (err, ps) {
         statement = ps;
         cb(err);
       });
@@ -184,6 +201,20 @@ describe('db', function () {
     return function dropTableClosure(done) {
       if (isRemoteDB && db.getDataFormatVersion2() >= dataFormatRequired) {
         db.dropTable.bind(db)(tableName, done);
+      } else {
+        done();
+      }
+    }
+  }
+
+  // Function used to reconnect to the db with a new data format version
+  function changeDataFormatSupport(newDataFormat) {
+    return function DFVReconnect(done) {
+      if (isRemoteDB) {
+        db.client.set('dataFormatSupport', newDataFormat);
+        db.end(function (err) {
+          db.init(done);
+        });
       } else {
         done();
       }
@@ -820,6 +851,440 @@ describe('db', function () {
         return {value: testValue, errMessage: "Cannot set parameter at row: 1. Wrong input for BOOLEAN type"};
       });
       async.each(invalidTestData, testDataTypeError.bind(null, 'BOOLEAN_TABLE'), done);
+    });
+  });
+
+  describeRemoteDB('FIXED', function () {
+    // FIXED8
+    var fixed8InsertValues = [
+      [123456],
+      [-10000.123456],
+      ['1234.56789101234567'],
+      ['-1289128378.00000'],
+      ['9999.992'],
+      ['9999999999.999989'],
+      ['-9999999999.999999'],
+      ['123e+7'],
+      ['-0.004567e-2'],
+      ['12345678901.2345e-5'],
+      [null],
+      [0],
+    ];
+    var fixed8Expected = [{A: '123456.00000'}, {A: '-10000.12345'}, {A: '1234.56789'}, {A: '-1289128378.00000'},
+      {A: '9999.99200'}, {A: '9999999999.99998'}, {A: '-9999999999.99999'}, {A: '1230000000.00000'},
+      {A: '-0.00004'}, {A: '123456.78901'}, {A: null}, {A: '0.00000'}];
+
+    var fixed8InvalidTestDataDFV8 = [
+      // Overflows 15 digit precision with 5 decimal places
+      {value: '10000000000', errMessage: 'numeric overflow: Failed in "A" column with the value 10000000000.00000'},
+      {value: '-10000000000', errMessage: 'numeric overflow: Failed in "A" column with the value -10000000000.00000'},
+      {value: '1e10', errMessage: 'numeric overflow: Failed in "A" column with the value 10000000000.00000'},
+      {value: '-1e10', errMessage: 'numeric overflow: Failed in "A" column with the value -10000000000.00000'},
+      // Exceed 8 byte representation
+      {value: '9223372036854775808', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED8 type'},
+      {value: '-8103103283140113886353743219674022396', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED8 type'},
+      {value: '9.3e18', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED8 type'},
+      {value: '-9.3e18', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED8 type'},
+    ];
+    // In DFV 7, the error messages are different
+    var fixed8InvalidTestDataDFV7 = fixed8InvalidTestDataDFV8.map(function (testData, index) {
+      if (index < 4) { // Overflows 15 digit precision with 5 decimal places
+        return {
+          value: testData.value,
+          errMessage: 'numeric overflow: the precision of the decimal value is larger than the target precision: 15: type_code=5, index=1'
+        };
+      } else { // Exceed 8 byte representation
+        return {
+          value: testData.value,
+          errMessage: 'numeric overflow: numeric overflow: type_code=5, index=1'
+        };
+      }
+    });
+
+    // FIXED12
+    var fixed12InsertValues = [
+      [9007199254740991],
+      [-7289481923.5612479],
+      ['61274182.56789101234567'],
+      ['-128127498912.00000'],
+      ['999999999999999999.992'],
+      ['999999999999999999.999989'],
+      ['-999999999999999999.999999'],
+      ['-789012.891023e12'],
+      ['67812.39812e-3'],
+      ['-909090909090909.909099909e+3'],
+      [null],
+      [0],
+    ];
+    var fixed12Expected = [{A: '9007199254740991.00000'}, {A: '-7289481923.56124'}, {A: '61274182.56789'},
+      {A: '-128127498912.00000'}, {A: '999999999999999999.99200'}, {A: '999999999999999999.99998'},
+      {A: '-999999999999999999.99999'}, {A: '-789012891023000000.00000'}, {A: '67.81239'},
+      {A: '-909090909090909909.09990'}, {A: null}, {A: '0.00000'}];
+
+    var fixed12InvalidTestDataDFV8 = [
+      // Overflows 23 digit precision with 5 decimal places
+      {value: '1000000000000000000', errMessage: 'numeric overflow: Failed in "A" column with the value 1000000000000000000.00000'},
+      {value: '-1000000000000000000', errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000.00000'},
+      {value: '1e18', errMessage: 'numeric overflow: Failed in "A" column with the value 1000000000000000000.00000'},
+      {value: '-1e18', errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000.00000'},
+      // Exceed 12 byte representation
+      {value: '39614081257132168796771975168', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED12 type'},
+      {value: '-89542859971670557702231615814500106944', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED12 type'},
+      {value: '3.962e28', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED12 type'},
+      {value: '-3.962e28', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED12 type'},
+    ];
+    var fixed12InvalidTestDataDFV7 = fixed12InvalidTestDataDFV8.map(function (testData, index) {
+      if (index < 4) { // Overflows 23 digit precision with 5 decimal places
+        return {
+          value: testData.value,
+          errMessage: 'numeric overflow: the precision of the decimal value is larger than the target precision: 23: type_code=5, index=1'
+        };
+      } else { // Exceed 12 byte representation
+        return {
+          value: testData.value,
+          errMessage: 'numeric overflow: numeric overflow: type_code=5, index=1'
+        };
+      }
+    });
+
+    // FIXED16
+    var fixed16InsertValues = [
+      ['682104294101148412963771036529'],
+      ['-964060612622724383174786442765.465905'],
+      [18724.230],
+      [-123456.903],
+      ['8312612546512631264781627841.7819453'],
+      ['-257283749723.00000'],
+      ['999999999999999999999999999999.992'],
+      ['999999999999999999999999999999.999989'],
+      ['-999999999999999999999999999999.999999'],
+      ['123e+27'],
+      ['-781923.004567e-2'],
+      ['140.639601953246854334843221842051061083e22'],
+      [null],
+      [0],
+    ];
+    var fixed16ExpectedDFV8 = [{A: '682104294101148412963771036529.00000'}, {A: '-964060612622724383174786442765.46590'},
+      {A: '18724.23000'}, {A: '-123456.90300'}, {A: '8312612546512631264781627841.78194'}, {A: '-257283749723.00000'},
+      {A: '999999999999999999999999999999.99200'}, {A: '999999999999999999999999999999.99998'},
+      {A: '-999999999999999999999999999999.99999'}, {A: '123000000000000000000000000000.00000'},
+      {A: '-7819.23004'}, {A: '1406396019532468543348432.21842'}, {A: null}, {A: '0.00000'}];
+    // In DFV7 and below, decimal precision is lower so data after 34 digits in fixed decimals is truncated
+    var fixed16ExpectedDFV7 = fixed16ExpectedDFV8.map(function (expectedRow) {
+      if (expectedRow.A === '999999999999999999999999999999.99998') {
+        return {A: '999999999999999999999999999999.99990'};
+      } else if (expectedRow.A === '-999999999999999999999999999999.99999') {
+        return {A: '-999999999999999999999999999999.99990'};
+      } else {
+        return expectedRow;
+      }
+    });
+
+    var fixed16InvalidTestDataDFV8 = [
+      // Overflows 35 digit precision with 5 decimal places
+      {
+        value: '1000000000000000000000000000000',
+        errMessage: 'numeric overflow: Failed in "A" column with the value 1000000000000000000000000000000.00000'
+      },
+      {
+        value: '-1000000000000000000000000000000',
+        errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000000000000000.00000'
+      },
+      {value: '1e30', errMessage: 'numeric overflow: Failed in "A" column with the value 1000000000000000000000000000000.00000'},
+      {value: '-1e30', errMessage: 'numeric overflow: Failed in "A" column with the value -1000000000000000000000000000000.00000'},
+      // Overflows maximum 38 digit precision with 5 decimals
+      {value: '9999999999999999999999999999999999', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED16 type'},
+      {value: '-9999999999999999999999999999999999', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED16 type'},
+      {value: '123456789e+25', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED16 type'},
+      {value: '-123456789e+25', errMessage: 'Cannot set parameter at row: 1. Wrong input for FIXED16 type'},
+    ];
+    var fixed16InvalidTestDataDFV7 = fixed16InvalidTestDataDFV8.map(function (testData, index) {
+      if (index < 4 || index >= 6) { // Overflows 35 digit precision with 5 decimal places
+        return {
+          value: testData.value,
+          errMessage: 'numeric overflow: the precision of the decimal value is larger than the target precision: 35: type_code=5, index=1'
+        };
+      } else { // Exceeds 16 byte representation
+        return {
+          value: testData.value,
+          errMessage: 'numeric overflow: cannot convert the value to DECIMAL(35, 5): type_code=5, index=1'
+        };
+      }
+    });
+
+    describeRemoteDB('DFV >= 8', function () {
+      describeRemoteDB('FIXED8', function () {
+        before(setUpTableRemoteDB('FIXED8_TABLE', ['A DECIMAL(15, 5)'], 8));
+        after(dropTableRemoteDB('FIXED8_TABLE', 8));
+  
+        it('should insert and return valid FIXED8 decimals', function (done) {
+          testDataTypeValid('FIXED8_TABLE', fixed8InsertValues, [81], fixed8Expected, done);
+        });
+  
+        it('should raise input type error', function (done) {
+          // Overflow validations are done one at a time, and some are done on the server, so this test can take longer
+          this.timeout(4000);
+          async.each(fixed8InvalidTestDataDFV8, testDataTypeError.bind(null, 'FIXED8_TABLE'), done);
+        });
+      });
+
+      describeRemoteDB('FIXED12', function () {
+        before(setUpTableRemoteDB('FIXED12_TABLE', ['A DECIMAL(23, 5)'], 8));
+        after(dropTableRemoteDB('FIXED12_TABLE', 8));
+
+        it('should insert and return valid FIXED12 decimals', function (done) {
+          testDataTypeValid('FIXED12_TABLE', fixed12InsertValues, [82], fixed12Expected, done);
+        });
+
+        it('should raise input type error', function (done) {
+          // Same as before, some overflow validations are on the server, so this test can take longer
+          this.timeout(4000);
+          async.each(fixed12InvalidTestDataDFV8, testDataTypeError.bind(null, 'FIXED12_TABLE'), done);
+        });
+      });
+
+      describeRemoteDB('FIXED16', function () {
+        before(setUpTableRemoteDB('FIXED16_TABLE', ['A DECIMAL(35, 5)'], 8));
+        after(dropTableRemoteDB('FIXED16_TABLE', 8));
+  
+        it('should insert and return valid FIXED16 decimals', function (done) {
+          testDataTypeValid('FIXED16_TABLE', fixed16InsertValues, [76], fixed16ExpectedDFV8, done);
+        });
+  
+        it('should raise input type error', function (done) {
+          // Same as before, some overflow validations are on the server, so this test can take longer
+          this.timeout(4000);
+          async.each(fixed16InvalidTestDataDFV8, testDataTypeError.bind(null, 'FIXED16_TABLE'), done);
+        });
+      });
+    });
+
+    describeRemoteDB('DFV 7', function () {
+      before(changeDataFormatSupport(7));
+      after(changeDataFormatSupport(ORGINAL_DATA_FORMAT));
+
+      describeRemoteDB('FIXED8', function () {
+        before(setUpTableRemoteDB('FIXED8_TABLE', ['A DECIMAL(15, 5)'], 7));
+        after(dropTableRemoteDB('FIXED8_TABLE', 7));
+
+        it('should insert and return valid FIXED8 decimals', function (done) {
+          testDataTypeValid('FIXED8_TABLE', fixed8InsertValues, [5], fixed8Expected, done);
+        });
+
+        it('should raise input type error', function (done) {
+          // Overflow validations are done one at a time and all on the server in lower data format versions,
+          // so this test can take even longer
+          this.timeout(5000);
+          async.each(fixed8InvalidTestDataDFV7, testDataTypeError.bind(null, 'FIXED8_TABLE'), done);
+        });
+      });
+
+      describeRemoteDB('FIXED12', function () {
+        before(setUpTableRemoteDB('FIXED12_TABLE', ['A DECIMAL(23, 5)'], 7));
+        after(dropTableRemoteDB('FIXED12_TABLE', 7));
+
+        it('should insert and return valid FIXED12 decimals', function (done) {
+          testDataTypeValid('FIXED12_TABLE', fixed12InsertValues, [5], fixed12Expected, done);
+        });
+
+        it('should raise input type error', function (done) {
+          // Same as before, all overflow validations are on the server, so this test can take longer
+          this.timeout(5000);
+          async.each(fixed12InvalidTestDataDFV7, testDataTypeError.bind(null, 'FIXED12_TABLE'), done);
+        });
+      });
+
+      describeRemoteDB('FIXED16', function () {
+        before(setUpTableRemoteDB('FIXED16_TABLE', ['A DECIMAL(35, 5)'], 7));
+        after(dropTableRemoteDB('FIXED16_TABLE', 7));
+  
+        it('should insert and return valid FIXED16 decimals', function (done) {
+          testDataTypeValid('FIXED16_TABLE', fixed16InsertValues, [5], fixed16ExpectedDFV7, done);
+        });
+
+        it('should support FIXED16 decimals larger than DECIMAL precision', function (done) {
+          var expected = [{A: '100000000000000000000000000000000000000'}];
+          validateDataSql('SELECT TO_DECIMAL(99999999999999999999999999999999999999, 38, 0) AS "A" FROM DUMMY',
+            [5], expected, done);
+        })
+  
+        it('should raise input type error', function (done) {
+          // Same as before, all overflow validations are on the server, so this test can take longer
+          this.timeout(5000);
+          async.each(fixed16InvalidTestDataDFV7, testDataTypeError.bind(null, 'FIXED16_TABLE'), done);
+        });
+      });
+    });
+  });
+
+  describeRemoteDB('REAL_VECTOR (only tested on HANA cloud)', function () {
+    var skipTests = false;
+    before(function (done) {
+      var version = db.getHANAFullVersion();
+      if (version === undefined || !version.startsWith("4.")) { // Skip tests on on-premise HANA
+        skipTests = true;
+        this.test.parent.pending = true;
+        this.skip();
+      }
+      done();
+    });
+
+    function setUpTable(tableName, columns, dataFormatRequired) {
+      // Returns a closure which has access to the parameters above and the 'this'
+      // argument will be the describe context when used in a mocha before hook
+      return function setUpTableClosure(done) {
+        if (skipTests || db.getDataFormatVersion2() < dataFormatRequired) {
+          this.skip();
+          done();
+        } else {
+          setCurTableCols(columns);
+          db.createTable.bind(db)(tableName, ['ID INT GENERATED BY DEFAULT AS IDENTITY'].concat(columns), null, done);
+        }
+      }
+    }
+
+    function dropTable(tableName, dataFormatRequired) {
+      return function dropTableClosure(done) {
+        if (skipTests || db.getDataFormatVersion2() < dataFormatRequired) {
+          done();
+        } else {
+          db.dropTable.bind(db)(tableName, done);
+        }
+      }
+    }
+
+    function changeSettingReconnect(settings, dataFormatRequired) {
+      return function changeSettingReconnectClosure(done) {
+        if (skipTests || db.getDataFormatVersion2() < dataFormatRequired) {
+          done();
+        } else {
+          for (var key in settings) {
+            db.client.set(key, settings[key]);
+          }
+          db.end(function (err) {
+            db.init(done);
+          });
+        }
+      }
+    }
+
+    describe('REAL_VECTOR', function () {
+      describe('dynamic length', function () {
+        before(setUpTable('REAL_VECTOR_TABLE', ['A REAL_VECTOR'], 9));
+        after(dropTable('REAL_VECTOR_TABLE', 9));
+
+        it('should return valid real vectors via callback', function (done) {
+          var insertValues = [
+            [Buffer.from("050000000000803F0000004000004040000080400000A040", "hex")],
+            [[0]],
+            [[-100, 200, -3000.458]],
+            [[-3.4028234663852886e+38, 1.1754943508222875e-38, 3.4028234663852886e+38, -1.1754943508222875e-38]],
+            [null],
+          ];
+          var expected = [{A: Buffer.from("050000000000803F0000004000004040000080400000A040", "hex")}, {A: Buffer.from("0100000000000000", "hex")},
+            {A: Buffer.from("030000000000C8C20000484354873BC5", "hex")}, {A: Buffer.from("04000000FFFF7FFF00008000FFFF7F7F00008080", "hex")}, {A: null}];
+          testDataTypeValid('REAL_VECTOR_TABLE', insertValues, [96], expected, done);
+        });
+
+        it('should raise input type error', function (done) {
+          var invalidTestData = [
+            {
+              value: 5,
+              errMessage: 'Cannot set parameter at row: 1. Wrong input for REAL_VECTOR type'
+            },
+            {
+              value: ['3.12'],
+              errMessage: 'Cannot set parameter at row: 1. Wrong input for REAL_VECTOR type'
+            },
+            {
+              value: Buffer.from("0100000000803F"),
+              errMessage: 'Cannot set parameter at row: 1. Invalid length or indicator value for REAL_VECTOR type'
+            },
+            {
+              value: Buffer.from("00000000"),
+              errMessage: 'Cannot set parameter at row: 1. Invalid length or indicator value for REAL_VECTOR type'
+            },
+            {
+              value: Buffer.from("020000000000803F0000004000004040000080400000A040"),
+              errMessage: 'Cannot set parameter at row: 1. Invalid length or indicator value for REAL_VECTOR type'
+            },
+            {value: [], errMessage: 'Cannot set parameter at row: 1. Invalid length or indicator value for REAL_VECTOR type'},
+          ];
+          async.each(invalidTestData, testDataTypeError.bind(null, 'REAL_VECTOR_TABLE'), done);
+        });
+      });
+
+      describe('vectorOutputType Array', function () {
+        before(changeSettingReconnect({ vectorOutputType: 'Array', packetSizeLimit: Math.pow(2, 19) }, 9));
+        after(changeSettingReconnect({ vectorOutputType: 'Buffer', packetSizeLimit: DEFAULT_PACKET_SIZE }, 9));
+        beforeEach(setUpTable('REAL_VECTOR_TABLE', ['A REAL_VECTOR'], 9));
+        afterEach(dropTable('REAL_VECTOR_TABLE', 9));
+
+        it('should return valid real vectors as arrays', function (done) {
+          var insertValues = [
+            [null],
+            [[0]],
+            [Buffer.from("0100000066E64046", "hex")],
+            [[-8912.323, 5781234, -0.57083]],
+            [Buffer.from("050000000000803F0000004000004040000080400000A040", "hex")],
+            [[12345, 56.789, -1, 1, 100.09, 150000.4, 19023.237]],
+          ];
+          var expected = [{A: null}, {A: [0]}, {A: [12345.6]}, {A: [-8912.323, 5781234, -0.57083]},
+            {A: [1, 2, 3, 4, 5]}, {A: [12345, 56.789, -1, 1, 100.09, 150000.4, 19023.237]}];
+          testDataTypeValid('REAL_VECTOR_TABLE', insertValues, [96], expected, done);
+        });
+
+        it('should insert and return maximum size real vectors', function (done) {
+          this.timeout(5000);
+          var buildVector = Array.from(Array(65000).keys()); // 0, 1, ..., 65000
+          var insertValues = [buildVector];
+          var expected = [{A: buildVector}];
+          testDataTypeValid('REAL_VECTOR_TABLE', insertValues, [96], expected, done);
+        });
+      });
+
+      describe('fixed length', function () {
+        before(setUpTable('REAL_VECTOR_TABLE', ['A REAL_VECTOR(3)'], 9));
+        after(dropTable('REAL_VECTOR_TABLE', 9));
+
+        it('should return valid real vectors via callback', function (done) {
+          var insertValues = [
+            [[0, 0, 0]],
+            [Buffer.from("030000000000803F0000004000004040", "hex")],
+            [[78124.230, 0.0012738, -0.0098654]],
+            [[-100, 200, -3000.458]],
+            [[-3.4028234663852886e+38, 1.1754943508222875e-38, 500.123]],
+            [[3.4028234663852886e+38, -1.1754943508222875e-38, -500.123]],
+            [null],
+          ];
+          var expected = [{A: Buffer.from("03000000000000000000000000000000", "hex")}, {A: Buffer.from("030000000000803F0000004000004040", "hex")},
+            {A: Buffer.from("030000001D969847A3F5A63A7DA221BC", "hex")}, {A: Buffer.from("030000000000C8C20000484354873BC5", "hex")},
+            {A: Buffer.from("03000000FFFF7FFF00008000BE0FFA43", "hex")}, {A: Buffer.from("03000000FFFF7F7F00008080BE0FFAC3", "hex")}, {A: null}];
+          testDataTypeValid('REAL_VECTOR_TABLE', insertValues, [96], expected, done);
+        });
+
+        it('should raise input type error', function (done) {
+          var invalidTestData = [
+            {
+              value: Buffer.from("030000000000803F0000004000004040000080400000A040", "hex"),
+              errMessage: 'Cannot set parameter at row: 1. Invalid length or indicator value for REAL_VECTOR type'
+            },
+            {
+              value: [3, 4, 5, 6, 7],
+              errMessage: 'Cannot set parameter at row: 1. The source dimension is different from the target dimension for REAL_VECTOR type'
+            },
+            {
+              value: [1, 2],
+              errMessage: 'Cannot set parameter at row: 1. The source dimension is different from the target dimension for REAL_VECTOR type'
+            },
+            {
+              value: Buffer.from("0100000000007A44", "hex"),
+              errMessage: 'Cannot set parameter at row: 1. The source dimension is different from the target dimension for REAL_VECTOR type'
+            },
+          ];
+          async.each(invalidTestData, testDataTypeError.bind(null, 'REAL_VECTOR_TABLE'), done);
+        });
+      });
     });
   });
 });

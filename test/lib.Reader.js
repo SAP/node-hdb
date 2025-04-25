@@ -197,6 +197,57 @@ describe('Lib', function () {
       reader.hasMore().should.equal(false);
     });
 
+    it('should read a FIXED8', function () {
+      var buffer = new Buffer([
+        0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0xc5, 0x38, 0xd2, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0x01, 0x7d, 0xf1, 0x77, 0x5b, 0xf9, 0x96, 0xe5, 0x02,
+        0x01, 0x5a, 0xfd, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+      ]);
+      var reader = new lib.Reader(buffer);
+      should(reader.readFixed8(0) === null).ok;
+      reader.readFixed8(6).should.equal('0.000000');
+      reader.readFixed8(3).should.equal('-3000.123');
+      reader.readFixed8(4).should.equal('20873895546820.6461');
+      reader.readFixed8(5).should.equal('-0.00678');
+      reader.hasMore().should.equal(false);
+    });
+
+    it('should read a FIXED12', function () {
+      var buffer = new Buffer([
+        0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x27, 0xc2, 0x40, 0x3c, 0x0e, 0x79, 0xfe, 0xb9, 0x2f, 0xbf, 0x8b, 0x0a,
+        0x01, 0x00, 0xf2, 0x0d, 0xb2, 0x3f, 0x8a, 0x5f, 0x57, 0x9a, 0x28, 0x8a, 0x07,
+        0x01, 0xeb, 0x32, 0xa4, 0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      ]);
+      var reader = new lib.Reader(buffer);
+      should(reader.readFixed12(0) === null).ok;
+      reader.readFixed12(6).should.equal('0.000000');
+      reader.readFixed12(15).should.equal('3263793639537.366352265265703');
+      reader.readFixed12(25).should.equal('233.3418573610039254524490240');
+      reader.readFixed12(15).should.equal('-0.000000123456789');
+      reader.hasMore().should.equal(false);
+    });
+
+    it('should read a FIXED16', function () {
+      var buffer = new Buffer([
+        0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x9e, 0x5f, 0x70, 0x5c, 0x9c, 0x3a, 0xf1, 0xd2, 0xba, 0xa3, 0x00, 0x20, 0x3e, 0xaf, 0xc8, 0x07,
+        0x01, 0xc9, 0x13, 0xbc, 0x33, 0x1d, 0x99, 0xd0, 0x6a, 0x6a, 0x4b, 0xba, 0xeb, 0xfa, 0xc8, 0xfc, 0xfe,
+        0x01, 0xa0, 0x53, 0x78, 0xdb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      ]);
+      var reader = new lib.Reader(buffer);
+      should(reader.readFixed16(0) === null).ok;
+      reader.readFixed16(6).should.equal('0.000000');
+      reader.readFixed16(11).should.equal('103466096859323850690600125.78438143902');
+      reader.readFixed16(31).should.equal('-134592.0821303502632246421882052799543');
+      reader.readFixed16(20).should.equal('-0.00000000000612871264');
+      reader.hasMore().should.equal(false);
+    });
+
     it('should read a String in utf-8 encoding', function () {
       var buffer = new Buffer([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
       var reader = new lib.Reader(buffer);
@@ -207,7 +258,7 @@ describe('Lib', function () {
 
     it('should read a String in cesu-8 encoding', function () {
       var buffer = new Buffer([0xff, 6, 0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]);
-      var reader = new lib.Reader(buffer, null, true);
+      var reader = new lib.Reader(buffer, null, { useCesu8: true });
       should(reader.readString() === null).ok;
       reader.readString().should.equal('🍨');
       reader.hasMore().should.equal(false);
@@ -386,6 +437,26 @@ describe('Lib', function () {
       (reader.readBoolean() === null).should.be.ok;
       reader.readBoolean().should.equal(false);
       reader.readBoolean().should.equal(true);
+      reader.hasMore().should.equal(false);
+    });
+
+    it('should read a real vector', function () {
+      var buffer = new Buffer([
+        0xFF,
+        0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x10, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7A, 0x44, 0x00, 0x00, 0xFA, 0xC4, 0x00, 0x80, 0x3B, 0x45,
+        0x10, 0x03, 0x00, 0x00, 0x00, 0xBB, 0xEF, 0x66, 0xC2, 0x5A, 0x36, 0x0C, 0xC9, 0x21, 0xF0, 0xD9, 0x3A,
+        0x14, 0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x7F, 0xFF, 0x00, 0x00, 0x80, 0x00, 0xFF, 0xFF, 0x7F, 0x7F, 0x00, 0x00, 0x80, 0x80
+      ]);
+      var reader = new lib.Reader(buffer, null, { vectorOutputType: 'Array' });
+      (reader.readRealVector() === null).should.be.ok;
+      var expected = [[0], [1000, -2000, 3000], [-57.73411178588867, -574309.625, 0.0016627350123599172],
+      [-3.4028234663852886e+38, 1.1754943508222875e-38, 3.4028234663852886e+38, -1.1754943508222875e-38]];
+      for (var i = 0; i < expected.length; i++) {
+        var result = reader.readRealVector();
+        result.should.have.length(expected[i].length);
+        result.should.eql(expected[i]);
+      }
       reader.hasMore().should.equal(false);
     });
   });

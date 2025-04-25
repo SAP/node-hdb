@@ -53,7 +53,7 @@ describe('Lib', function () {
 
     it('should write a string in cesu-8 encoding when useCesu8 is enabled', function (done) {
       var test = data.EMOJI;
-      var writer = Writer.create(test, true);
+      var writer = Writer.create(test, { useCesu8: true });
       writer.getParameters(SIZE, function (err, buffer) {
         if (err) {
           return done(err);
@@ -129,6 +129,18 @@ describe('Lib', function () {
       });
     });
 
+    it('should write FIXED types', function (done) {
+      var test = data.FIXED;
+      var writer = Writer.create(test);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should write boolean type', function (done) {
       var test = data.BOOLEAN;
       var writer = Writer.create(test);
@@ -141,8 +153,20 @@ describe('Lib', function () {
       });
     });
 
+    it('should write vector types', function (done) {
+      var test = data.VECTOR;
+      var writer = Writer.create(test);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should get WriteLobRequest', function (done) {
-      var writer = new Writer([TypeCode.BLOB]);
+      var writer = new Writer({ types: [TypeCode.BLOB] });
       var stream = new lib.util.stream.Readable();
       stream._chunks = [
         new Buffer('Lorem ', 'ascii'),
@@ -172,21 +196,21 @@ describe('Lib', function () {
     });
 
     it('should propertly round DATETIME ms value', function() {
-      var writer = new Writer([TypeCode.TIMESTAMP]);
+      var writer = new Writer({ types: [TypeCode.TIMESTAMP] });
       var dt = '2018-05-17T12:38:02.002Z';
       writer.setValues([dt]);
       writer._buffers[0][7].should.equal(210);
     });
 
     it('should propertly round TIME ms value', function() {
-      var writer = new Writer([TypeCode.TIME]);
+      var writer = new Writer({ types: [TypeCode.TIME] });
       var dt = '12:38:02.002Z';
       writer.setValues([dt]);
       writer._buffers[0][3].should.equal(210);
     });
 
     it('should set a BLOB value', function () {
-      var writer = new Writer([TypeCode.BLOB]);
+      var writer = new Writer({ types: [TypeCode.BLOB] });
       var buf = new Buffer([0x48, 0x4B]);
       // write buffer
       writer.setValues([buf]);
@@ -213,7 +237,7 @@ describe('Lib', function () {
     });
 
     it('should set a CLOB value', function () {
-      var writer = new Writer([TypeCode.CLOB]);
+      var writer = new Writer({ types: [TypeCode.CLOB] });
       var buf = new Buffer('EUR', 'ascii');
       // write buffer
       writer.setValues([buf]);
@@ -226,7 +250,7 @@ describe('Lib', function () {
     });
 
     it('should set a NCLOB value', function () {
-      var writer = new Writer([TypeCode.NCLOB]);
+      var writer = new Writer({ types: [TypeCode.NCLOB] });
       var buf = new Buffer([0xe2, 0x82, 0xac]);
       // write buffer
       writer.setValues([buf]);
@@ -239,7 +263,7 @@ describe('Lib', function () {
     });
 
     it('should set a STRING value', function () {
-      var writer = new Writer([TypeCode.STRING]);
+      var writer = new Writer({ types: [TypeCode.STRING] });
       var value, length;
       // tiny
       value = 'tiny';
@@ -269,7 +293,7 @@ describe('Lib', function () {
     });
 
     it('should set a BINARY value', function () {
-      var writer = new Writer([TypeCode.BINARY]);
+      var writer = new Writer({ types: [TypeCode.BINARY] });
       var value, length;
       // tiny
       value = new Buffer('tiny', 'ascii');
@@ -293,7 +317,7 @@ describe('Lib', function () {
 
     it('should get Parameters where buffer exactly fits', function (
       done) {
-      var writer = new Writer([TypeCode.BLOB]);
+      var writer = new Writer({ types: [TypeCode.BLOB] });
       var stream = new lib.util.stream.Readable();
       var buffer = new Buffer('blob', 'ascii');
       var size = 10 + buffer.length;
@@ -316,7 +340,7 @@ describe('Lib', function () {
     
     it('should get Parameters where multiple chunks are taken',
       function(done) {
-        var writer = new Writer([TypeCode.BLOB]);
+        var writer = new Writer({ types: [TypeCode.BLOB] });
         var stream = lib.util.stream.Readable.from([Buffer.from("1", "ascii"), Buffer.from("2", "ascii"),
           Buffer.from("3", "ascii"), Buffer.from("4", "ascii")]);
         var size = 14; // 10 for header, and 4 for buffer
@@ -337,7 +361,7 @@ describe('Lib', function () {
 
     it('should get Parameters where the buffer is too large for one packet',
       function (done) {
-        var writer = new Writer([TypeCode.BLOB]);
+        var writer = new Writer({ types: [TypeCode.BLOB] });
         var inputBuffer = Buffer.from('larger than 5', 'ascii');
         var stream = lib.util.stream.Readable.from([inputBuffer]);
         var size = 15; // header is 10, buffer only has space for 5
@@ -373,7 +397,7 @@ describe('Lib', function () {
     it('should get WriteLobRequest where buffer exactly fits',
       function (
         done) {
-        var writer = new Writer([TypeCode.BLOB]);
+        var writer = new Writer({ types: [TypeCode.BLOB] });
         var stream = new lib.util.stream.Readable();
         var buffer = new Buffer('blob', 'ascii');
         var size = 21 + buffer.length;
@@ -399,7 +423,7 @@ describe('Lib', function () {
     it('should emit a stream error while getting Parameters',
       function (done) {
         var streamError = new Error('stream error');
-        var writer = new Writer([TypeCode.BLOB]);
+        var writer = new Writer({ types: [TypeCode.BLOB] });
         var stream = new EventEmitter();
         stream.readable = true;
         writer.setValues([stream]);
@@ -412,7 +436,7 @@ describe('Lib', function () {
 
     it('should emit an internal error while getting Parameters',
       function (done) {
-        var writer = new Writer([TypeCode.BLOB]);
+        var writer = new Writer({ types: [TypeCode.BLOB] });
         var stream = new lib.util.stream.Readable();
         stream.read = function (size) {
           return new Buffer(size + 1);
@@ -428,7 +452,7 @@ describe('Lib', function () {
     it('should emit a stream error while getting WriteLobRequest',
       function (done) {
         var streamError = new Error('stream error');
-        var writer = new Writer([TypeCode.BLOB]);
+        var writer = new Writer({ types: [TypeCode.BLOB] });
         var stream = new EventEmitter();
         stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
         stream.read = function () {
@@ -444,7 +468,7 @@ describe('Lib', function () {
 
     it('should emit an internal error while getting WriteLobRequest',
       function (done) {
-        var writer = new Writer([TypeCode.BLOB]);
+        var writer = new Writer({ types: [TypeCode.BLOB] });
         var stream = new EventEmitter();
         stream._locatorId = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
         stream.read = function (size) {
@@ -460,18 +484,18 @@ describe('Lib', function () {
 
     ['TINYINT', 'SMALLINT', 'INT', 'BIGINT', 'REAL', 'DOUBLE', 'BINARY'].forEach(function (type) {
       it('should raise wrong input type error for ' + type, function () {
-        var writer = new Writer([TypeCode[type]]);
+        var writer = new Writer({ types: [TypeCode[type]] });
         Writer.prototype.setValues.bind(writer, 'wrong').should.throw();
       });
     });
 
     it('should raise wrong input type error for LOB', function () {
-      var writer = new Writer([TypeCode.CLOB]);
+      var writer = new Writer({ types: [TypeCode.CLOB] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
     it('should raise wrong input type error for DECIMAL', function () {
-      var writer = new Writer([TypeCode.DECIMAL]);
+      var writer = new Writer({ types: [TypeCode.DECIMAL] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
@@ -479,8 +503,73 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, ['.']).should.throw();
     });
 
+    it('should raise wrong input type error for FIXED8', function () {
+      var writer = new Writer({ types: [TypeCode.FIXED8], fractions: [0] });
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Regex does not match
+      Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
+      Writer.prototype.setValues.bind(writer, ['']).should.throw();
+      // Overflow of 8 bytes representation
+      var overflow0 = ['9223372036854775808', '-9223372036854775809', '99e+17', '-99e+17', '1e19', '-1e19',
+        '0.01e+21', '-.01e+21'];
+      for (var i = 0; i < overflow0.length; i++) {
+        Writer.prototype.setValues.bind(writer, [overflow0[i]]).should.throw("Wrong input for FIXED8 type");
+      }
+      // Overflow of 8 bytes representation after shifting to match decimal
+      var fracWriter = new Writer({ types: [TypeCode.FIXED8], fractions: [2] });
+      var overflow2 = ['100000000000000000', '-100000000000000000', '99e15', '-99e+15', '1e+17', '-1e+17',
+        '.01e+19', '-0.01e19'];
+      for (var i = 0; i < overflow2.length; i++) {
+        Writer.prototype.setValues.bind(fracWriter, [overflow2[i]]).should.throw("Wrong input for FIXED8 type");
+      }
+    });
+
+    it('should raise wrong input type error for FIXED12', function () {
+      var writer = new Writer({ types: [TypeCode.FIXED12], fractions: [0] });
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Regex does not match
+      Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
+      Writer.prototype.setValues.bind(writer, ['']).should.throw();
+      // Overflow of 12 bytes representation
+      var overflow0 = ['39614081257132168796771975168', '-39614081257132168796771975169', '99e+27', '-99e+27',
+        '1e29', '-1e29', '0.01e+31', '-.01e+31'];
+      for (var i = 0; i < overflow0.length; i++) {
+        Writer.prototype.setValues.bind(writer, [overflow0[i]]).should.throw("Wrong input for FIXED12 type");
+      }
+      // Overflow of 12 bytes representation after shifting to match decimal
+      var fracWriter = new Writer({ types: [TypeCode.FIXED12], fractions: [2] });
+      var overflow2 = ['1000000000000000000000000000', '-1000000000000000000000000000', '99e25', '-99e+25',
+        '1e+27', '-1e+27', '.01e+29', '-0.01e29'];
+      for (var i = 0; i < overflow2.length; i++) {
+        Writer.prototype.setValues.bind(fracWriter, [overflow2[i]]).should.throw("Wrong input for FIXED12 type");
+      }
+    });
+
+    it('should raise wrong input type error for FIXED16', function () {
+      var writer = new Writer({ types: [TypeCode.FIXED16], fractions: [0] });
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Regex does not match
+      Writer.prototype.setValues.bind(writer, ['1^6']).should.throw();
+      Writer.prototype.setValues.bind(writer, ['']).should.throw();
+      // Overflow of 38 digit precision limit
+      var overflow0 = ['99e+37', '-99e+37', '1e38', '-1e38', '0.01e+40', '-.01e+40'];
+      for (var i = 0; i < overflow0.length; i++) {
+        Writer.prototype.setValues.bind(writer, [overflow0[i]]).should.throw("Wrong input for FIXED16 type");
+      }
+      // Overflow of 16 bytes representation
+      Writer.prototype.setValues.bind(writer, ['170141183460469231731687303715884105728']).should.throw("Wrong input for FIXED16 type");
+      Writer.prototype.setValues.bind(writer, ['-170141183460469231731687303715884105729']).should.throw("Wrong input for FIXED16 type");
+      // Overflow of 16 bytes representation after shifting to match decimal
+      var fracWriter = new Writer({ types: [TypeCode.FIXED16], fractions: [2] });
+      var overflow2 = ['10000000000000000000000000000000000000', '-10000000000000000000000000000000000000',
+        '99e+35', '-99e35', '1e37', '-1e+37', '.01e+39', '-0.01e+39'];
+      for (var i = 0; i < overflow2.length; i++) {
+        Writer.prototype.setValues.bind(fracWriter, [overflow2[i]]).should.throw("Wrong input for FIXED16 type");
+      }
+    });
+
     it('should raise wrong input type error for DATE', function () {
-      var writer = new Writer([TypeCode.DATE]);
+      var writer = new Writer({ types: [TypeCode.DATE] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, ['2014+10+11']).should
@@ -488,7 +577,7 @@ describe('Lib', function () {
     });
 
     it('should raise wrong input type error for TIME', function () {
-      var writer = new Writer([TypeCode.TIME]);
+      var writer = new Writer({ types: [TypeCode.TIME] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, ['12.00.00']).should
@@ -496,7 +585,7 @@ describe('Lib', function () {
     });
 
     it('should raise wrong input type error for TIMESTAMP', function () {
-      var writer = new Writer([TypeCode.TIMESTAMP]);
+      var writer = new Writer({ types: [TypeCode.TIMESTAMP] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, [
@@ -506,7 +595,7 @@ describe('Lib', function () {
     });
 
     it('should raise wrong input type error for LONGDATE', function () {
-      var writer = new Writer([TypeCode.LONGDATE]);
+      var writer = new Writer({ types: [TypeCode.LONGDATE] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, [
@@ -546,7 +635,7 @@ describe('Lib', function () {
     });
 
     it('should raise wrong input type error for SECONDDATE', function () {
-      var writer = new Writer([TypeCode.SECONDDATE]);
+      var writer = new Writer({ types: [TypeCode.SECONDDATE] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, [
@@ -586,7 +675,7 @@ describe('Lib', function () {
     });
 
     it('should raise wrong input type error for DAYDATE', function () {
-      var writer = new Writer([TypeCode.DAYDATE]);
+      var writer = new Writer({ types: [TypeCode.DAYDATE] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, [
@@ -611,7 +700,7 @@ describe('Lib', function () {
     });
 
     it('should raise wrong input type error for SECONDTIME', function () {
-      var writer = new Writer([TypeCode.SECONDTIME]);
+      var writer = new Writer({ types: [TypeCode.SECONDTIME] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
       // Regex does not match
       Writer.prototype.setValues.bind(writer, [
@@ -636,40 +725,58 @@ describe('Lib', function () {
     });
 
     it('should raise wrong input type error for ALPHANUM', function () {
-      var writer = new Writer([TypeCode.ALPHANUM]);
+      var writer = new Writer({ types: [TypeCode.ALPHANUM] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
     it('should raise wrong input type error for TEXT', function () {
-      var writer = new Writer([TypeCode.TEXT]);
+      var writer = new Writer({ types: [TypeCode.TEXT] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
     it('should raise wrong input type error for SHORTTEXT', function () {
-      var writer = new Writer([TypeCode.SHORTTEXT]);
+      var writer = new Writer({ types: [TypeCode.SHORTTEXT] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
     it('should raise wrong input type error for ST_GEOMETRY', function () {
-      var writer = new Writer([TypeCode.ST_GEOMETRY]);
+      var writer = new Writer({ types: [TypeCode.ST_GEOMETRY] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
     it('should raise wrong input type error for ST_POINT', function () {
-      var writer = new Writer([TypeCode.ST_POINT]);
+      var writer = new Writer({ types: [TypeCode.ST_POINT] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
     it('should raise wrong input type error for BINTEXT', function () {
-      var writer = new Writer([TypeCode.BINTEXT]);
+      var writer = new Writer({ types: [TypeCode.BINTEXT] });
       Writer.prototype.setValues.bind(writer, [false]).should.throw();
     });
 
     it('should raise wrong input type error for BOOLEAN', function () {
-      var writer = new Writer([TypeCode.BOOLEAN]);
+      var writer = new Writer({ types: [TypeCode.BOOLEAN] });
       Writer.prototype.setValues.bind(writer, [Buffer.from("01", "hex")]).should.throw();
     });
 
+    it('should raise wrong input type error for REAL_VECTOR', function () {
+      var writer = new Writer({ types: [TypeCode.REAL_VECTOR], lengths: [0] });
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Buffer length is not divisible by 4
+      Writer.prototype.setValues.bind(writer, [Buffer.from('0300000000803F0000004000004040', 'hex')]).should.throw();
+      // Fvecs length does not match
+      Writer.prototype.setValues.bind(writer, [Buffer.from('050000000000803F0000004000004040', 'hex')]).should.throw();
+      // Vector is empty
+      Writer.prototype.setValues.bind(writer, [Buffer.from('0000', 'hex')]).should.throw();
+      Writer.prototype.setValues.bind(writer, [[]]).should.throw();
+      
+      var fixedWriter = new Writer({ types: [TypeCode.REAL_VECTOR], lengths: [3] });
+      // Buffer length is not divisible by 4
+      Writer.prototype.setValues.bind(fixedWriter, [Buffer.from('0300000000803F0000004000004040', 'hex')]).should.throw();
+      // Length does not match expected
+      Writer.prototype.setValues.bind(fixedWriter, [Buffer.from("050000000000803F0000004000004040000080400000A040", "hex")]).should.throw();
+      Writer.prototype.setValues.bind(fixedWriter, [[1, 2, 3, 4, 5]]).should.throw();
+    });
   });
 
 });
