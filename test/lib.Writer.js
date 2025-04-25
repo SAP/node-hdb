@@ -153,6 +153,18 @@ describe('Lib', function () {
       });
     });
 
+    it('should write vector types', function (done) {
+      var test = data.VECTOR;
+      var writer = Writer.create(test);
+      writer.getParameters(SIZE, function (err, buffer) {
+        if (err) {
+          return done(err);
+        }
+        buffer.should.eql(test.part.buffer);
+        done();
+      });
+    });
+
     it('should get WriteLobRequest', function (done) {
       var writer = new Writer({ types: [TypeCode.BLOB] });
       var stream = new lib.util.stream.Readable();
@@ -747,6 +759,24 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, [Buffer.from("01", "hex")]).should.throw();
     });
 
+    it('should raise wrong input type error for REAL_VECTOR', function () {
+      var writer = new Writer({ types: [TypeCode.REAL_VECTOR], lengths: [0] });
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Buffer length is not divisible by 4
+      Writer.prototype.setValues.bind(writer, [Buffer.from('0300000000803F0000004000004040', 'hex')]).should.throw();
+      // Fvecs length does not match
+      Writer.prototype.setValues.bind(writer, [Buffer.from('050000000000803F0000004000004040', 'hex')]).should.throw();
+      // Vector is empty
+      Writer.prototype.setValues.bind(writer, [Buffer.from('0000', 'hex')]).should.throw();
+      Writer.prototype.setValues.bind(writer, [[]]).should.throw();
+      
+      var fixedWriter = new Writer({ types: [TypeCode.REAL_VECTOR], lengths: [3] });
+      // Buffer length is not divisible by 4
+      Writer.prototype.setValues.bind(fixedWriter, [Buffer.from('0300000000803F0000004000004040', 'hex')]).should.throw();
+      // Length does not match expected
+      Writer.prototype.setValues.bind(fixedWriter, [Buffer.from("050000000000803F0000004000004040000080400000A040", "hex")]).should.throw();
+      Writer.prototype.setValues.bind(fixedWriter, [[1, 2, 3, 4, 5]]).should.throw();
+    });
   });
 
 });

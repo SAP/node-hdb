@@ -860,3 +860,40 @@ exports.BOOLEAN = {
     false
   ]
 };
+
+exports.VECTOR = {
+  part: {
+    argumentCount: 1,
+    buffer: new Buffer(
+      '8C' +
+      '0C10030000000000A0410000F4C10000F042' +
+      '0C080100000000000000' +
+      '0C0801000000FFFF7F7F' +
+      '0C1003000000955AE741B2778447330B47C6' +
+      '0C2007000000A4D2F0CA603FB44262CD0139EE58154500EC49C6005B73497F96184B', 'hex')
+  },
+  types: [
+    TypeCode.REAL_VECTOR,
+    TypeCode.REAL_VECTOR,
+    TypeCode.REAL_VECTOR,
+    TypeCode.REAL_VECTOR,
+    TypeCode.REAL_VECTOR,
+    TypeCode.REAL_VECTOR
+  ],
+  lengths: [
+    0,
+    3,
+    1,
+    0,
+    3,
+    0,
+  ],
+  values: [
+    null,
+    Buffer.from("030000000000A0410000F4C10000F042", "hex"),
+    [0],
+    [3.40282347e+38],
+    [28.91923, 67823.39, -12738.80],
+    [-7891282, 90.123781, 0.0001237891, 2389.558, -12923.00, 996784, 9999999]
+  ]
+}

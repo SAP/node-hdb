@@ -32,6 +32,10 @@ RemoteDB.prototype.getDataFormatVersion2 = function getDataFormatVersion2() {
   return this.client.connectOptions.dataFormatVersion2;
 }
 
+RemoteDB.prototype.getVectorOutputType = function getVectorOutputType() {
+  return this.client.get('vectorOutputType');
+}
+
 RemoteDB.prototype.createImages = function createImages(cb) {
   this.images = TestDB.IMAGES.slice(0);
   var values = this.images.map(function toParameters(img) {

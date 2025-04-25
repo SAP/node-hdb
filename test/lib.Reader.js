@@ -258,7 +258,7 @@ describe('Lib', function () {
 
     it('should read a String in cesu-8 encoding', function () {
       var buffer = new Buffer([0xff, 6, 0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]);
-      var reader = new lib.Reader(buffer, null, true);
+      var reader = new lib.Reader(buffer, null, { useCesu8: true });
       should(reader.readString() === null).ok;
       reader.readString().should.equal('🍨');
       reader.hasMore().should.equal(false);
@@ -437,6 +437,26 @@ describe('Lib', function () {
       (reader.readBoolean() === null).should.be.ok;
       reader.readBoolean().should.equal(false);
       reader.readBoolean().should.equal(true);
+      reader.hasMore().should.equal(false);
+    });
+
+    it('should read a real vector', function () {
+      var buffer = new Buffer([
+        0xFF,
+        0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x10, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7A, 0x44, 0x00, 0x00, 0xFA, 0xC4, 0x00, 0x80, 0x3B, 0x45,
+        0x10, 0x03, 0x00, 0x00, 0x00, 0xBB, 0xEF, 0x66, 0xC2, 0x5A, 0x36, 0x0C, 0xC9, 0x21, 0xF0, 0xD9, 0x3A,
+        0x14, 0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x7F, 0xFF, 0x00, 0x00, 0x80, 0x00, 0xFF, 0xFF, 0x7F, 0x7F, 0x00, 0x00, 0x80, 0x80
+      ]);
+      var reader = new lib.Reader(buffer, null, { vectorOutputType: 'Array' });
+      (reader.readRealVector() === null).should.be.ok;
+      var expected = [[0], [1000, -2000, 3000], [-57.73411178588867, -574309.625, 0.0016627350123599172],
+      [-3.4028234663852886e+38, 1.1754943508222875e-38, 3.4028234663852886e+38, -1.1754943508222875e-38]];
+      for (var i = 0; i < expected.length; i++) {
+        var result = reader.readRealVector();
+        result.should.have.length(expected[i].length);
+        result.should.eql(expected[i]);
+      }
       reader.hasMore().should.equal(false);
     });
   });
