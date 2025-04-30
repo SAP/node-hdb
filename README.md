@@ -64,7 +64,7 @@ Below is a major feature comparison chart between the two drivers:
 | Active-Active Read Enabled	                        |:heavy_check_mark:|:x:|
 | Connection Pooling (Implicit and Explicit)            |:heavy_check_mark:|:x:|
 | Client-Side Data Encryption	                        |:heavy_check_mark:|:x:|
-| Database Redirection                              |:heavy_check_mark:|:x:|
+| Database Redirection                              |:heavy_check_mark:|:heavy_check_mark:|
 | Statement Distribution	                        |:heavy_check_mark:|:x:|
 | Password/PBKDF2 Authentication	                |:heavy_check_mark:|:heavy_check_mark:|
 | SAML Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
