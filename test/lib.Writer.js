@@ -766,8 +766,10 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(writer, [Buffer.from('0300000000803F0000004000004040', 'hex')]).should.throw();
       // Fvecs length does not match
       Writer.prototype.setValues.bind(writer, [Buffer.from('050000000000803F0000004000004040', 'hex')]).should.throw();
-      // Vector is empty
+      // Vector is too small
       Writer.prototype.setValues.bind(writer, [Buffer.from('0000', 'hex')]).should.throw();
+      // Vector is empty
+      Writer.prototype.setValues.bind(writer, [Buffer.from('00000000', 'hex')]).should.throw();
       Writer.prototype.setValues.bind(writer, [[]]).should.throw();
       
       var fixedWriter = new Writer({ types: [TypeCode.REAL_VECTOR], lengths: [3] });
@@ -775,6 +777,25 @@ describe('Lib', function () {
       Writer.prototype.setValues.bind(fixedWriter, [Buffer.from('0300000000803F0000004000004040', 'hex')]).should.throw();
       // Length does not match expected
       Writer.prototype.setValues.bind(fixedWriter, [Buffer.from("050000000000803F0000004000004040000080400000A040", "hex")]).should.throw();
+      Writer.prototype.setValues.bind(fixedWriter, [[1, 2, 3, 4, 5]]).should.throw();
+    });
+
+    it('should raise wrong input type error for HALF_VECTOR', function () {
+      var writer = new Writer({ types: [TypeCode.HALF_VECTOR], lengths: [0] });
+      Writer.prototype.setValues.bind(writer, [false]).should.throw();
+      // Buffer length - 4 is not divisible by 2
+      Writer.prototype.setValues.bind(writer, [Buffer.from('0300000003C00400042', 'hex')]).should.throw();
+      // Fvecs length does not match
+      Writer.prototype.setValues.bind(writer, [Buffer.from('05000000B4CC696FAF63DD87', 'hex')]).should.throw();
+      // Vector is empty
+      Writer.prototype.setValues.bind(writer, [Buffer.from('00000000', 'hex')]).should.throw();
+      Writer.prototype.setValues.bind(writer, [[]]).should.throw();
+      
+      var fixedWriter = new Writer({ types: [TypeCode.REAL_VECTOR], lengths: [3] });
+      // Buffer length - 4 is not divisible by 2
+      Writer.prototype.setValues.bind(fixedWriter, [Buffer.from('0300000003C00400042', 'hex')]).should.throw();
+      // Length does not match expected
+      Writer.prototype.setValues.bind(fixedWriter, [Buffer.from("05000000B4CC696FAF63DD87404E", "hex")]).should.throw();
       Writer.prototype.setValues.bind(fixedWriter, [[1, 2, 3, 4, 5]]).should.throw();
     });
   });
