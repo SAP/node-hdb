@@ -1,0 +1,6 @@
+{
+  "author": "SAP SE",
+  "name": "@dynatrace/oneagent-sdk",
+  "description": "mock of @dynatrace/oneagent-sdk for HANA Client testing",
+  "main": "./index.js"
+}
