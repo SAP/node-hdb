@@ -220,11 +220,11 @@ client.connect({
     return console.error('Error:', err);
   }
   console.log('User:', client.get('user'));
-  console.log('SessionCookie:', client.get('SessionCookie'));
+  console.log('SessionCookie:', client.get('sessionCookie'));
 });
 ```
 
-After a successful SAML authentication, the server returns the database `user` and a `SessionCookie` which can be used for reconnecting.
+After a successful SAML authentication, the server returns the database `user` and a `sessionCookie` which can be used for reconnecting.
 
 #### JWT token
 JWT tokens can also be used to authenticate users.
@@ -239,11 +239,11 @@ client.connect({
     return console.error('Error:', err);
   }
   console.log('User:', client.get('user'));
-  console.log('SessionCookie:', client.get('SessionCookie'));
+  console.log('SessionCookie:', client.get('sessionCookie'));
 });
 ```
 
-After a successful JWT authentication, the server returns the database `user` and a `SessionCookie` which can be used for reconnecting.
+After a successful JWT authentication, the server returns the database `user` and a `sessionCookie` which can be used for reconnecting.
 
 ### Encrypted network communication
 To establish an encrypted database connection just pass either `key`, `cert` and `ca` or a `pfx` to createClient.
