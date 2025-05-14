@@ -211,3 +211,24 @@ RemoteDB.prototype.createHashBlobProc = function createHashBlobProc(cb) {
 RemoteDB.prototype.dropHashBlobProc = function dropHashBlobProc(cb) {
   this.client.exec('drop procedure HASH_BLOB cascade', cb);
 };
+
+RemoteDB.prototype.createSwapTypeProc = function createSwapTypeProc(type, cb) {
+  var sql = [
+    'create procedure TYPE_SWAP_PROC (',
+    `  inout A ${type}, inout B ${type}) AS`,
+    'begin',
+    `  declare TMP ${type} := A;`,
+    '  A = B;',
+    '  B = TMP;',
+    'end;'
+  ].join('\n');
+  var self = this;
+  self.dropSwapTypeProc(function() {
+    // ignore any error as the procedure may not exist yet
+    self.client.exec(sql, cb);
+  });
+}
+
+RemoteDB.prototype.dropSwapTypeProc = function dropSwapTypeProc(cb) {
+  this.client.exec('drop procedure TYPE_SWAP_PROC cascade', cb);
+};
