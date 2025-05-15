@@ -84,7 +84,7 @@ Below is a major feature comparison chart between the two drivers:
 | TypeScript support                                |:heavy_check_mark:|:x:|
 | Pure JavaScript package	                        |:x:               |:heavy_check_mark:|
 | Security Provider Support                         |SAP CommonCryptoLib, OpenSSL, MSCrypto|OpenSSL|
-| Node.js major version support                         |See [SAP Note 3165810](https://launchpad.support.sap.com/#/notes/3165810)|All Supported Versions|
+| Node.js major version support                         |See [SAP Note 3165810](https://launchpad.support.sap.com/#/notes/3165810)|18+|
 | License (without alternate SAP license agreement)     |[SAP Developer Agreement](https://tools.hana.ondemand.com/developer-license.txt)|[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)|
 | SAP Support (with SAP Support agreement)              |Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|Component [HAN-DB-CLI](https://launchpad.support.sap.com/#incident/create)|
 | Community Support                                     |[answers.sap.com](https://answers.sap.com/tags/73554900100700000996) HANA tag|[node-hdb/issues](https://github.com/SAP/node-hdb/issues)
