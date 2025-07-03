@@ -12,6 +12,10 @@ test-acceptance:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
 		-R $(REPORTER) -b	test/acceptance/*.js
 
+test-dynatrace:
+	@NODE_ENV=test ./node_modules/.bin/mocha \
+		-R $(REPORTER) -b test/acceptance/db.Dynatrace.js
+
 test-mock:
 	@HDB_MOCK=1 $(MAKE) -s test
 
