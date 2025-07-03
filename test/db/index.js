@@ -38,9 +38,12 @@ function getOptions(testOptions) {
   return libUtil.extend(options || localOptions, testOptions);
 }
 
-module.exports = function create(testOptions) {
+function create(testOptions) {
   if (!options || process.env.HDB_MOCK) {
     return new LocalDB(getOptions(testOptions));
   }
   return new RemoteDB(getOptions(testOptions));
 };
+
+module.exports = create;
+module.exports.getOptions = getOptions;
