@@ -440,7 +440,7 @@ describe('Lib', function () {
       reader.hasMore().should.equal(false);
     });
 
-    it('should read a real vector', function () {
+    it('should read a REAL_VECTOR', function () {
       var buffer = new Buffer([
         0xFF,
         0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -454,6 +454,26 @@ describe('Lib', function () {
       [-3.4028234663852886e+38, 1.1754943508222875e-38, 3.4028234663852886e+38, -1.1754943508222875e-38]];
       for (var i = 0; i < expected.length; i++) {
         var result = reader.readRealVector();
+        result.should.have.length(expected[i].length);
+        result.should.eql(expected[i]);
+      }
+      reader.hasMore().should.equal(false);
+    });
+
+    it('should read a HALF_VECTOR', function () {
+      var buffer = new Buffer([
+        0xFF,
+        0x06, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x0A, 0x03, 0x00, 0x00, 0x00, 0xD0, 0xE3, 0xD0, 0x67, 0xDC, 0xE9,
+        0x0C, 0x04, 0x00, 0x00, 0x00, 0x84, 0xF5, 0x33, 0x60, 0x4D, 0x97, 0xC9, 0x3C,
+        0x12, 0x07, 0x00, 0x00, 0x00, 0x01, 0x00, 0xFF, 0x83, 0x00, 0x04, 0x00, 0x3C, 0x00, 0xBC, 0xFF, 0x7B, 0xFF, 0xFB,
+      ]);
+      var reader = new lib.Reader(buffer, null, { vectorOutputType: 'Array' });
+      (reader.readHalfVector() === null).should.be.ok;
+      var expected = [[0], [-1000, 2000, -3000], [-22592, 537.5, -0.0017824172973632812, 1.1962890625],
+      [5.960464477539063e-8, -0.00006097555160522461, 0.00006103515625, 1, -1, 65504, -65504]];
+      for (var i = 0; i < expected.length; i++) {
+        var result = reader.readHalfVector();
         result.should.have.length(expected[i].length);
         result.should.eql(expected[i]);
       }
