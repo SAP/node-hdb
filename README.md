@@ -292,6 +292,19 @@ var client = hdb.createClient({
 ```
 If not set, the value of `packetSize` defaults to 131072 (128KB) and `packetSizeLimit` defaults to `packetSize`. Values for `packetSize` may range from 65536 (64KB) to 1073741823 (1GB-1). Values for `packetSizeLimit` may range from `packetSize` to 1073741823 (1GB-1).
 
+### Controlling the Data Format Version
+By default, the node-hdb driver uses version 1 of the SAP HANA data format. Attempting to use a higher version than the server supports will result in an error. See the [documentation](tbd: add link) for more information on which data types are supported in which version.
+
+For example, the following configuration will set the version to 7:
+```js
+var client = hdb.createClient({
+  host : 'hostname',
+  port : 30015,
+  dataFormatSupport : 7,
+  ...
+});
+```
+
 Direct Statement Execution
 --------------------------
 
