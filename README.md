@@ -75,7 +75,7 @@ Below is a major feature comparison chart between the two drivers:
 | Secure User Store Integration (hdbuserstore)	        |:heavy_check_mark:|:x:|
 | Connections through HTTP proxy	                |:heavy_check_mark:|:x:|
 | Connections through SOCKS proxy (SAP Cloud Connector)	|:heavy_check_mark:|:x:|
-| Network Compression                                   |:heavy_check_mark:|:x:|
+| Network Compression                                   |:heavy_check_mark:|:heavy_check_mark:|
 | Network Packet Size                                   |:heavy_check_mark:|:x:|
 | Network Poll before Send                              |:heavy_check_mark:|:x:|
 | Advanced Tracing via external utility or environment variables |:heavy_check_mark:|:x:|
@@ -291,6 +291,21 @@ var client = hdb.createClient({
 });
 ```
 If not set, the value of `packetSize` defaults to 131072 (128KB) and `packetSizeLimit` defaults to `packetSize`. Values for `packetSize` may range from 65536 (64KB) to 1073741823 (1GB-1). Values for `packetSizeLimit` may range from `packetSize` to 1073741823 (1GB-1).
+
+### Network Compression
+By default, network compression depends on the server configuration:  
+`indexserver.ini > session > compression` is TRUE by default on HANA Cloud, and FALSE otherwise.
+
+You can override this using the client-side `compress` option:
+
+- `compress: true` → **Forces compression**, even if the server disables it  
+- `compress: false` → **Disables compression**, even if the server enables it
+
+When compression is enabled, packets larger than 10240 bytes (10 KB) are compressed.
+
+**Note:**  
+Network compression may improve performance by reducing the size of data sent over the network. This is especially helpful on slow connections or when sending large or highly compressible data. However, it can also introduce CPU overhead for compression and decompression.  
+**We recommend benchmarking compression with your own workloads and deployment environment to determine its effectiveness.**
 
 Direct Statement Execution
 --------------------------
