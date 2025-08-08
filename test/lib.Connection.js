@@ -185,6 +185,28 @@ describe('Lib', function () {
       connection.readyState.should.equal('opening');
     });
 
+    it('should replace socket and move error listener during open()', function (done) {
+      const connection = createConnection();
+      const oldSocket = mock.createSocket({});
+      const newSocket = mock.createSocket({});
+      connection._connect = function (options, cb) {
+        process.nextTick(() => cb(null, newSocket));
+        return oldSocket;
+      };
+      connection.open({}, function (err) {
+        (!!err).should.be.not.ok;
+        oldSocket.listeners('error').length.should.equal(0);
+        oldSocket.listeners('data').length.should.equal(0);
+        const errorListeners = newSocket.listeners('error');
+        errorListeners.length.should.equal(1);
+        errorListeners[0].should.be.a.Function();
+        const dataListeners = newSocket.listeners('data');
+        dataListeners.length.should.equal(1);
+        dataListeners[0].should.be.a.Function();
+        done();
+      });
+    });
+
     it('should fail to open a Connection with an invalid reply', function (done) {
       var connection = createConnection();
       connection.open({

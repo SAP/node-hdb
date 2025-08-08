@@ -352,12 +352,23 @@ describe('hdb', function () {
       var createSocketCalled;
       var createSecureSocketCalled;
 
-      var createSocketStub = function () {
+      const createSocketStub = function (options, cb) {
         createSocketCalled = true;
+        if (typeof cb === 'function') {
+          process.nextTick(() => {
+            cb();
+          });
+        }
         return socketStub;
       };
-      var createSecureSocketStub = function () {
+
+      const createSecureSocketStub = function (options, cb) {
         createSecureSocketCalled = true;
+        if (typeof cb === 'function') {
+          process.nextTick(() => {
+            cb();
+          });
+        }
         return socketStub;
       };
 
@@ -375,11 +386,6 @@ describe('hdb', function () {
         createSocketCalled = false;
         createSecureSocketCalled = false;
         socketStub = new mock.createSocket({});
-        socketStub.setNoDelay = function () {
-          process.nextTick(function () {
-            socketStub.write();
-          });
-        };
         tcp.createSocket = createSocketStub;
         tcp.createSecureSocket = createSecureSocketStub;
       });
@@ -420,20 +426,19 @@ describe('hdb', function () {
     });
 
     describe('#TCP keepalive', function () {
-
       var tcp = require('../lib/protocol/tcp');
       var originalCreateSocket = tcp.createSocket;
       var socketStub;
 
       beforeEach(function () {
         socketStub = new mock.createSocket({});
-        socketStub.setNoDelay = function () {
-          process.nextTick(function () {
-            socketStub.write();
-          });
-        };
-        tcp.createSocket = function () {
-            return socketStub;
+        tcp.createSocket = function (options, cb) {
+          if (typeof cb === 'function') {
+            process.nextTick(() => {
+              cb();
+            });
+          }
+          return socketStub;
         };
       });
 
