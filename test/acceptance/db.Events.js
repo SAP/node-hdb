@@ -14,6 +14,8 @@
 'use strict';
 
 var db = require('../db')();
+var RemoteDB = require('../db/RemoteDB');
+var describeRemoteDB = db instanceof RemoteDB ? describe : describe.skip;
 
 describe('db', function () {
 
@@ -55,6 +57,54 @@ describe('db', function () {
             done();
           });
         }, 0);
+      });
+    });
+  });
+
+  describeRemoteDB('isValid', function () {
+    before(db.init.bind(db));
+    after(function (done) {
+      if (client.readyState !== 'closed') {
+        db.end(done);
+      } else {
+        done();
+      }
+    });
+    var client = db.client;
+
+    it('should be valid when connected', function (done) {
+      client.isValid(0, function (err, ret) { // no timeout
+        if (err) done(err);
+        ret.should.be.true();
+        done();
+      })
+    });
+
+    it('should be valid with timeout when connected', function (done) {
+      client.isValid(1, function (err, ret) { // 1 second timeout
+        if (err) done(err);
+        ret.should.be.true();
+        done();
+      });
+    });
+
+    it('should be invalid when disconnected', function (done) {
+      client.exec('SELECT CURRENT_CONNECTION FROM DUMMY', function (err, res) {
+        var connId = res[0].CURRENT_CONNECTION;
+        var adminDB = require('../db')();
+        adminDB.init(function (err) {
+          if (err) done(err);
+          var adminClient = adminDB.client;
+          var disconnectSQL = "ALTER SYSTEM DISCONNECT SESSION '" + connId + "'";
+          adminClient.exec(disconnectSQL, function (err) {
+            if (err) done(err);
+            client.isValid(0, function (err, ret) { // disconnected
+              if (err) done(err);
+              ret.should.be.false();
+              adminDB.end(done);
+            });
+          });
+        });
       });
     });
   });

@@ -173,7 +173,7 @@ describe('hdb', function () {
         client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
         client._connection.getClientInfo().getProperty("SESSVAR1").should.equal("TESTVAR1");
         client._connection.getClientInfo().getProperty("SESSVAR2").should.equal("TESTVAR2");
-        client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
+        client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), {}, null);
         client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
         client._connection.getClientInfo().getProperty("SESSVAR1").should.equal("TESTVAR1");
         client._connection.getClientInfo().getProperty("SESSVAR2").should.equal("TESTVAR2");
@@ -188,14 +188,14 @@ describe('hdb', function () {
       client.setClientInfo("VARKEY1", "VARVAL1");
       client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
       client._connection.getClientInfo().getProperty("VARKEY1").should.equal("VARVAL1");
-      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
+      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), {}, null);
       client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
 
       client.setClientInfo("VARKEY2", "VARVAL2");
       client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
       client._connection.getClientInfo().getProperty("VARKEY1").should.equal("VARVAL1");
       client._connection.getClientInfo().getProperty("VARKEY2").should.equal("VARVAL2");
-      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
+      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), {}, null);
       client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(false);
       done();
     });
@@ -211,7 +211,7 @@ describe('hdb', function () {
       }
 
       var sendCount = 0;
-      var mock_send = function(data, cb) {
+      var mock_send = function(data, options, cb) {
         sendCount += 1;
         if (sendCount === 1) {
           data.parts.forEach(function(part) {
@@ -263,7 +263,7 @@ describe('hdb', function () {
       }
 
       var sendCount = 0;
-      var mock_send = function(data, cb) {
+      var mock_send = function(data, options, cb) {
         sendCount += 1;
         if (sendCount === 1) {
           data.parts.forEach(function(part) {
@@ -313,7 +313,7 @@ describe('hdb', function () {
       }
 
       var sendCount = 0;
-      var mock_send = function(data, cb) {
+      var mock_send = function(data, options, cb) {
         sendCount += 1;
         if (sendCount === 1) {
           cb(undefined, mock_auth_reply);
@@ -1104,7 +1104,7 @@ describe('hdb', function () {
                          { name: 3, type: 3, value: 30041 } ]
       };
 
-      var mock_send = function (data, cb) {
+      var mock_send = function (data, options, cb) {
         ++sendCount;
         if (sendCount == 1) {
           cb(new Error(), reply1);
@@ -1224,7 +1224,7 @@ describe('hdb', function () {
         connectOptions: []
       };
 
-      var mock_send = function (data, cb) {
+      var mock_send = function (data, options, cb) {
         ++sendCount;
         if (sendCount == 1) {
           cb(undefined, reply1);
