@@ -99,7 +99,11 @@ describe('Util', function () {
     });
 
     it('should return a dummy tracelog function', function () {
+      // Temporarily unset the HDB_TRACE environment variable
+      var hdbTrace = process.env.HDB_TRACE;
+      delete process.env.HDB_TRACE;
       var tracelog = util.tracelog();
+      process.env.HDB_TRACE = hdbTrace;
       (!tracelog()).should.be.ok;
       tracelog.name.should.equal('dummyTracelog');
     });
