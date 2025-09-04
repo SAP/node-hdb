@@ -245,6 +245,10 @@ client.connect({
 
 After a successful JWT authentication, the server returns the database `user` and a `sessionCookie` which can be used for reconnecting.
 
+#### X.509 authentication
+Users provide the X.509 certificate or the name of a file containing the X.509 certificate via the `authenticationX509` connection property. The password for encrypted keys is provided via `authenticationX509Password`.
+
+
 ### Encrypted network communication
 To establish an encrypted database connection just pass either `key`, `cert` and `ca` or a `pfx` to createClient.
 
@@ -274,7 +278,7 @@ var client = hdb.createClient({
 If so, make sure to include all the necessary TLS-related properties for both the databases in the client's options.
 
 In case you need custom logic to validate the server's hostname against the certificate, you can assign a callback function to the `checkServerIdentity` property, alongside the other connection options. The callback is
-supplied to the `tls.connect` funciton of the [TLS](https://nodejs.org/api/tls.html#connect) API and should conform to the signature described there.
+supplied to the `tls.connect` function of the [TLS](https://nodejs.org/api/tls.html#connect) API and should conform to the signature described there.
 
 ### Controlling the Maximum Packet Size
 By default, the node-hdb driver restricts the size of outgoing packets to 128KB. Attempting to execute SQL statements larger than this limit will result in an error. Furthermore, large object parameters (LOBs) larger than this limit will be broken up and sent in multiple packets to the server.
