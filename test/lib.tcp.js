@@ -15,14 +15,12 @@
 
 var tcp = require('../lib/protocol/tcp');
 var tls = require('tls');
+var mock = require('./mock');
 var createSocket = tcp.createSocket;
 var createSecureSocket = tcp.createSecureSocket;
-var socket = {
-  setNoDelay: function setNoDelay(noDelay) {
-    noDelay.should.equal(true);
-  },
-  setKeepAlive: function setKeepAlive(enable, time) {}
-};
+var socket = new mock.createSocket({});
+const { ProxyClient } = require("../lib/protocol/Proxy");
+
 var digiCertRoots = [
     // DigiCert RSA4096 Root G5
     "-----BEGIN CERTIFICATE-----\n" +
@@ -118,10 +116,11 @@ describe('Lib', function () {
         process.nextTick(cb);
         return socket;
       };
-      tcp.connect({
-        pfx: true,
-        host: 'localhost'
-      }, done).should.equal(socket);
+      tcp.connect({ pfx: true, host: 'localhost' }, function (err, sock) {
+        (err == null).should.be.true();
+        sock.should.equal(socket);
+        done();
+      });      
     });
 
     it('should override default servername', function (done) {
@@ -132,11 +131,11 @@ describe('Lib', function () {
         process.nextTick(cb);
         return socket;
       };
-      tcp.connect({
-        pfx: true,
-        host: 'localhost',
-        servername: 'customSNI'
-      }, done).should.equal(socket);
+      tcp.connect({ pfx: true, host: 'localhost', servername: 'customSNI'}, function (err, sock) {
+        (err == null).should.be.true();
+        sock.should.equal(socket);
+        done();
+      });  
     });
 
     it('should create a connection', function (done) {
@@ -146,9 +145,29 @@ describe('Lib', function () {
         process.nextTick(cb);
         return socket;
       };
-      tcp.connect({}, done).should.equal(socket);
+      tcp.connect({}, function (err, sock) {
+        (err == null).should.be.true();
+        sock.should.equal(socket);
+        done();
+      });  
     });
 
+    it('should call callback with an error if TLS fails', function (done) {
+      tcp.createSecureSocket = function tlsConnect(options, cb) {
+        process.nextTick(() => {
+          socket.emit('error', new Error('TLS failed'));
+        });
+        return socket;
+      };
+    
+      tcp.connect({ useTLS: true }, function (err, s) {
+        (err != null).should.be.true();
+        err.message.should.equal('TLS failed');
+        tcp.createSocket = createSocket;
+        done();
+      });
+    });
+  
     it('should fallback to default trusted CAs', function (done) {
       var testCase = 0;
       tcp.createSecureSocket = function tlsConnect(options, cb) {
@@ -180,27 +199,90 @@ describe('Lib', function () {
           default:
             break;
         }
-        process.nextTick(cb);
+        process.nextTick(() => cb(null, socket));
         return socket;
-      }
-      // testCase = 0
-      tcp.connect({useTLS: true}, () => {
-        ++testCase; // 1
-        tcp.connect({ca: "DummyCert"}, () => {
-          ++testCase; // 2
-          tcp.connect({ca: ["DummyCert", "DummyCert2"], sslHanaCloudCertificates: true}, () => {
-            ++testCase; // 3
-            tcp.connect({ca: "DummyCert", sslHanaCloudCertificates: false}, () => {
-              ++testCase; // 4
-              tcp.connect({ca: ["DummyCert"], sslUseDefaultTrustStore: true}, () => {
+      };
+    
+      tcp.connect({ useTLS: true }, (err, s) => {
+        (err == null).should.be.true();
+        s.should.equal(socket);
+        ++testCase;
+        tcp.connect({ ca: "DummyCert" }, (err, s) => {
+          s.should.equal(socket);
+          ++testCase;
+          tcp.connect({ ca: ["DummyCert", "DummyCert2"], sslHanaCloudCertificates: true }, (err, s) => {
+            s.should.equal(socket);
+            ++testCase;
+            tcp.connect({ ca: "DummyCert", sslHanaCloudCertificates: false }, (err, s) => {
+              s.should.equal(socket);
+              ++testCase;
+              tcp.connect({ ca: ["DummyCert"], sslUseDefaultTrustStore: true }, (err, s) => {
+                s.should.equal(socket);
                 tcp.createSecureSocket = createSecureSocket;
                 done();
-              }).should.equal(socket);
-            }).should.equal(socket);
-          }).should.equal(socket);
-        }).should.equal(socket);
+              });
+            });
+          });
+        });
       });
     });
 
+    describe("upgradeSocketToTLS", () => {
+      const { EventEmitter } = require("events");
+      const assert = require("assert");
+      let originalProxyConnect, originalTlsConnect;
+
+      beforeEach(() => {
+        originalProxyConnect = ProxyClient.prototype.connect;
+        originalTlsConnect = tls.connect;
+      });
+      afterEach(() => {
+        ProxyClient.prototype.connect = originalProxyConnect;
+        tls.connect = originalTlsConnect;
+      });
+
+      function stubProxyConnect(fakeSocket = new mock.createSocket({})) {
+        ProxyClient.prototype.connect = (cb) => process.nextTick(() => cb(null, fakeSocket));
+      }
+
+      it("should upgrade a TCP socket to TLS", (done) => {
+        let tlsCalled = false;
+        stubProxyConnect();
+
+        tls.connect = (options, cb) => {
+          tlsCalled = true;
+          const tlsSocket = new EventEmitter();
+          tlsSocket.destroy = () => {};
+          process.nextTick(() => cb());
+          return tlsSocket;
+        };
+    
+        const options = { proxyHostname: "fake.proxy", proxyHttp: true };
+        tcp.connect(options, (err) => {
+          assert.ifError(err);
+          assert(tlsCalled, "tls upgrading should have happened");
+          done();
+        });
+      });
+    
+      it("should handle TLS error emitted before handshake callback", (done) => {
+        const earlyError = new Error("TLS socket failed early");
+        stubProxyConnect();
+    
+        tls.connect = (options, cb) => {
+          const tlsSocket = new EventEmitter();
+          tlsSocket._destroyed = false;
+          tlsSocket.destroy = () => { tlsSocket._destroyed = true; };
+          process.nextTick(() => tlsSocket.emit("error", earlyError));
+          return tlsSocket;
+        };
+    
+        const options = { proxyHostname: "fake.proxy", useTLS: true };
+        tcp.connect(options, (err, tlsSocket) => { //tlsSocket won't be returned if there's an error
+          assert.strictEqual(err, earlyError, "Callback should receive the early TLS error");
+          done();
+        });
+      });
+    });    
   });
 });

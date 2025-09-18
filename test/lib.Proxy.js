@@ -17,6 +17,7 @@ const assert = require("assert");
 const { ProxyClient } = require("../lib/protocol/Proxy");
 const ProxyConstants = require("../lib/protocol/common/ProxyConstants");
 const mock = require("./mock");
+const http = require("http");
 
 function createSocketMock() {
   const socket = mock.createSocket({});
@@ -28,7 +29,7 @@ function createSocketMock() {
   return socket;
 }
 
-describe('Lib', function () {
+describe("Lib", function () {
   describe("#ProxyClient", () => {
     describe("_doHandshake()", () => {
       it("should complete handshake with valid method", async () => {
@@ -110,7 +111,8 @@ describe('Lib', function () {
       });
 
       it("should throw on SAPCLOUDJWT failure", async () => {
-        client.authMethod = ProxyConstants.ProxyAuthMethods.PROXYAUTH_SAPCLOUDJWT;
+        client.authMethod =
+          ProxyConstants.ProxyAuthMethods.PROXYAUTH_SAPCLOUDJWT;
         client._doProxySAPCloudAuthentication = async () => false;
         await assert.rejects(() => client._doAuthentication());
       });
@@ -333,8 +335,8 @@ describe('Lib', function () {
       });
       it("should resolve with buffer on valid IPv6 reply", async () => {
         const ipv6Address = [
-          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-          0x00, 0x00, 0x00, 0x01,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x01,
         ];
         const reply = Buffer.from([
           ProxyConstants.ProxyVersions.PROXY_SOCKSV5,
@@ -422,71 +424,68 @@ describe('Lib', function () {
         await assert.rejects(promise);
       });
     });
-    describe("_upgradeToTLS()", () => {
-      let client;
-      let originalTlsConnect;
+  });
 
-      beforeEach(() => {
-        client = new ProxyClient({
-          host: "example.com",
-          port: 443,
-        });
-        client._socket = createSocketMock();
-        originalTlsConnect = require("tls").connect;
+  describe("_connectHttpProxy", () => {
+    let originalRequest;
+    beforeEach(() => {
+      originalRequest = http.request;
+    });
+    afterEach(() => {
+      http.request = originalRequest;
+    });
+
+    it("calls callback with socket on successful 200 CONNECT", (done) => {
+      const fakeSocket = {};
+      http.request = () => ({
+        on: (event, cb) => {
+          if (event === "connect") {
+            process.nextTick(() => cb({ statusCode: 200 }, fakeSocket));
+          }
+        },
+        once: () => {},
+        removeListener: () => {},
+        end: () => {},
       });
-
-      afterEach(() => {
-        require("tls").connect = originalTlsConnect;
+      const client = new ProxyClient({
+        proxyHttp: true,
+        proxyHostname: "proxyhost",
+        host: "desthost",
+        port: 1234,
       });
-
-      it("should upgrade to TLS and invoke callback with new socket", (done) => {
-        const fakeTlsSocket = createSocketMock();
-        require("tls").connect = (options, onSecureConnect) => {
-          process.nextTick(onSecureConnect);
-          return fakeTlsSocket;
-        };
-        client._upgradeToTLS((err, tlsSocket) => {
-          assert.ifError(err);
-          assert.strictEqual(tlsSocket, fakeTlsSocket);
-          done();
-        });
-      });
-
-      it("should handle TLS socket error and call callback with error", (done) => {
-        const fakeTlsSocket = createSocketMock();
-        require("tls").connect = () => {
-          process.nextTick(() => {
-            fakeTlsSocket.emit("error", new Error("TLS failure"));
-          });
-          return fakeTlsSocket;
-        };
-        client._upgradeToTLS((err, tlsSocket) => {
-          assert.ok(err);
-          assert.strictEqual(err.message, "Socket closed");
-          done();
-        });
+      client._connectHttpProxy((err, socket) => {
+        if (err) return done(err);
+        assert.strictEqual(socket, fakeSocket);
+        done();
       });
     });
-    it("should call upgradeToTLS when useTLS is true", (done) => {
-      const client = new ProxyClient({
-        proxyHostname: "proxy.local",
-        proxyPort: 1080,
-        useTLS: true,
-      });
-      client._socket = createSocketMock();
-      client._socket.connect = (port, host, cb) => cb();
-      client._doHandshake = async () => {};
-      client._doAuthentication = async () => {};
-      client._sendConnectRequest = async () => {};
-      client._readConnectReply = async () => {};
-      let upgradeCalled = false;
-      client._upgradeToTLS = (cb) => {
-        upgradeCalled = true;
-        cb();
+
+    it("calls callback with error on invalid response for CONNECT", (done) => {
+      const fakeSocket = {
+        destroy: () => {},
+        end: () => {},
+        on: () => {},
       };
-      client.connect(null, (err) => {
-        assert.ifError(err);
-        assert.strictEqual(upgradeCalled, true);
+      http.request = () => ({
+        on: (event, cb) => {
+          if (event === "connect") {
+            process.nextTick(() =>
+              cb({ statusCode: 403, statusMessage: "Forbidden" }, fakeSocket),
+            );
+          }
+        },
+        once: () => {},
+        removeListener: () => {},
+        end: () => {},
+      });
+      const client = new ProxyClient({
+        proxyHttp: true,
+        proxyHostname: "proxyhost",
+        host: "desthost",
+        port: 1234,
+      });
+      client._connectHttpProxy((err, socket) => {
+        assert(err instanceof Error);
         done();
       });
     });

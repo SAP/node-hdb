@@ -73,7 +73,7 @@ Below is a major feature comparison chart between the two drivers:
 | Kerberos Authentication	                        |:heavy_check_mark:|:x:|
 | X.509 Authentication	                          |:heavy_check_mark:|:x:|
 | Secure User Store Integration (hdbuserstore)	        |:heavy_check_mark:|:x:|
-| Connections through HTTP proxy	                |:heavy_check_mark:|:x:|
+| Connections through HTTP proxy	                |:heavy_check_mark:|:heavy_check_mark:|
 | Connections through SOCKS proxy (SAP Cloud Connector)	|:heavy_check_mark:|:heavy_check_mark:|
 | Network Compression                                   |:heavy_check_mark:|:heavy_check_mark:|
 | Network Packet Size                                   |:heavy_check_mark:|:x:|
@@ -276,19 +276,21 @@ If so, make sure to include all the necessary TLS-related properties for both th
 In case you need custom logic to validate the server's hostname against the certificate, you can assign a callback function to the `checkServerIdentity` property, alongside the other connection options. The callback is
 supplied to the `tls.connect` funciton of the [TLS](https://nodejs.org/api/tls.html#connect) API and should conform to the signature described there.
 
-### Proxy Support (SOCKS)
+### Proxy Support
 
-You can configure the client to connect to your database through a SOCKS5 proxy server by setting the following connection properties:
+You can configure the client to connect to your database through a SOCKS5 proxy or an HTTP proxy by setting the following connection properties:
 
 #### Connection Properties
 
 | Property          | Type    | Default | Description |
 |-------------------|---------|---------|-------------|
-| `proxyHostname`   | string  | –       | Hostname of the SOCKS5 proxy server. |
-| `proxyPort`       | number  | `1080`  | Port number of the SOCKS5 proxy server. |
-| `proxyUserName`   | string  | –       | User name for SOCKS5 authentication. <br> - **Neo:** must be manually base64-encoded in the format `1.base64(subaccount).base64(locationID)`. <br> - **Cloud Foundry:** used for the JWT. |
-| `proxyPassword`   | string  | –       | Password for SOCKS5 authentication. <br> - **Cloud Foundry:** used to provide the **Cloud Connector location ID**, base64 encoded. |
-| `proxyScpAccount` | string  | –       | SAP Cloud Connector routing information. <br> - **Cloud Foundry:** Optional plain text `<locationID>`, base64-encoded internally. Overrides `proxyPassword`. <br> - **Neo:** Format `<subaccount>.<locationID>`, both plain text, base64-encoded internally. Overrides `proxyUserName`. |
+| `proxyHostname` | string  | –       | Hostname of the proxy server. The default proxy server is SOCKS5. If `proxyHttp` is `true`, the proxy server is assumed to be an HTTP proxy. |
+| `proxyPort`     | number  | `1080`  | Port number of the proxy server. |
+| `proxyHttp`       | boolean | `false` | When set to `true`, enables HTTP proxy authentication and implies that `useTLS=true`. You can disable TLS by providing `useTLS=false`. |
+| `proxyUserName` | string  | –       | User name for SOCKS5 METHOD 02 authentication or Basic HTTP Authentication. <br> - **Neo:** base64-encoded as `1.base64(subaccount).base64(locationID)`. <br> - **Cloud Foundry:** used for the JWT value. |
+| `proxyPassword` | string  | –       | Password for SOCKS5 METHOD 02 authentication or Basic HTTP Authentication. <br> - **Cloud Foundry:** used to provide the Cloud Connector location ID, base64-encoded. |
+| `proxyScpAccount` | string  | –       | SAP Cloud Connector routing information. <br> - **Cloud Foundry:** optional `<locationID>` in plaintext, internally base64-encoded. Overrides `proxyPassword`. <br> - **Neo:** `<subaccount>.<locationID>` in plaintext, internally base64-encoded. Overrides `proxyUserName`. |
+
 
 ### Controlling the Maximum Packet Size
 By default, the node-hdb driver restricts the size of outgoing packets to 128KB. Attempting to execute SQL statements larger than this limit will result in an error. Furthermore, large object parameters (LOBs) larger than this limit will be broken up and sent in multiple packets to the server.

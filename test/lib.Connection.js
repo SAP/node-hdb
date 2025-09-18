@@ -29,7 +29,7 @@ const assert = require('assert');
 
 function connect(options, connectListener) {
   var socket = mock.createSocket(options);
-  util.setImmediate(connectListener);
+  util.setImmediate(() => connectListener(null, socket));
   return socket;
 }
 
@@ -185,7 +185,7 @@ describe('Lib', function () {
         connection.readyState.should.equal('closed');
         done();
       });
-      connection.readyState.should.equal('opening');
+      connection.readyState.should.equal('new');
     });
 
     it('should replace socket and move error listener during open()', function (done) {
