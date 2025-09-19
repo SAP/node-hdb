@@ -2,5 +2,8 @@
   "host": "localhost",
   "port": 30015,
   "user": "USER",
-  "password": "PASSWORD"
+  "password": "PASSWORD",
+  "proxyHostname": null,
+  "proxyPassword": null,
+  "proxyUserName": null 
 }
