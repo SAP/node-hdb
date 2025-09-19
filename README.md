@@ -71,7 +71,7 @@ Below is a major feature comparison chart between the two drivers:
 | JWT Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
 | LDAP Authentication	                            |:heavy_check_mark:|:heavy_check_mark:|
 | Kerberos Authentication	                        |:heavy_check_mark:|:x:|
-| X.509 Authentication	                          |:heavy_check_mark:|:x:|
+| X.509 Authentication	                          |:heavy_check_mark:|:heavy_check_mark:|
 | Secure User Store Integration (hdbuserstore)	        |:heavy_check_mark:|:x:|
 | Connections through HTTP proxy	                |:heavy_check_mark:|:x:|
 | Connections through SOCKS proxy (SAP Cloud Connector)	|:heavy_check_mark:|:x:|
