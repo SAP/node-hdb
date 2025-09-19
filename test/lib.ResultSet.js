@@ -254,6 +254,63 @@ function createResultSetWithoutLob(options) {
   return createResultSet(rsd, chunks, options);
 }
 
+function createOneChunkResultSet(options) {
+  var rsd = {
+    id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
+    metadata: [{
+      dataType: TypeCode.SMALLINT,
+      columnDisplayName: 'SMALLINT'
+    }],
+    data: {
+      argumentCount: 5,
+      attributes: ResultSetAttributes.LAST |
+        ResultSetAttributes.CLOSED,
+      kind: 5,
+      buffer: Buffer.concat([
+        writeInt(1), writeInt(2), writeInt(3),
+        writeInt(4), writeInt(5)
+      ])
+    }
+  };
+  return createResultSet(rsd, undefined, options);
+}
+
+function createResultSetWithRepeats(options) {
+  // Buffer with small int encodings for 1 - 32
+  var buffer32 = Buffer.concat(Array.from(Array(32).keys()).map(function (value) {
+    return writeInt(value + 1);
+  }));
+  var rsd = {
+    id: new Buffer([1, 0, 0, 0, 0, 0, 0, 0]),
+    metadata: [{
+      dataType: TypeCode.SMALLINT,
+      columnDisplayName: 'SMALLINT'
+    }],
+    data: {
+      argumentCount: 32,
+      attributes: 0,
+      buffer: buffer32
+    }
+  };
+  var chunks = [{
+    argumentCount: 32,
+    attributes: 0,
+    buffer: buffer32
+  }, {
+    argumentCount: 32,
+    attributes: 0,
+    buffer: buffer32
+  }, {
+    argumentCount: 4,
+    attributes: ResultSetAttributes.LAST |
+      ResultSetAttributes.CLOSED,
+    buffer: Buffer.concat([
+      writeInt(97), writeInt(98), writeInt(99), writeInt(100)
+    ])
+  }];
+  return createResultSet(rsd, chunks, options);
+}
+
 describe('Lib', function () {
 
   describe('#ResultSet', function () {
@@ -545,6 +602,49 @@ describe('Lib', function () {
       });
       rs.fetch(function (err) {
         err.should.equal(readError);
+        done();
+      });
+    });
+
+    it('should get row count without fetch all for one chunk result set', function (done) {
+      var rs = createOneChunkResultSet();
+      rs.getRowCount().should.equal(5);
+      rs.fetch(function (err, rows) {
+        if (err) done(err);
+        rows.should.eql([{
+          SMALLINT: 1,
+        }, {
+          SMALLINT: 2,
+        }, {
+          SMALLINT: 3,
+        }, {
+          SMALLINT: 4,
+        }, {
+          SMALLINT: 5,
+        }]);
+        rs.finished.should.be.true;
+        rs.closed.should.be.true;
+        done();
+      });
+    });
+
+    it('should not get row count until last chunk is received', function (done) {
+      var rs = createResultSetWithRepeats();
+      rs.getRowCount().should.equal(-1);
+      rs.fetch(function (err, rows) {
+        if (err) done(err);
+        var expectedRows = [];
+        for (var i = 0; i < 100; i++) {
+          if (i >= 96) {
+            expectedRows.push({SMALLINT: i + 1});
+          } else {
+            expectedRows.push({SMALLINT: (i % 32) + 1});
+          }
+        }
+        rows.should.eql(expectedRows);
+        rs.finished.should.be.true;
+        rs.closed.should.be.true;
+        rs.getRowCount().should.equal(100);
         done();
       });
     });
