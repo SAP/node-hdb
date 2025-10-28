@@ -1,6 +1,13 @@
 {
-  "author": "Koser, Holger <holger.koser@sap.com>",
+  "author": {
+    "name": "SAP SE",
+    "url": "https://www.sap.com/"
+  },
   "contributors": [
+    "Albion, Jeff <jeff.albion@sap.com>",
+    "Ian, McCurdy <ian.mccurdy@sap.com>",
+    "He, Linjun <linjun.he@sap.com>",
+    "Koser, Holger <holger.koser@sap.com>",
     "Vachkov, Georgi <georgi.vachkov@sap.com>",
     "Penev, Alexander <alexander.penev@sap.com>"
   ],
