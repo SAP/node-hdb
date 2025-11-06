@@ -12,6 +12,16 @@ test-acceptance:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
 		-R $(REPORTER) -b	test/acceptance/*.js
 
+test-dynatrace:
+	@ENABLE_NODE_OPENTEL_TESTS=false NODE_ENV=test \
+		./node_modules/.bin/mocha -R $(REPORTER) -b \
+			test/acceptance/db.ExtTrace.js
+
+test-opentelemetry:
+	@ENABLE_NODE_OPENTEL_TESTS=true NODE_ENV=test \
+		./node_modules/.bin/mocha -R $(REPORTER) -b \
+			test/acceptance/db.ExtTrace.js
+
 test-mock:
 	@HDB_MOCK=1 $(MAKE) -s test
 

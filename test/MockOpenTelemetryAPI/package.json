@@ -1,0 +1,6 @@
+{
+  "author": "SAP SE",
+  "name": "@opentelemetry/api",
+  "description": "mock of @opentelemetry/api for HANA Client testing",
+  "main": "./index.js"
+}
