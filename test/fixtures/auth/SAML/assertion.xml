@@ -1,0 +1,34 @@
+<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	ID="b07b804c-7c29-ea16-7300-4f3d6f7928ac" Version="2.0"
+	IssueInstant="2004-12-05T09:22:05Z">
+	<saml:Issuer>https://idp.example.org/SAML</saml:Issuer>
+	<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+		<SignedInfo>
+			<CanonicalizationMethod
+				Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+			<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" />
+			<Reference URI="">
+				<Transforms>
+					<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+				</Transforms>
+				<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+				<DigestValue></DigestValue>
+			</Reference>
+		</SignedInfo>
+		<SignatureValue />
+		<KeyInfo>
+			<X509Data>
+				<X509Certificate>
+				</X509Certificate>
+			</X509Data>
+		</KeyInfo>
+	</Signature>
+	<saml:Subject>
+		<saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">
+			EXTERNAL_USER_NAME
+		</saml:NameID>
+	</saml:Subject>
+	<saml:Conditions NotBefore="2012-01-01T00:00:00Z"
+		NotOnOrAfter="2050-01-01T00:00:00Z" />
+</saml:Assertion>
