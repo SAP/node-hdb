@@ -1,0 +1,11 @@
+.DS_Store
+.vscode
+node_modules
+coverage
+config.json
+hdb.js
+examples/test*.js
+npm-debug.log
+tmp
+/test/db/config.json*
+package-lock.json
