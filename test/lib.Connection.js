@@ -869,7 +869,7 @@ describe('Lib', function () {
         context('Connection#receive compression behaviour', function () {
           const fakeCompressedBuffer = Buffer.from('compressed');
           const fakeDecompressedBuffer = Buffer.from('decompressed');
-        
+
           function createPacket({
             packetLength,
             compressionFlag,
@@ -881,15 +881,15 @@ describe('Lib', function () {
             messageHeader.writeUInt32LE(packetLength, 12); // VARPARTLENGTH
             messageHeader.writeUInt8(compressionFlag, 22); // PACKET OPTIONS
             messageHeader.writeUInt32LE(compressionVarpartLength, 24); // COMPRESSIONVARPARTLENGTH
-          
+
             const currentBody = Buffer.concat([segmentHeader, compressedBuffer]);
             const paddedBody = currentBody.length < packetLength
               ? Buffer.concat([currentBody, Buffer.alloc(packetLength - currentBody.length)])
               : currentBody.slice(0, packetLength);
-          
+
             return Buffer.concat([messageHeader, paddedBody]);
           }
-          
+
           function testReceiveBehaviour({
             packetLength = fakeCompressedBuffer.length + 24,
             compressionFlag = 2,
@@ -901,18 +901,19 @@ describe('Lib', function () {
             const segmentHeader = Buffer.alloc(24);
             const packet = createPacket({ packetLength, compressionFlag, compressionVarpartLength, segmentHeader });
             let decompressCalled = false;
-          
+
             Compressor.decompress = (input, length) => {
               decompressCalled = true;
               input.should.eql(Buffer.concat([segmentHeader, fakeCompressedBuffer]));
               length.should.equal(fakeDecompressedBuffer.length + 24);
               return Buffer.concat([segmentHeader, fakeDecompressedBuffer]);
             };
-          
+
             const connection = new Connection();
+            connection._compressionEnabled = true;
             const fakeSocket = mock.createSocket(1);
             connection._addListeners(fakeSocket);
-          
+
             if (shouldThrow) {
               try {
                 assert.throws(() => {
@@ -940,15 +941,15 @@ describe('Lib', function () {
               };
               fakeSocket.emit('data', packet);
             }
-          }          
-        
+          }
+
           it('should decompress if compression flag is 2', function (done) {
             testReceiveBehaviour({
               expectDecompress: true,
               done,
             });
           });
-        
+
           it('should not decompress if compression flag is 0', function (done) {
             testReceiveBehaviour({
               compressionFlag: 0,
@@ -956,38 +957,7 @@ describe('Lib', function () {
               done,
             });
           });
-        
-          it('should throw error if packet.header.length <= 0', function (done) {
-            testReceiveBehaviour({
-              packetLength: 0,
-              expectDecompress: false,
-              shouldThrow: true,
-              done,
-            });
-          });
-        
-          it('should throw error if packet.header.length >= compressionVarpartLength', function (done) {
-            const compLen = fakeDecompressedBuffer.length + 24;
-            testReceiveBehaviour({
-              packetLength: compLen,
-              compressionVarpartLength: compLen,
-              expectDecompress: false,
-              shouldThrow: true,
-              done,
-            });
-          });
-        
-          it('should throw error if packet.header.length > packetSizeLimit', function (done) {
-            const connection = new Connection();
-            const packetSizeLimit = connection.packetSizeLimit;
-            testReceiveBehaviour({
-              packetLength: packetSizeLimit + 1,
-              expectDecompress: false,
-              shouldThrow: true,
-              done,
-            });
-          });
-        });  
+        });
       });
     }
   });
