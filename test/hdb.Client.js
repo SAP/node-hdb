@@ -40,6 +40,7 @@ TestClient.prototype._createResult = function _createResult() {
 };
 
 const { mock_auth_reply, mock_conn_reply } = require('./mock/data/replies.js');
+const { IgnoreTopologyEnum } = require('../lib/protocol/ConnectionTopology.js');
 
 describe('hdb', function () {
 
@@ -1304,6 +1305,53 @@ describe('hdb', function () {
         done(err);
       });
 
+    });
+
+    describe('#ignoreTopology connect property', function () {
+      function createConn() {
+        const connection = new lib.Connection();
+        connection._connect = function (options, connectListener) {
+          const socket = mock.createSocket(options);
+          util.setImmediate(() => connectListener(null, socket));
+          return socket;
+        };
+        return connection;
+      }
+
+      it('should set ignoreTopology to Requested from connect properties specify true', function (done) {
+        const client = new lib.Client();
+        client._connection = createConn();
+        const connectProp = {ignoreTopology: true};
+        client.connect(connectProp, function (err) {
+          client._connection._ignoreTopology.should.eql(
+            IgnoreTopologyEnum.IgnoreTopology_Requested,
+          );
+          done();
+        });
+      });
+
+      it('should set ignoreTopology to NotIgnore if not provided', function (done) {
+        const client = new lib.Client();
+        client._connection = createConn();
+        client.connect({}, function (err) {
+          client._connection._ignoreTopology.should.eql(
+            IgnoreTopologyEnum.IgnoreTopology_NotIgnoring,
+          );
+          done();
+        });
+      });
+
+      it('should set ignoreTopology to NotIgnore if connect properties specify false', function (done) {
+        const client = new lib.Client();
+        client._connection = createConn();
+        const connectProp = {ignoreTopology: false};
+        client.connect(connectProp, function (err) {
+          client._connection._ignoreTopology.should.eql(
+            IgnoreTopologyEnum.IgnoreTopology_NotIgnoring,
+          );
+          done();
+        });
+      });
     });
 
   });
