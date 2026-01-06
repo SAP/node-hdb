@@ -27,7 +27,7 @@
   ],
   "main": "./index.js",
   "scripts": {
-    "test": "make test-coveralls"
+    "test": "make test-unit"
   },
   "browser": {
     "./lib/protocol/tcp.js": "./chrome/sockets/tcp.js"
