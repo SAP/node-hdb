@@ -31,67 +31,22 @@ const {
   SMVR_ROLE,
 } = require("../lib/protocol/common/TopologyInformation");
 const {TopologyUpdateRecord, IgnoreTopologyEnum} = require("../lib/protocol/ConnectionTopology");
-
-// Test only constants
-const UNKNOWN_TOPOLOGY_INFO_NAME = 15;
+const {TopologyTestUtils} = require("./TestUtil");
 
 // Test helper functions for ConnectionTopology tests
 function createDummyTopologyUpdateRecord() {
   // The type key `UNKNOWN_TOPOLOGY_INFO_NAME` is used for making sure a TopologyUpdateRecord
   // object with no field will be returned instead of null.
   // This `UNKNOWN_TOPOLOGY_INFO_NAME` type key will be ignored.
-  const dummyTopologyInfo = [{name: UNKNOWN_TOPOLOGY_INFO_NAME, type: 3, value: 2}];
+  const dummyTopologyInfo = [
+    {name: TopologyTestUtils.UNKNOWN_TOPOLOGY_INFO_NAME, type: 3, value: 2},
+  ];
   return TopologyUpdateRecord.create(dummyTopologyInfo);
 }
 
 describe("Lib", function () {
   describe("#ConnectionTopology", function () {
     describe("TopologyUpdateRecord", function () {
-      // Test constants/helper functions for TopologyUpdateRecord tests
-      const ALLOWED_TOPOLOGY_RECORD_KEYS = [
-        "host",
-        "port",
-        "tenant",
-        "loadFactor",
-        "volumeId",
-        "siteType",
-        "smvrRole",
-        "isCoordinator",
-        "isOwn",
-        "serviceType",
-        "isStandby",
-      ];
-
-      function checkTopologyUpdateRecord(topologyUpdateRecord, expectedValues) {
-        assert.strictEqual(topologyUpdateRecord instanceof TopologyUpdateRecord, true);
-
-        Object.keys(topologyUpdateRecord).forEach(key => {
-          assert.strictEqual(ALLOWED_TOPOLOGY_RECORD_KEYS.includes(key), true);
-        });
-
-        const checks = [
-          ["host", HOST_NAME],
-          ["port", HOST_PORT_NUMBER],
-          ["tenant", TENANT_NAME],
-          ["loadFactor", LOAD_FACTOR],
-          ["volumeId", VOLUME_ID],
-          ["siteType", SITE_TYPE],
-          ["smvrRole", SMVR_ROLE],
-          ["isCoordinator", IS_COORDINATOR],
-          ["isOwn", IS_CURRENT_SESSION],
-          ["serviceType", SERVICE_TYPE],
-          ["isStandby", IS_STANDBY],
-        ];
-
-        checks.forEach(([propName, expectedKey]) => {
-          assert.strictEqual(
-            topologyUpdateRecord[propName],
-            expectedValues[expectedKey],
-            propName + " value does not match",
-          );
-        });
-      }
-
       // TopologyUpdateRecord tests
       it("should create nothing if no topology information provided", () => {
         assert.strictEqual(TopologyUpdateRecord.create(null), null);
@@ -112,9 +67,11 @@ describe("Lib", function () {
       });
 
       it("should not record if unknown topology information is provided", () => {
-        const unknownTopologyInfo = [{name: UNKNOWN_TOPOLOGY_INFO_NAME, type: 3, value: 3}];
+        const unknownTopologyInfo = [
+          {name: TopologyTestUtils.UNKNOWN_TOPOLOGY_INFO_NAME, type: 3, value: 3},
+        ];
         const topologyRecord = TopologyUpdateRecord.create(unknownTopologyInfo);
-        checkTopologyUpdateRecord(topologyRecord, {});
+        TopologyTestUtils.checkTopologyUpdateRecord(topologyRecord, {});
       });
 
       it("should not record if deprecated topology information is provided", () => {
@@ -124,7 +81,7 @@ describe("Lib", function () {
           {name: ALL_IP_ADDRESSES, type: 3, value: 3},
         ];
         const topologyRecord = TopologyUpdateRecord.create(deprecatedTopologyInfo);
-        checkTopologyUpdateRecord(topologyRecord, {});
+        TopologyTestUtils.checkTopologyUpdateRecord(topologyRecord, {});
       });
 
       it("should successfully create correct TopologyUpdateRecord", () => {
@@ -152,7 +109,7 @@ describe("Lib", function () {
           [IS_STANDBY]: undefined,
         };
         const topologyUpdateRecord = TopologyUpdateRecord.create(topologyInfo);
-        checkTopologyUpdateRecord(topologyUpdateRecord, expectedValues);
+        TopologyTestUtils.checkTopologyUpdateRecord(topologyUpdateRecord, expectedValues);
       });
 
       it("should mark record invalid if host is not specified", () => {
