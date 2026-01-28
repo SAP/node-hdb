@@ -30,7 +30,12 @@ const {
   SITE_TYPE,
   SMVR_ROLE,
 } = require("../lib/protocol/common/TopologyInformation");
-const {TopologyUpdateRecord, IgnoreTopologyEnum} = require("../lib/protocol/ConnectionTopology");
+const {
+  TopologyUpdateRecord,
+  IgnoreTopologyEnum,
+  Location,
+  INVALID_VOLUME_ID,
+} = require("../lib/protocol/ConnectionTopology");
 const {TopologyTestUtils} = require("./TestUtil");
 
 // Test helper functions for ConnectionTopology tests
@@ -225,5 +230,143 @@ describe("Lib", function () {
         );
       });
     });
+
+    // TODO: Replace magic numbers for `_serviceType` in the following tests by serviceType enum
+    // once serviceType enum is defined in a common place.
+    describe("Location", function () {
+      it("should create a Location object if record provides nothing useful", () => {
+        // Note: this case should not happen in real as records should be validated first
+        const record = createDummyTopologyUpdateRecord();
+        const testLocation = new Location(record);
+
+        assert.strictEqual(testLocation._host, undefined);
+        assert.strictEqual(testLocation._port, undefined);
+        assert.strictEqual(testLocation._volumeId, INVALID_VOLUME_ID);
+        assert.strictEqual(testLocation._preferredHost, undefined);
+        assert.strictEqual(testLocation._serviceType, undefined);
+        assert.strictEqual(testLocation._isCoordinator, undefined);
+      });
+
+      it("should create a Location object with proper field values based on record", () => {
+        const record = createDummyTopologyUpdateRecord();
+        record.host = "myhostname";
+        record.port = 30015;
+        record.volumeId = 2;
+        record.serviceType = 3;
+        record.isCoordinator = true;
+
+        const testLocation = new Location(record);
+        assert.strictEqual(testLocation._host, "myhostname");
+        assert.strictEqual(testLocation._port, 30015);
+        assert.strictEqual(testLocation._volumeId, 2);
+        assert.strictEqual(testLocation._preferredHost, undefined);
+        assert.strictEqual(testLocation._serviceType, 3);
+        assert.strictEqual(testLocation._isCoordinator, true);
+      });
+
+      it("should ignore extra information provided by the record", () => {
+        const record = createDummyTopologyUpdateRecord();
+        record.host = "myHoStnAmE";
+        record.port = 30015;
+        record.volumeId = 2;
+        record.serviceType = 3;
+        record.isCoordinator = true;
+        record.isStandby = false;
+        record.isOwn = true;
+        record.loadFactor = 1;
+
+        const testLocation = new Location(record);
+        assert.strictEqual(testLocation._host, "myhostname");
+        assert.strictEqual(testLocation._port, 30015);
+        assert.strictEqual(testLocation._volumeId, 2);
+        assert.strictEqual(testLocation._preferredHost, undefined);
+        assert.strictEqual(testLocation._serviceType, 3);
+        assert.strictEqual(testLocation._isCoordinator, true);
+        assert.strictEqual(Object.keys(testLocation).includes("_loadFactor"), false);
+      });
+
+      it("should return false when update has no changes", () => {
+        const record = createDummyTopologyUpdateRecord();
+        record.host = "myhostname";
+        record.port = 30015;
+        record.volumeId = 2;
+        record.serviceType = 3;
+        record.isCoordinator = true;
+        const testLocation = new Location(record);
+
+        const updated = testLocation.update(record);
+        assert.strictEqual(updated, false);
+        assert.strictEqual(testLocation._host, "myhostname");
+        assert.strictEqual(testLocation._port, 30015);
+        assert.strictEqual(testLocation._volumeId, 2);
+        assert.strictEqual(testLocation._serviceType, 3);
+        assert.strictEqual(testLocation._isCoordinator, true);
+      });
+
+      it("should update nothing when only character cases in host are different", () => {
+        let record = createDummyTopologyUpdateRecord();
+        record.host = "myhostname";
+        record.port = 30015;
+        record.volumeId = 2;
+        record.serviceType = 3;
+        record.isCoordinator = true;
+        const testLocation = new Location(record);
+
+        record.host = "MyHostName";
+        const updated = testLocation.update(record);
+        assert.strictEqual(updated, false);
+        assert.strictEqual(testLocation._host, "myhostname");
+        assert.strictEqual(testLocation._port, 30015);
+        assert.strictEqual(testLocation._volumeId, 2);
+        assert.strictEqual(testLocation._serviceType, 3);
+        assert.strictEqual(testLocation._isCoordinator, true);
+      });
+
+      it("should update host and port when they change and reset preferredHost", () => {
+        let record = createDummyTopologyUpdateRecord();
+        record.host = "myhostname";
+        record.port = 30615;
+        record.volumeId = 2;
+        record.serviceType = 3;
+        record.isCoordinator = true;
+        const testLocation = new Location(record);
+
+        // set preferredHost manually to test reset
+        testLocation._preferredHost = "preferredHost";
+        assert.strictEqual(testLocation._preferredHost, "preferredHost");
+
+        record.host = "newMyHostname";
+        const updated = testLocation.update(record);
+
+        assert.strictEqual(updated, true);
+        assert.strictEqual(testLocation._host, "newmyhostname");
+        assert.strictEqual(testLocation._port, 30615);
+        assert.strictEqual(testLocation._volumeId, 2);
+        assert.strictEqual(testLocation._serviceType, 3);
+        assert.strictEqual(testLocation._isCoordinator, true);
+        assert.strictEqual(testLocation._preferredHost, undefined);
+      });
+
+      it("should update serviceType and isCoordinator independently", () => {
+        let record = createDummyTopologyUpdateRecord();
+        record.host = "myhostname";
+        record.port = 30615;
+        record.volumeId = 2;
+        record.serviceType = 3;
+        record.isCoordinator = true;
+        const testLocation = new Location(record);
+
+        // serviceType
+        record.serviceType = 0;
+        assert.strictEqual(testLocation.update(record), true);
+        assert.strictEqual(testLocation._serviceType, 0);
+
+        // isCoordinator
+        record.isCoordinator = false;
+        assert.strictEqual(testLocation.update(record), true);
+        assert.strictEqual(testLocation._isCoordinator, false);
+      });
+    });
+
   });
 });
