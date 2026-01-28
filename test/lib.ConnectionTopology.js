@@ -35,6 +35,7 @@ const {
   IgnoreTopologyEnum,
   Location,
   INVALID_VOLUME_ID,
+  SystemInfo,
 } = require("../lib/protocol/ConnectionTopology");
 const {TopologyTestUtils} = require("./TestUtil");
 
@@ -368,5 +369,336 @@ describe("Lib", function () {
       });
     });
 
+    // TODO: Replace magic numbers for `_serviceType` in the following tests by serviceType enum
+    // once serviceType enum is defined in a common place.
+    describe("SystemInfo", function () {
+      it("should initialize with empty locations and volumeId set", () => {
+        const testSysInfo = new SystemInfo();
+
+        assert.deepStrictEqual(testSysInfo._locations, []);
+        assert.strictEqual(testSysInfo._volumeIdSet instanceof Set, true);
+        assert.strictEqual(testSysInfo._volumeIdSet.size, 0);
+      });
+
+      it("updateTopology should do nothing if record is not provided", () => {
+        // This should not happen in real as record is checked in its caller
+        const testSysInfo = new SystemInfo();
+        // null
+        assert.strictEqual(testSysInfo._updateTopology(null), false);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+        // undefined
+        assert.strictEqual(testSysInfo._updateTopology(undefined), false);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+      });
+
+      it("updateTopology should insert when no existing location matches volumeId", () => {
+        const testSysInfo = new SystemInfo();
+        const record = createDummyTopologyUpdateRecord();
+        record.host = "myhostname";
+        record.port = 30015;
+        record.volumeId = 9;
+
+        const updated = testSysInfo._updateTopology(record);
+        assert.strictEqual(updated, true);
+        assert.strictEqual(testSysInfo._locations.length, 1);
+        assert.strictEqual(testSysInfo._locations[0]._volumeId, 9);
+        assert.strictEqual(testSysInfo._locations[0]._host, "myhostname");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+      });
+
+      it("updateTopology should update existing location when volumeId matches", () => {
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "host1";
+        record1.port = 30015;
+        record1.volumeId = 2;
+        const initialLocation = new Location(record1);
+
+        const testSysInfo = new SystemInfo();
+        testSysInfo._locations.push(initialLocation);
+        assert.strictEqual(testSysInfo._locations.length, 1);
+        assert.strictEqual(testSysInfo._locations[0]._host, "host1");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "host2";
+        record2.port = 30115;
+        record2.volumeId = 2; // same volumeId
+
+        const updated = testSysInfo._updateTopology(record2);
+        assert.strictEqual(updated, true);
+        assert.strictEqual(testSysInfo._locations.length, 1);
+        assert.strictEqual(testSysInfo._locations[0]._host, "host2");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30115);
+      });
+
+      it("updateTopology should return false when no update needed", () => {
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "host1";
+        record1.port = 30015;
+        record1.volumeId = 2;
+        const initialLocation = new Location(record1);
+
+        const testSysInfo = new SystemInfo();
+        testSysInfo._locations.push(initialLocation);
+        assert.strictEqual(testSysInfo._locations.length, 1);
+        assert.strictEqual(testSysInfo._locations[0]._host, "host1");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+
+        // update with a exactly same record
+        let updated = testSysInfo._updateTopology(record1);
+        assert.strictEqual(updated, false);
+        assert.strictEqual(testSysInfo._locations.length, 1);
+        assert.strictEqual(testSysInfo._locations[0]._volumeId, 2);
+        assert.strictEqual(testSysInfo._locations[0]._host, "host1");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+
+        // Then update with another new record with different volumeId
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "host2";
+        record2.port = 30115;
+        record2.volumeId = 3; // different volumeId
+
+        updated = testSysInfo._updateTopology(record2);
+        assert.strictEqual(updated, true);
+        assert.strictEqual(testSysInfo._locations.length, 2);
+        assert.strictEqual(testSysInfo._locations[0]._volumeId, 2);
+        assert.strictEqual(testSysInfo._locations[0]._host, "host1");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+        assert.strictEqual(testSysInfo._locations[1]._volumeId, 3);
+        assert.strictEqual(testSysInfo._locations[1]._host, "host2");
+        assert.strictEqual(testSysInfo._locations[1]._port, 30115);
+      });
+
+      it("should return no update when input records are invalid types", () => {
+        const testSysInfo = new SystemInfo();
+
+        // null
+        let ret = testSysInfo.addOrUpdateTopology(null);
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+
+        // undefined
+        ret = testSysInfo.addOrUpdateTopology(undefined);
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+
+        // non-array
+        ret = testSysInfo.addOrUpdateTopology({});
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+      });
+
+      it("should not add or update and error detected due to missing own record if no record is provided", () => {
+        const testSysInfo = new SystemInfo();
+        const ret = testSysInfo.addOrUpdateTopology([]);
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, true);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+      });
+
+      it("should mark bad topology when no own records exists", () => {
+        const testSysInfo = new SystemInfo();
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "hostA";
+        record1.port = 30015;
+        record1.volumeId = 1;
+        record1.isOwn = false;
+
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "hostB";
+        record2.port = 30115;
+        record2.volumeId = 2;
+        record2.isOwn = false;
+
+        const ret = testSysInfo.addOrUpdateTopology([record1, record2]);
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, true);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+      });
+
+      it("should mark bad topology when multiple own records exist", () => {
+        const testSysInfo = new SystemInfo();
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "hostA";
+        record1.port = 30015;
+        record1.volumeId = 1;
+        record1.isOwn = true;
+
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "hostB";
+        record2.port = 30115;
+        record2.volumeId = 2;
+        record2.isOwn = true;
+
+        const ret = testSysInfo.addOrUpdateTopology([record1, record2]);
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, true);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+      });
+
+      it("should mark bad topology when a record has INVALID_VOLUME_ID", () => {
+        const testSysInfo = new SystemInfo();
+        const record = createDummyTopologyUpdateRecord();
+        record.host = "hostA";
+        record.port = 30015;
+        record.volumeId = INVALID_VOLUME_ID;
+
+        const ret = testSysInfo.addOrUpdateTopology([record]);
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, true);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+      });
+
+      it("should mark bad topology when duplicate volumeIds detected in input", () => {
+        const testSysInfo = new SystemInfo();
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "hostA";
+        record1.port = 30015;
+        record1.volumeId = 7;
+        record1.isOwn = true; // own record exists
+
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "hostB";
+        record2.port = 30016;
+        record2.volumeId = 7; // duplicate volumeId
+
+        const ret = testSysInfo.addOrUpdateTopology([record1, record2]);
+        assert.strictEqual(ret.topologyUpdated, false);
+        assert.strictEqual(ret.detectedBadTopology, true);
+        assert.strictEqual(testSysInfo._locations.length, 0);
+      });
+
+      it("should add new Location for valid records", () => {
+        const testSysInfo = new SystemInfo();
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "myhostname";
+        record1.port = 30015;
+        record1.volumeId = 2;
+        record1.serviceType = 3;
+        record1.isCoordinator = true;
+        record1.isOwn = true; // own record exists
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "myhostname2";
+        record2.port = 30115;
+        record2.volumeId = 1;
+        record2.serviceType = 3;
+        record2.isCoordinator = false;
+
+        const ret = testSysInfo.addOrUpdateTopology([record1, record2]);
+        assert.strictEqual(ret.topologyUpdated, true);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 2);
+
+        const location1 = testSysInfo._locations[0];
+        assert.strictEqual(location1._host, "myhostname");
+        assert.strictEqual(location1._port, 30015);
+        assert.strictEqual(location1._volumeId, 2);
+        assert.strictEqual(location1._serviceType, 3);
+        assert.strictEqual(location1._isCoordinator, true);
+        const location2 = testSysInfo._locations[1];
+        assert.strictEqual(location2._host, "myhostname2");
+        assert.strictEqual(location2._port, 30115);
+        assert.strictEqual(location2._volumeId, 1);
+        assert.strictEqual(location2._serviceType, 3);
+        assert.strictEqual(location2._isCoordinator, false);
+      });
+
+      it("should update existing Location when same volumeId appears", () => {
+        const testSysInfo = new SystemInfo();
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "hostA";
+        record1.port = 30015;
+        record1.volumeId = 2;
+        record1.serviceType = 3;
+        record1.isCoordinator = true;
+        record1.isOwn = true;
+
+        let ret = testSysInfo.addOrUpdateTopology([record1]);
+        assert.strictEqual(ret.topologyUpdated, true);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 1);
+        assert.strictEqual(testSysInfo._locations[0]._volumeId, 2);
+        assert.strictEqual(testSysInfo._locations[0]._host, "hosta");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+        assert.strictEqual(testSysInfo._locations[0]._serviceType, 3);
+        assert.strictEqual(testSysInfo._locations[0]._isCoordinator, true);
+
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "HostB"; // case-insensitive will be normalized to lowercase in Location
+        record2.port = 31015;
+        record2.volumeId = 2;
+        record2.serviceType = 4;
+        record2.isCoordinator = false;
+        record2.isOwn = true;
+
+        ret = testSysInfo.addOrUpdateTopology([record2]);
+        assert.strictEqual(ret.topologyUpdated, true);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 1);
+        const location = testSysInfo._locations[0];
+        assert.strictEqual(location._volumeId, 2);
+        assert.strictEqual(location._host, "hostb");
+        assert.strictEqual(location._port, 31015);
+        assert.strictEqual(location._serviceType, 4);
+        assert.strictEqual(location._isCoordinator, false);
+      });
+
+      it("should remove locations not present in the updated topology set", () => {
+        const testSysInfo = new SystemInfo();
+        const record1 = createDummyTopologyUpdateRecord();
+        record1.host = "hostA";
+        record1.port = 30015;
+        record1.volumeId = 2;
+        record1.serviceType = 3;
+        record1.isCoordinator = true;
+        record1.isOwn = true; // own record exists
+        const record2 = createDummyTopologyUpdateRecord();
+        record2.host = "HostB";
+        record2.port = 31015;
+        record2.volumeId = 3;
+        record2.serviceType = 4;
+        record2.isCoordinator = false;
+
+        let ret = testSysInfo.addOrUpdateTopology([record1, record2]);
+        assert.strictEqual(ret.topologyUpdated, true);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 2);
+        assert.strictEqual(testSysInfo._locations[0]._volumeId, 2);
+        assert.strictEqual(testSysInfo._locations[0]._host, "hosta");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+        assert.strictEqual(testSysInfo._locations[0]._serviceType, 3);
+        assert.strictEqual(testSysInfo._locations[0]._isCoordinator, true);
+        assert.strictEqual(testSysInfo._locations[1]._volumeId, 3);
+        assert.strictEqual(testSysInfo._locations[1]._host, "hostb");
+        assert.strictEqual(testSysInfo._locations[1]._port, 31015);
+        assert.strictEqual(testSysInfo._locations[1]._serviceType, 4);
+        assert.strictEqual(testSysInfo._locations[1]._isCoordinator, false);
+
+        const record3 = createDummyTopologyUpdateRecord();
+        record3.host = "HostD";
+        record3.port = 32015;
+        record3.volumeId = 4;
+        record3.serviceType = 5;
+        record3.isCoordinator = false;
+
+        ret = testSysInfo.addOrUpdateTopology([record1, record3]);
+        assert.strictEqual(ret.topologyUpdated, true);
+        assert.strictEqual(ret.detectedBadTopology, false);
+        assert.strictEqual(testSysInfo._locations.length, 2);
+        assert.strictEqual(testSysInfo._locations[0]._volumeId, 2);
+        assert.strictEqual(testSysInfo._locations[0]._host, "hosta");
+        assert.strictEqual(testSysInfo._locations[0]._port, 30015);
+        assert.strictEqual(testSysInfo._locations[0]._serviceType, 3);
+        assert.strictEqual(testSysInfo._locations[0]._isCoordinator, true);
+        assert.strictEqual(testSysInfo._locations[1]._volumeId, 4);
+        assert.strictEqual(testSysInfo._locations[1]._host, "hostd");
+        assert.strictEqual(testSysInfo._locations[1]._port, 32015);
+        assert.strictEqual(testSysInfo._locations[1]._serviceType, 5);
+        assert.strictEqual(testSysInfo._locations[1]._isCoordinator, false);
+      });
+    });
   });
 });
