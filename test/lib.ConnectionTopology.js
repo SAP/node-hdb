@@ -39,17 +39,6 @@ const {
 } = require("../lib/protocol/ConnectionTopology");
 const {TopologyTestUtils} = require("./TestUtil");
 
-// Test helper functions for ConnectionTopology tests
-function createDummyTopologyUpdateRecord() {
-  // The type key `UNKNOWN_TOPOLOGY_INFO_NAME` is used for making sure a TopologyUpdateRecord
-  // object with no field will be returned instead of null.
-  // This `UNKNOWN_TOPOLOGY_INFO_NAME` type key will be ignored.
-  const dummyTopologyInfo = [
-    {name: TopologyTestUtils.UNKNOWN_TOPOLOGY_INFO_NAME, type: 3, value: 2},
-  ];
-  return TopologyUpdateRecord.create(dummyTopologyInfo);
-}
-
 describe("Lib", function () {
   describe("#ConnectionTopology", function () {
     describe("TopologyUpdateRecord", function () {
@@ -119,7 +108,7 @@ describe("Lib", function () {
       });
 
       it("should mark record invalid if host is not specified", () => {
-        let testTopologyUpdateRecord = createDummyTopologyUpdateRecord();
+        let testTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
         let validationRet;
         // no .host field
         validationRet = testTopologyUpdateRecord.validateAndUpdate(30015);
@@ -147,7 +136,7 @@ describe("Lib", function () {
       });
 
       it("should mark record invalid if host is an empty string", () => {
-        let testTopologyUpdateRecord = createDummyTopologyUpdateRecord();
+        let testTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
         testTopologyUpdateRecord.host = "";
         let validationRet = testTopologyUpdateRecord.validateAndUpdate(30015);
         assert.strictEqual(validationRet.isValid, false);
@@ -158,7 +147,7 @@ describe("Lib", function () {
       });
 
       it("should mark record invalid if host is an invalid address", () => {
-        let testTopologyUpdateRecord = createDummyTopologyUpdateRecord();
+        let testTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
         testTopologyUpdateRecord.host = "host[]name";
         let validationRet = testTopologyUpdateRecord.validateAndUpdate(30015);
         assert.strictEqual(validationRet.isValid, false);
@@ -169,7 +158,7 @@ describe("Lib", function () {
       });
 
       it("should mark record invalid if original port is invalid", () => {
-        let testTopologyUpdateRecord = createDummyTopologyUpdateRecord();
+        let testTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
         testTopologyUpdateRecord.host = "my-hostname";
         let validationRet;
         // <= 0
@@ -191,7 +180,7 @@ describe("Lib", function () {
       });
 
       it("should update invalid port if host provide new parsed host and port", () => {
-        let testTopologyUpdateRecord = createDummyTopologyUpdateRecord();
+        let testTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
         testTopologyUpdateRecord.host = "myhostname:30015";
         testTopologyUpdateRecord.port = -5;
         let validationRet = testTopologyUpdateRecord.validateAndUpdate(30015);
@@ -205,7 +194,7 @@ describe("Lib", function () {
       });
 
       it("should update valid port if host provide new parsed host and port", () => {
-        let testTopologyUpdateRecord = createDummyTopologyUpdateRecord();
+        let testTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
         testTopologyUpdateRecord.host = "myhostname:30015";
         testTopologyUpdateRecord.port = 40015;
         let validationRet = testTopologyUpdateRecord.validateAndUpdate(30015);
@@ -219,7 +208,7 @@ describe("Lib", function () {
       });
 
       it("should mark record invalid if port forwarding detected", () => {
-        let testTopologyUpdateRecord = createDummyTopologyUpdateRecord();
+        let testTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
         testTopologyUpdateRecord.host = "myhostname";
         testTopologyUpdateRecord.port = 35015;
         testTopologyUpdateRecord.isOwn = true;
@@ -237,7 +226,7 @@ describe("Lib", function () {
     describe("Location", function () {
       it("should create a Location object if record provides nothing useful", () => {
         // Note: this case should not happen in real as records should be validated first
-        const record = createDummyTopologyUpdateRecord();
+        const record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         const testLocation = new Location(record);
 
         assert.strictEqual(testLocation._host, undefined);
@@ -249,7 +238,7 @@ describe("Lib", function () {
       });
 
       it("should create a Location object with proper field values based on record", () => {
-        const record = createDummyTopologyUpdateRecord();
+        const record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "myhostname";
         record.port = 30015;
         record.volumeId = 2;
@@ -266,7 +255,7 @@ describe("Lib", function () {
       });
 
       it("should ignore extra information provided by the record", () => {
-        const record = createDummyTopologyUpdateRecord();
+        const record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "myHoStnAmE";
         record.port = 30015;
         record.volumeId = 2;
@@ -287,7 +276,7 @@ describe("Lib", function () {
       });
 
       it("should return false when update has no changes", () => {
-        const record = createDummyTopologyUpdateRecord();
+        const record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "myhostname";
         record.port = 30015;
         record.volumeId = 2;
@@ -305,7 +294,7 @@ describe("Lib", function () {
       });
 
       it("should update nothing when only character cases in host are different", () => {
-        let record = createDummyTopologyUpdateRecord();
+        let record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "myhostname";
         record.port = 30015;
         record.volumeId = 2;
@@ -324,7 +313,7 @@ describe("Lib", function () {
       });
 
       it("should update host and port when they change and reset preferredHost", () => {
-        let record = createDummyTopologyUpdateRecord();
+        let record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "myhostname";
         record.port = 30615;
         record.volumeId = 2;
@@ -349,7 +338,7 @@ describe("Lib", function () {
       });
 
       it("should update serviceType and isCoordinator independently", () => {
-        let record = createDummyTopologyUpdateRecord();
+        let record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "myhostname";
         record.port = 30615;
         record.volumeId = 2;
@@ -393,7 +382,7 @@ describe("Lib", function () {
 
       it("updateTopology should insert when no existing location matches volumeId", () => {
         const testSysInfo = new SystemInfo();
-        const record = createDummyTopologyUpdateRecord();
+        const record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "myhostname";
         record.port = 30015;
         record.volumeId = 9;
@@ -407,7 +396,7 @@ describe("Lib", function () {
       });
 
       it("updateTopology should update existing location when volumeId matches", () => {
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "host1";
         record1.port = 30015;
         record1.volumeId = 2;
@@ -419,7 +408,7 @@ describe("Lib", function () {
         assert.strictEqual(testSysInfo._locations[0]._host, "host1");
         assert.strictEqual(testSysInfo._locations[0]._port, 30015);
 
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "host2";
         record2.port = 30115;
         record2.volumeId = 2; // same volumeId
@@ -432,7 +421,7 @@ describe("Lib", function () {
       });
 
       it("updateTopology should return false when no update needed", () => {
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "host1";
         record1.port = 30015;
         record1.volumeId = 2;
@@ -453,7 +442,7 @@ describe("Lib", function () {
         assert.strictEqual(testSysInfo._locations[0]._port, 30015);
 
         // Then update with another new record with different volumeId
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "host2";
         record2.port = 30115;
         record2.volumeId = 3; // different volumeId
@@ -501,13 +490,13 @@ describe("Lib", function () {
 
       it("should mark bad topology when no own records exists", () => {
         const testSysInfo = new SystemInfo();
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "hostA";
         record1.port = 30015;
         record1.volumeId = 1;
         record1.isOwn = false;
 
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "hostB";
         record2.port = 30115;
         record2.volumeId = 2;
@@ -521,13 +510,13 @@ describe("Lib", function () {
 
       it("should mark bad topology when multiple own records exist", () => {
         const testSysInfo = new SystemInfo();
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "hostA";
         record1.port = 30015;
         record1.volumeId = 1;
         record1.isOwn = true;
 
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "hostB";
         record2.port = 30115;
         record2.volumeId = 2;
@@ -541,7 +530,7 @@ describe("Lib", function () {
 
       it("should mark bad topology when a record has INVALID_VOLUME_ID", () => {
         const testSysInfo = new SystemInfo();
-        const record = createDummyTopologyUpdateRecord();
+        const record = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record.host = "hostA";
         record.port = 30015;
         record.volumeId = INVALID_VOLUME_ID;
@@ -554,13 +543,13 @@ describe("Lib", function () {
 
       it("should mark bad topology when duplicate volumeIds detected in input", () => {
         const testSysInfo = new SystemInfo();
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "hostA";
         record1.port = 30015;
         record1.volumeId = 7;
         record1.isOwn = true; // own record exists
 
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "hostB";
         record2.port = 30016;
         record2.volumeId = 7; // duplicate volumeId
@@ -573,14 +562,14 @@ describe("Lib", function () {
 
       it("should add new Location for valid records", () => {
         const testSysInfo = new SystemInfo();
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "myhostname";
         record1.port = 30015;
         record1.volumeId = 2;
         record1.serviceType = 3;
         record1.isCoordinator = true;
         record1.isOwn = true; // own record exists
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "myhostname2";
         record2.port = 30115;
         record2.volumeId = 1;
@@ -608,7 +597,7 @@ describe("Lib", function () {
 
       it("should update existing Location when same volumeId appears", () => {
         const testSysInfo = new SystemInfo();
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "hostA";
         record1.port = 30015;
         record1.volumeId = 2;
@@ -626,7 +615,7 @@ describe("Lib", function () {
         assert.strictEqual(testSysInfo._locations[0]._serviceType, 3);
         assert.strictEqual(testSysInfo._locations[0]._isCoordinator, true);
 
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "HostB"; // case-insensitive will be normalized to lowercase in Location
         record2.port = 31015;
         record2.volumeId = 2;
@@ -648,14 +637,14 @@ describe("Lib", function () {
 
       it("should remove locations not present in the updated topology set", () => {
         const testSysInfo = new SystemInfo();
-        const record1 = createDummyTopologyUpdateRecord();
+        const record1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record1.host = "hostA";
         record1.port = 30015;
         record1.volumeId = 2;
         record1.serviceType = 3;
         record1.isCoordinator = true;
         record1.isOwn = true; // own record exists
-        const record2 = createDummyTopologyUpdateRecord();
+        const record2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record2.host = "HostB";
         record2.port = 31015;
         record2.volumeId = 3;
@@ -677,7 +666,7 @@ describe("Lib", function () {
         assert.strictEqual(testSysInfo._locations[1]._serviceType, 4);
         assert.strictEqual(testSysInfo._locations[1]._isCoordinator, false);
 
-        const record3 = createDummyTopologyUpdateRecord();
+        const record3 = TopologyTestUtils.createDummyTopologyUpdateRecord();
         record3.host = "HostD";
         record3.port = 32015;
         record3.volumeId = 4;

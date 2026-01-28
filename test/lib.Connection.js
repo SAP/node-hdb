@@ -14,18 +14,22 @@
 'use strict';
 /* jshint expr:true */
 
-var lib = require('../lib');
-var mock = require('./mock');
-var util = lib.util;
-var Connection = lib.Connection;
-var MessageType = lib.common.MessageType;
-var FunctionCode = lib.common.FunctionCode;
-var SegmentKind = lib.common.SegmentKind;
-var ErrorLevel = lib.common.ErrorLevel;
-var PartKind = lib.common.PartKind;
+const lib = require('../lib');
+const mock = require('./mock');
+const util = lib.util;
+const Connection = lib.Connection;
+const MessageType = lib.common.MessageType;
+const FunctionCode = lib.common.FunctionCode;
+const SegmentKind = lib.common.SegmentKind;
+const ErrorLevel = lib.common.ErrorLevel;
+const PartKind = lib.common.PartKind;
 const Compressor = lib.Compressor;
 const DataFormatVersion = lib.common.DataFormatVersion;
 const assert = require('assert');
+const {
+  IgnoreTopologyEnum,
+} = require("../lib/protocol/ConnectionTopology");
+const {TopologyTestUtils} = require("./TestUtil");
 
 function connect(options, connectListener) {
   var socket = mock.createSocket(options);
@@ -959,6 +963,181 @@ describe('Lib', function () {
           });
         });
       });
-    }
+    };
+
+    context("topology handling support", function () {
+      context("Connection#_setIgnoreTopology", function () {
+        it("should do nothing if failure reason is not what expected", function () {
+          // These cases are not expected to happen in real world
+          const testConn = createConnection();
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          testConn._setIgnoreTopology(null);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          testConn._setIgnoreTopology(undefined);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          testConn._setIgnoreTopology(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          // TODO: _distributionMode stay unchanged
+        });
+
+        it("should set ignore topology with failure reason and disable distribution mode", function () {
+          const testConn = createConnection();
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+
+          // Invalid topology
+          testConn._setIgnoreTopology(IgnoreTopologyEnum.IgnoreTopology_InvalidTopology);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_InvalidTopology);
+          // Port forwarding
+          testConn._setIgnoreTopology(IgnoreTopologyEnum.IgnoreTopology_PortForwarding);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_PortForwarding);
+          // TODO: check whether _distributionMode is set to OFF
+        });
+      });
+
+      context("Connection#_updateTopology", function () {
+        it("should do nothing if topologyUpdateRecords has wrong type", function () {
+          // These cases are not expected to happen in real world
+          const testConn = createConnection();
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          // null
+          testConn._updateTopology(null);
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          // undefined
+          testConn._updateTopology(undefined);
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          // non-array type
+          testConn._updateTopology("a string");
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+        });
+
+        it("should do nothing if topologyUpdateRecords is empty array", function () {
+          const testConn = createConnection();
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+          // empty array
+          testConn._updateTopology([]);
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+        });
+
+        // Test date for tests below
+        // valid topology update record with own is true
+        let validTopologyUpdateRecord1 = TopologyTestUtils.createDummyTopologyUpdateRecord();
+        validTopologyUpdateRecord1.host = "myhostname";
+        validTopologyUpdateRecord1.port = 30015;
+        validTopologyUpdateRecord1.volumeId = 2;
+        validTopologyUpdateRecord1.serviceType = 3;
+        validTopologyUpdateRecord1.isCoordinator = true;
+        validTopologyUpdateRecord1.isOwn = true;
+        // valid topology update record with own is false
+        let validTopologyUpdateRecord2 = TopologyTestUtils.createDummyTopologyUpdateRecord();
+        validTopologyUpdateRecord2.host = "myHostName2";
+        validTopologyUpdateRecord2.port = 30115;
+        validTopologyUpdateRecord2.volumeId = 4;
+        validTopologyUpdateRecord2.serviceType = 3;
+        validTopologyUpdateRecord2.isCoordinator = false;
+        // invalid topology update record
+        let invalidTopologyUpdateRecord = TopologyTestUtils.createDummyTopologyUpdateRecord();
+
+        it("should ignore topology if at least one received topology update is invalid", function () {
+          const testTopologyUpdateRecords = [
+            validTopologyUpdateRecord1,
+            invalidTopologyUpdateRecord,
+            validTopologyUpdateRecord2,
+          ];
+
+          const testConn = createConnection();
+          // TODO: replace testConn.port by the desired pconn.port
+          testConn.port = validTopologyUpdateRecord1.port;
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+
+          testConn._updateTopology(testTopologyUpdateRecords);
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_InvalidTopology);
+          // TODO: check whether _distributionMode is set to OFF
+        });
+
+        it("should add or update topology if all topology update are valid and no bad topology", function () {
+          const testTopologyUpdateRecords = [
+            validTopologyUpdateRecord1,
+            validTopologyUpdateRecord2,
+          ];
+
+          const testConn = createConnection();
+          // TODO: replace testConn.port by the desired pconn.port
+          testConn.port = validTopologyUpdateRecord1.port;
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+
+          testConn._updateTopology(testTopologyUpdateRecords);
+          testConn._systemInfo._locations.should.have.length(2);
+          testConn._systemInfo._volumeIdSet.size.should.equal(2);
+          testConn._systemInfo._locations[0]._host.should.equal("myhostname");
+          testConn._systemInfo._locations[0]._port.should.equal(30015);
+          testConn._systemInfo._locations[0]._volumeId.should.equal(2);
+          testConn._systemInfo._locations[0]._serviceType.should.equal(3);
+          testConn._systemInfo._locations[0]._isCoordinator.should.be.true;
+          testConn._systemInfo._locations[1]._host.should.equal("myhostname2");
+          testConn._systemInfo._locations[1]._port.should.equal(30115);
+          testConn._systemInfo._locations[1]._volumeId.should.equal(4);
+          testConn._systemInfo._locations[1]._serviceType.should.equal(3);
+          testConn._systemInfo._locations[1]._isCoordinator.should.be.false;
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+        });
+
+        it("should ignore topology if bad topology is detected", function () {
+          // Note: the different cases of bad topology are tested in SystemInfo tests
+          // Two own topology records and duplicated volumeIds
+          const testTopologyUpdateRecords = [
+            validTopologyUpdateRecord1,
+            validTopologyUpdateRecord1,
+          ];
+
+          const testConn = createConnection();
+          // TODO: replace testConn.port by the desired pconn.port
+          testConn.port = validTopologyUpdateRecord1.port;
+          testConn._systemInfo._locations.should.be.empty();
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
+
+          testConn._updateTopology(testTopologyUpdateRecords);
+          testConn._systemInfo._locations.should.have.length(0);
+          testConn._systemInfo._volumeIdSet.size.should.equal(0);
+          testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_InvalidTopology);
+        });
+      });
+
+      context("Connection#receive behaviour for topology handling", function () {
+        it("should call _updateTopology when receive a reply", function () {
+          const testConn = createConnection();
+          testConn.is_updateTopologyCalled = false;
+          testConn._updateTopology = function () {
+            testConn.is_updateTopologyCalled = true;
+          };
+          testConn._parseReplySegment = function () {
+            const reply = {topologyUpdateRecords: []};
+            return reply;
+          };
+          testConn.is_updateTopologyCalled.should.be.true;
+          testConn.receive(Buffer.alloc(0), function () {
+            testConn.is_updateTopologyCalled.should.be.true;
+          });
+        });
+      });
+    });
   });
 });

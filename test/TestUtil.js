@@ -14,7 +14,7 @@
 "use strict";
 
 const assert = require("assert");
-const lib = require('../lib');
+const lib = require("../lib");
 const PartKind = lib.common.PartKind;
 const Part = lib.reply.Part;
 const data = require("../lib/protocol/data");
@@ -108,11 +108,21 @@ function checkTopologyUpdateRecord(topologyUpdateRecord, expectedValues) {
  *   \[{name: <topology_info_name>, type: <value_type>, value: <value>}, ...\],
  *   \[...\],
  *  \]
-  */
+ */
 function generateTopologyInformationPart(topologyInformationList) {
   let testPart = new Part(PartKind.TOPOLOGY_INFORMATION, 0, 1);
   testPart = data[PartKind.TOPOLOGY_INFORMATION].write(testPart, topologyInformationList);
   return testPart;
+}
+
+function createDummyTopologyUpdateRecord() {
+  // The type key `UNKNOWN_TOPOLOGY_INFO_NAME` is used for making sure a TopologyUpdateRecord
+  // object with no field will be returned instead of null.
+  // This `UNKNOWN_TOPOLOGY_INFO_NAME` type key will be ignored.
+  const dummyTopologyInfo = [
+    {name: UNKNOWN_TOPOLOGY_INFO_NAME, type: 3, value: 2},
+  ];
+  return TopologyUpdateRecord.create(dummyTopologyInfo);
 }
 
 // -------------------------------------------------------------------------------
@@ -124,5 +134,6 @@ module.exports = {
     UNKNOWN_TOPOLOGY_INFO_NAME,
     checkTopologyUpdateRecord,
     generateTopologyInformationPart,
+    createDummyTopologyUpdateRecord,
   },
 };
