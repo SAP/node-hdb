@@ -37,6 +37,8 @@ const {
   SMVR_ROLE,
 } = require("../lib/protocol/common/TopologyInformation");
 
+// A topology information identifier indicating the topology information identifier is unknown.
+// Note: used for testing only.
 const UNKNOWN_TOPOLOGY_INFO_NAME = 15;
 const _ALLOWED_TOPOLOGY_RECORD_KEYS = [
   "host",

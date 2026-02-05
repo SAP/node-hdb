@@ -178,7 +178,7 @@ describe('Rep', function () {
         [SERVICE_TYPE]: 3,
       };
       const validTopologyInfo2 = [
-        {name: VOLUME_ID, type: 3, value: 2},
+        {name: VOLUME_ID, type: 3, value: 4},
         {name: HOST_NAME, type: 29, value: "myHostname2"},
         {name: HOST_PORT_NUMBER, type: 3, value: 30015},
         {name: TENANT_NAME, type: 29, value: ""},
@@ -192,7 +192,7 @@ describe('Rep', function () {
         [HOST_PORT_NUMBER]: 30015,
         [TENANT_NAME]: "",
         [LOAD_FACTOR]: 1,
-        [VOLUME_ID]: 2,
+        [VOLUME_ID]: 4,
         [IS_COORDINATOR]: true,
         [IS_CURRENT_SESSION]: true,
         [SERVICE_TYPE]: 3,
