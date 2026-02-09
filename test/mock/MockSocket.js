@@ -80,6 +80,10 @@ MockSocket.prototype.setKeepAlive = function setKeepAlive(enable, time) {
   }
 };
 
+MockSocket.prototype.setNoDelay = function setNoDelay(noDelay) {
+  noDelay.should.equal(true);
+};
+
 Object.defineProperty(MockSocket.prototype, 'readyState', {
   get: function () {
     if (this.readable && this.writable) {

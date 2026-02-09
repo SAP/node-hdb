@@ -53,7 +53,12 @@ function createJWTTokenAndCert() {
 
 const options = getOptions()
 
-describe("Authentication Connect Tests", function () {
+let describeOrSkip = describe
+if (options.port == 443) {
+  describeOrSkip = describe.skip;
+}
+
+describeOrSkip("Authentication Connect Tests (Not tested in HANA cloud instances)", function () {
   before(db.init.bind(db));
   after(db.end.bind(db));
   const adminConn = db.client;

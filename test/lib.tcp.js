@@ -15,46 +15,44 @@
 
 var tcp = require('../lib/protocol/tcp');
 var tls = require('tls');
+var mock = require('./mock');
 var createSocket = tcp.createSocket;
 var createSecureSocket = tcp.createSecureSocket;
-var socket = {
-  setNoDelay: function setNoDelay(noDelay) {
-    noDelay.should.equal(true);
-  },
-  setKeepAlive: function setKeepAlive(enable, time) {}
-};
+var socket = new mock.createSocket({});
+const { ProxyClient } = require("../lib/protocol/Proxy");
+
 var digiCertRoots = [
-    // DigiCert RSA4096 Root G5
+    // DigiCert TLS RSA4096 Root G5
     "-----BEGIN CERTIFICATE-----\n" +
-    "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
+    "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\n" +
     "-----END CERTIFICATE-----\n",
 
     // DigiCert Global Root G2
@@ -118,10 +116,11 @@ describe('Lib', function () {
         process.nextTick(cb);
         return socket;
       };
-      tcp.connect({
-        pfx: true,
-        host: 'localhost'
-      }, done).should.equal(socket);
+      tcp.connect({ pfx: true, host: 'localhost' }, function (err, sock) {
+        (err == null).should.be.true();
+        sock.should.equal(socket);
+        done();
+      });      
     });
 
     it('should override default servername', function (done) {
@@ -132,11 +131,11 @@ describe('Lib', function () {
         process.nextTick(cb);
         return socket;
       };
-      tcp.connect({
-        pfx: true,
-        host: 'localhost',
-        servername: 'customSNI'
-      }, done).should.equal(socket);
+      tcp.connect({ pfx: true, host: 'localhost', servername: 'customSNI'}, function (err, sock) {
+        (err == null).should.be.true();
+        sock.should.equal(socket);
+        done();
+      });  
     });
 
     it('should create a connection', function (done) {
@@ -146,9 +145,29 @@ describe('Lib', function () {
         process.nextTick(cb);
         return socket;
       };
-      tcp.connect({}, done).should.equal(socket);
+      tcp.connect({}, function (err, sock) {
+        (err == null).should.be.true();
+        sock.should.equal(socket);
+        done();
+      });  
     });
 
+    it('should call callback with an error if TLS fails', function (done) {
+      tcp.createSecureSocket = function tlsConnect(options, cb) {
+        process.nextTick(() => {
+          socket.emit('error', new Error('TLS failed'));
+        });
+        return socket;
+      };
+    
+      tcp.connect({ useTLS: true }, function (err, s) {
+        (err != null).should.be.true();
+        err.message.should.equal('TLS failed');
+        tcp.createSocket = createSocket;
+        done();
+      });
+    });
+  
     it('should fallback to default trusted CAs', function (done) {
       var testCase = 0;
       tcp.createSecureSocket = function tlsConnect(options, cb) {
@@ -180,27 +199,90 @@ describe('Lib', function () {
           default:
             break;
         }
-        process.nextTick(cb);
+        process.nextTick(() => cb(null, socket));
         return socket;
-      }
-      // testCase = 0
-      tcp.connect({useTLS: true}, () => {
-        ++testCase; // 1
-        tcp.connect({ca: "DummyCert"}, () => {
-          ++testCase; // 2
-          tcp.connect({ca: ["DummyCert", "DummyCert2"], sslHanaCloudCertificates: true}, () => {
-            ++testCase; // 3
-            tcp.connect({ca: "DummyCert", sslHanaCloudCertificates: false}, () => {
-              ++testCase; // 4
-              tcp.connect({ca: ["DummyCert"], sslUseDefaultTrustStore: true}, () => {
+      };
+    
+      tcp.connect({ useTLS: true }, (err, s) => {
+        (err == null).should.be.true();
+        s.should.equal(socket);
+        ++testCase;
+        tcp.connect({ ca: "DummyCert" }, (err, s) => {
+          s.should.equal(socket);
+          ++testCase;
+          tcp.connect({ ca: ["DummyCert", "DummyCert2"], sslHanaCloudCertificates: true }, (err, s) => {
+            s.should.equal(socket);
+            ++testCase;
+            tcp.connect({ ca: "DummyCert", sslHanaCloudCertificates: false }, (err, s) => {
+              s.should.equal(socket);
+              ++testCase;
+              tcp.connect({ ca: ["DummyCert"], sslUseDefaultTrustStore: true }, (err, s) => {
+                s.should.equal(socket);
                 tcp.createSecureSocket = createSecureSocket;
                 done();
-              }).should.equal(socket);
-            }).should.equal(socket);
-          }).should.equal(socket);
-        }).should.equal(socket);
+              });
+            });
+          });
+        });
       });
     });
 
+    describe("upgradeSocketToTLS", () => {
+      const { EventEmitter } = require("events");
+      const assert = require("assert");
+      let originalProxyConnect, originalTlsConnect;
+
+      beforeEach(() => {
+        originalProxyConnect = ProxyClient.prototype.connect;
+        originalTlsConnect = tls.connect;
+      });
+      afterEach(() => {
+        ProxyClient.prototype.connect = originalProxyConnect;
+        tls.connect = originalTlsConnect;
+      });
+
+      function stubProxyConnect(fakeSocket = new mock.createSocket({})) {
+        ProxyClient.prototype.connect = (cb) => process.nextTick(() => cb(null, fakeSocket));
+      }
+
+      it("should upgrade a TCP socket to TLS", (done) => {
+        let tlsCalled = false;
+        stubProxyConnect();
+
+        tls.connect = (options, cb) => {
+          tlsCalled = true;
+          const tlsSocket = new EventEmitter();
+          tlsSocket.destroy = () => {};
+          process.nextTick(() => cb());
+          return tlsSocket;
+        };
+    
+        const options = { proxyHostname: "fake.proxy", proxyHttp: true };
+        tcp.connect(options, (err) => {
+          assert.ifError(err);
+          assert(tlsCalled, "tls upgrading should have happened");
+          done();
+        });
+      });
+    
+      it("should handle TLS error emitted before handshake callback", (done) => {
+        const earlyError = new Error("TLS socket failed early");
+        stubProxyConnect();
+    
+        tls.connect = (options, cb) => {
+          const tlsSocket = new EventEmitter();
+          tlsSocket._destroyed = false;
+          tlsSocket.destroy = () => { tlsSocket._destroyed = true; };
+          process.nextTick(() => tlsSocket.emit("error", earlyError));
+          return tlsSocket;
+        };
+    
+        const options = { proxyHostname: "fake.proxy", useTLS: true };
+        tcp.connect(options, (err, tlsSocket) => { //tlsSocket won't be returned if there's an error
+          assert.strictEqual(err, earlyError, "Callback should receive the early TLS error");
+          done();
+        });
+      });
+    });    
   });
 });

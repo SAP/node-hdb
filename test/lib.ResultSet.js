@@ -549,5 +549,30 @@ describe('Lib', function () {
       });
     });
 
+    it('should not fail when closed multiple times', function (done) {
+      let rs = createSimpleResultSet();
+      rs.closed.should.be.false;
+      let closeCount = 0;
+      rs.close(function (err) {
+        closeCount += 1;
+        rs.closed.should.be.true;
+        (err === undefined).should.be.true;
+        rs.close(function (err) {
+          closeCount += 1;
+          (err === undefined).should.be.true;
+          if (closeCount === 3) {
+            done();
+          }
+        });
+      });
+      rs.close(function (err) {
+        closeCount += 1;
+        (err === undefined).should.be.true;
+        if (closeCount === 3) {
+          done();
+        }
+      });
+    });
+
   });
 });

@@ -14,14 +14,13 @@
 'use strict';
 /* jshint expr: true */
 
-var lib = require('../lib');
-var EventEmitter = require('events').EventEmitter;
-var util = lib.util;
+const os = require('os');
+const lib = require('../lib');
+const EventEmitter = require('events').EventEmitter;
+const util = lib.util;
 
 describe('Util', function () {
-
   describe('#index', function () {
-
     it('should create a read stream', function (done) {
       var ds = new EventEmitter();
       var resumeCount = 0;
@@ -33,7 +32,7 @@ describe('Util', function () {
         pauseCount += 1;
       };
       var readable = util.createReadStream(ds, {
-        objectMode: true
+        objectMode: true,
       });
       readable.push = function push(chunk) {
         var pushMore = util.stream.Readable.prototype.push.call(this, chunk);
@@ -114,12 +113,30 @@ describe('Util', function () {
       var _appendFileSync = util._appendFileSync;
       util._appendFileSync = function appendFileSync(filename, message) {
         filename.should.match(/hdb\.trace\.[0-9]+\.log$/);
-        message.should.equal('foo\n\'bar\'');
+        message.should.equal("foo\n'bar'");
       };
       tracelog('foo', 'bar');
       util._appendFileSync = _appendFileSync;
     });
 
-  });
+    describe('os_user', () => {
+      it('should return the username if os.userInfo() provides it', () => {
+        os.userInfo = () => ({username: 'testuser'});
+        util.os_user.should.equal('testuser');
+      });
 
+      it('should return "Unknown" if os.userInfo() throws an error', () => {
+        os.userInfo = () => {
+          throw new Error('Access denied');
+        };
+        util.os_user.should.equal('Unknown');
+      });
+
+      it('should return "Unknown" if os.userInfo() returns no username', () => {
+        os.userInfo = () => ({});
+        util.os_user.should.equal('Unknown');
+      });
+    });
+  });
 });
+
