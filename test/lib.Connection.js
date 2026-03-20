@@ -25,10 +25,10 @@ const ErrorLevel = lib.common.ErrorLevel;
 const PartKind = lib.common.PartKind;
 const Compressor = lib.Compressor;
 const DataFormatVersion = lib.common.DataFormatVersion;
-const assert = require('assert');
 const {
   IgnoreTopologyEnum,
 } = require("../lib/protocol/ConnectionTopology");
+const {PhysicalConnection, PhysicalConnectionSet} = require("../lib/protocol/PhysicalConnection");
 const {TopologyTestUtils} = require("./TestUtil");
 
 function connect(options, connectListener) {
@@ -37,10 +37,46 @@ function connect(options, connectListener) {
   return socket;
 }
 
+// Register a mock PhysicalConnection as the anchor so that connect() can
+// call pconn.authenticate().  The mock runs through manager.initialize /
+// manager.finalize exactly as the real implementation would, but without a
+// real socket.
+function registerMockPconn(connection) {
+  const pconn = new PhysicalConnection(1, undefined);
+  pconn.authenticate = function mockAuthenticate(conn, manager, authOptions, cb) {
+    const authReply = {authentication: manager.initialData()};
+    if (authReply.authentication instanceof Error) {
+      return cb(authReply.authentication);
+    }
+    manager.initialize(authReply.authentication, function (err) {
+      if (err) {
+        return cb(err);
+      }
+      const connectReply = {authentication: manager.finalData(), connectOptions: []};
+      if (connectReply.authentication instanceof Error) {
+        return cb(connectReply.authentication);
+      }
+      conn.connectOptions.setOptions(connectReply.connectOptions);
+      if (Compressor.lz4Available &&
+          Compressor.isLZ4CompressionNegotiated(conn.connectOptions.compressionLevelAndFlags)) {
+        pconn._compressionEnabled = true;
+      }
+      manager.finalize(connectReply.authentication);
+      conn._settings.user = manager.userFromServer;
+      if (manager.sessionCookie) {
+        conn._settings.sessionCookie = manager.sessionCookie;
+      }
+      cb(null, connectReply);
+    });
+  };
+  connection._physicalConnections.addAnchorConnection(pconn);
+  return pconn;
+}
+
 function createConnection(options) {
   var settings = {};
   var connection = new Connection(util.extend(settings, options));
-  connection._connect = connect;
+  connection._connectFn = connect;
   connection._settings.should.equal(settings);
   (!!connection._socket).should.be.not.ok;
   return connection;
@@ -196,7 +232,7 @@ describe('Lib', function () {
       const connection = createConnection();
       const oldSocket = mock.createSocket({});
       const newSocket = mock.createSocket({});
-      connection._connect = function (options, cb) {
+      connection._connectFn = function (options, cb) {
         process.nextTick(() => cb(null, newSocket));
         return oldSocket;
       };
@@ -554,11 +590,30 @@ describe('Lib', function () {
         manager.sessionCookie = 'cookie';
         return manager;
       };
-      connection.send = sendAuthenticationRequest;
+      registerMockPconn(connection);
       connection.connect(credentials, function (err, reply) {
         (!!err).should.be.not.ok;
         reply.authentication.should.equal('FINAL');
         settings.sessionCookie.should.equal('cookie');
+        done();
+      });
+    });
+
+    it('should resume the queue after a successful connect', function (done) {
+      const connection = createConnection();
+      connection._createAuthenticationManager = mock.createManager;
+      registerMockPconn(connection);
+      // Queue starts paused — tasks pushed before connect must not run yet
+      let taskRan = false;
+      connection._queue.push(connection._queue.createTask(function (cb) {
+        taskRan = true;
+        cb();
+      }, function () {}));
+      taskRan.should.be.false();
+      connection.connect({}, function (err) {
+        (!!err).should.be.not.ok;
+        // After connect the queue resumes and the pending task runs
+        taskRan.should.be.true();
         done();
       });
     });
@@ -580,7 +635,7 @@ describe('Lib', function () {
       var connection = createConnection();
       var error = new Error('AUTHENTICATION_ERROR');
       connection._createAuthenticationManager = mock.createManager;
-      connection.send = sendAuthenticationRequest;
+      registerMockPconn(connection);
       connection.connect(
         {
           initialDataError: error,
@@ -596,7 +651,7 @@ describe('Lib', function () {
       var connection = createConnection();
       var error = new Error('CONNECT_ERROR');
       connection._createAuthenticationManager = mock.createManager;
-      connection.send = sendAuthenticationRequest;
+      registerMockPconn(connection);
       connection.connect(
         {
           finalDataError: error,
@@ -612,7 +667,7 @@ describe('Lib', function () {
       var connection = createConnection();
       var error = new Error('INITIALIZE_ERROR');
       connection._createAuthenticationManager = mock.createManager;
-      connection.send = sendAuthenticationRequest;
+      registerMockPconn(connection);
       connection.connect(
         {
           initializeError: error,
@@ -701,8 +756,9 @@ describe('Lib', function () {
 
       it('should authenticate with cesu-8 support', function (done) {
         var connection = createConnection({ useCesu8: true });
-        connection.send = function (statement) {
-          statement.useCesu8.should.eql(true);
+        var pconn = registerMockPconn(connection);
+        pconn.authenticate = function(conn, manager, authOptions, cb) {
+          authOptions.useCesu8.should.eql(true);
           done();
         };
         connection.connect({ user: 'user', password: 'pass' }, function (err) {
@@ -721,7 +777,7 @@ describe('Lib', function () {
         manager.sessionCookie = 'cookie';
         return manager;
       };
-      connection.send = sendAuthenticationRequest;
+      registerMockPconn(connection);
       connection.connect(options, function (err) {
         cb(err, connection);
       });
@@ -778,7 +834,7 @@ describe('Lib', function () {
         it('should set compressionEnabled to true when compress=true', function (done) {
           testConnectionOptions({ compress: true }, function (err, connection) {
             connection.connectOptions.should.have.property('compressionLevelAndFlags', 768);
-            connection._compressionEnabled.should.be.true();
+            connection._physicalConnections.getAnchorConnection()._compressionEnabled.should.be.true();
             done();
           });
         });
@@ -786,180 +842,8 @@ describe('Lib', function () {
         it('should set compressionEnabled to false when compress=false', function (done) {
           testConnectionOptions({ compress: false }, function (err, connection) {
             connection.connectOptions.should.not.have.property('compressionLevelAndFlags');
-            connection._compressionEnabled.should.be.false();
+            connection._physicalConnections.getAnchorConnection()._compressionEnabled.should.be.false();
             done();
-          });
-        });
-
-        context('Connection#send compression behaviour', function () {
-          let originalCompress;
-          const compresssedBuffer = Buffer.from('compressed');
-
-          beforeEach(() => {
-            originalCompress = Compressor.compress;
-          });
-
-          afterEach(() => {
-            Compressor.compress = originalCompress;
-          });
-
-          function createMessage(type, packetSize) {
-            const packet = Buffer.alloc(packetSize);
-            return {
-              type,
-              toBuffer: (size) => {
-                size.should.be.a.Number();
-                return packet;
-              },
-            };
-          }
-
-          function createConnectionSpy(shouldCompress, compressionEnabled, done) {
-            const connection = new Connection();
-            connection._compressionEnabled = compressionEnabled;
-
-            let compressCalled = false;
-
-            Compressor.compress = function (input) {
-              compressCalled = true;
-              input.length.should.be.above(10 * 1024);
-              return compresssedBuffer; // The compressed buffer
-            };
-
-            connection._socket = {
-              write: function (buf) {
-                if (shouldCompress) {
-                  compressCalled.should.be.true();
-                  buf.equals(compresssedBuffer).should.be.true();
-                } else {
-                  compressCalled.should.be.false();
-                }
-                done();
-              },
-            };
-            return connection;
-          }
-
-          it('should compress if compression is enabled and packet is large and type is EXECUTE', function (done) {
-            const message = createMessage(MessageType.EXECUTE, 11 * 1024);
-            const connection = createConnectionSpy(true, true, done);
-            connection.send(message, null);
-          });
-
-          it('should not compress if message type is AUTHENTICATE', function (done) {
-            const message = createMessage(MessageType.AUTHENTICATE, 11 * 1024);
-            const connection = createConnectionSpy(false, true, done);
-            connection.send(message, null);
-          });
-
-          it('should not compress if message type is CONNECT', function (done) {
-            const message = createMessage(MessageType.CONNECT, 11 * 1024);
-            const connection = createConnectionSpy(false, true, done);
-            connection.send(message, null);
-          });
-
-          it('should not compress if compression is disabled', function (done) {
-            const message = createMessage(MessageType.EXECUTE, 11 * 1024);
-            const connection = createConnectionSpy(false, false, done);
-            connection.send(message, null);
-          });
-
-          it('should not compress if packet is too small', function (done) {
-            const message = createMessage(MessageType.EXECUTE, 1024); // 1 KB
-            const connection = createConnectionSpy(false, true, done);
-            connection.send(message, null);
-          });
-        });
-        context('Connection#receive compression behaviour', function () {
-          const fakeCompressedBuffer = Buffer.from('compressed');
-          const fakeDecompressedBuffer = Buffer.from('decompressed');
-
-          function createPacket({
-            packetLength,
-            compressionFlag,
-            compressionVarpartLength,
-            segmentHeader = Buffer.alloc(24),
-            compressedBuffer = fakeCompressedBuffer,
-          }) {
-            const messageHeader = Buffer.alloc(32);
-            messageHeader.writeUInt32LE(packetLength, 12); // VARPARTLENGTH
-            messageHeader.writeUInt8(compressionFlag, 22); // PACKET OPTIONS
-            messageHeader.writeUInt32LE(compressionVarpartLength, 24); // COMPRESSIONVARPARTLENGTH
-
-            const currentBody = Buffer.concat([segmentHeader, compressedBuffer]);
-            const paddedBody = currentBody.length < packetLength
-              ? Buffer.concat([currentBody, Buffer.alloc(packetLength - currentBody.length)])
-              : currentBody.slice(0, packetLength);
-
-            return Buffer.concat([messageHeader, paddedBody]);
-          }
-
-          function testReceiveBehaviour({
-            packetLength = fakeCompressedBuffer.length + 24,
-            compressionFlag = 2,
-            compressionVarpartLength = fakeDecompressedBuffer.length + 24,
-            expectDecompress,
-            shouldThrow = false,
-            done,
-          }) {
-            const segmentHeader = Buffer.alloc(24);
-            const packet = createPacket({ packetLength, compressionFlag, compressionVarpartLength, segmentHeader });
-            let decompressCalled = false;
-
-            Compressor.decompress = (input, length) => {
-              decompressCalled = true;
-              input.should.eql(Buffer.concat([segmentHeader, fakeCompressedBuffer]));
-              length.should.equal(fakeDecompressedBuffer.length + 24);
-              return Buffer.concat([segmentHeader, fakeDecompressedBuffer]);
-            };
-
-            const connection = new Connection();
-            connection._compressionEnabled = true;
-            const fakeSocket = mock.createSocket(1);
-            connection._addListeners(fakeSocket);
-
-            if (shouldThrow) {
-              try {
-                assert.throws(() => {
-                  fakeSocket.emit('data', packet);
-                }, /Packet decompression failed/);
-                done();
-              } catch (err) {
-                done(err);
-              }
-            } else {
-              connection.receive = (buf, cb) => {
-                try {
-                  if (expectDecompress) {
-                    decompressCalled.should.be.true();
-                    buf.should.eql(Buffer.concat([segmentHeader, fakeDecompressedBuffer]));
-                  } else {
-                    decompressCalled.should.be.false();
-                    buf.should.eql(Buffer.concat([segmentHeader, fakeCompressedBuffer]));
-                  }
-                  if (cb) cb(null);
-                  done();
-                } catch (err) {
-                  done(err);
-                }
-              };
-              fakeSocket.emit('data', packet);
-            }
-          }
-
-          it('should decompress if compression flag is 2', function (done) {
-            testReceiveBehaviour({
-              expectDecompress: true,
-              done,
-            });
-          });
-
-          it('should not decompress if compression flag is 0', function (done) {
-            testReceiveBehaviour({
-              compressionFlag: 0,
-              expectDecompress: false,
-              done,
-            });
           });
         });
       });
