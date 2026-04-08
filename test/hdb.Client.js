@@ -14,11 +14,11 @@
 'use strict';
 /* jshint expr:true */
 
-var should = require('should');
-var lib = require('../lib');
-var util = lib.util;
-var mock = require('./mock');
-var pjson = require('../package.json');
+const should = require('should');
+const lib = require('../lib');
+const util = lib.util;
+const mock = require('./mock');
+const pjson = require('../package.json');
 
 util.inherits(TestClient, lib.Client);
 
@@ -139,21 +139,21 @@ describe('hdb', function () {
     });
 
     it('should emit an error if there is an error listener attached', function (done) {
-      var client = new TestClient();
+      const client = new TestClient();
       client._connection = createConn();
       function createConn() {
-        var connection = new lib.Connection();
+        const connection = new lib.Connection();
         connection._connectFn = function (options, connectListener) {
-          var socket = mock.createSocket(options);
+          const socket = mock.createSocket(options);
           util.setImmediate(() => connectListener(null, socket));
         };
         return connection;
       }
 
       client.connect(function (err) {
-        client._connection._socket.emit('error');
+        client._connection._physicalConnections.getAnchorConnection()._socket.emit('error');
         client.on('error', done.bind());
-        client._connection._socket.emit('error');
+        client._connection._physicalConnections.getAnchorConnection()._socket.emit('error');
       });
     });
 
@@ -241,7 +241,12 @@ describe('hdb', function () {
       let sentClientAppProgram = false;
 
       // Mocks
+      let pconn;
       const mock_open = function (options, cb) {
+        addMockSocket(pconn, [
+          {authentication: "INITIAL"},
+          {authentication: "FINAL", connectOptions: []},
+        ]);
         cb();
       };
       const mock_createAuthenticationManager = function () {
@@ -269,11 +274,7 @@ describe('hdb', function () {
 
       client._connection.open = mock_open;
       client._connection._createAuthenticationManager = mock_createAuthenticationManager;
-      const pconn = addMockPconnAsAnchorConn(client._connection);
-      addMockSocket(pconn, [
-        {authentication: "INITIAL"},
-        {authentication: "FINAL", connectOptions: []},
-      ]);
+      pconn = addMockPconnAsAnchorConn(client._connection);
       pconn.send = mock_psend;
 
       client.connect(function (err) {
@@ -297,7 +298,12 @@ describe('hdb', function () {
       let sentClientAppProgram = false;
 
       // Mocks
+      let pconn;
       const mock_open = function (options, cb) {
+        addMockSocket(pconn, [
+          {authentication: "INITIAL"},
+          {authentication: "FINAL", connectOptions: []},
+        ]);
         cb();
       };
       const mock_createAuthenticationManager = function () {
@@ -329,11 +335,7 @@ describe('hdb', function () {
 
       client._connection.open = mock_open;
       client._connection._createAuthenticationManager = mock_createAuthenticationManager;
-      const pconn = addMockPconnAsAnchorConn(client._connection);
-      addMockSocket(pconn, [
-        {authentication: "INITIAL"},
-        {authentication: "FINAL", connectOptions: []},
-      ]);
+      pconn = addMockPconnAsAnchorConn(client._connection);
       pconn.send = mock_psend;
 
       client.connect(function (err) {
@@ -355,7 +357,12 @@ describe('hdb', function () {
       let sentOS_User = false;
 
       // Mocks
+      let pconn;
       const mock_open = function (options, cb) {
+        addMockSocket(pconn, [
+          {authentication: "INITIAL"},
+          {authentication: "FINAL", connectOptions: []},
+        ]);
         cb();
       };
       const mock_createAuthenticationManager = function () {
@@ -378,11 +385,7 @@ describe('hdb', function () {
       // Replace original fn by mocks for testing
       client._connection.open = mock_open;
       client._connection._createAuthenticationManager = mock_createAuthenticationManager;
-      const pconn = addMockPconnAsAnchorConn(client._connection);
-      addMockSocket(pconn, [
-        {authentication: "INITIAL"},
-        {authentication: "FINAL", connectOptions: []},
-      ]);
+      pconn = addMockPconnAsAnchorConn(client._connection);
       pconn.send = mock_psend;
 
       client.connect(function (err) {
@@ -474,9 +477,9 @@ describe('hdb', function () {
     });
 
     describe('#TCP keepalive', function () {
-      var tcp = require('../lib/protocol/tcp');
-      var originalCreateSocket = tcp.createSocket;
-      var socketStub;
+      const tcp = require('../lib/protocol/tcp');
+      const originalCreateSocket = tcp.createSocket;
+      let socketStub;
 
       beforeEach(function () {
         socketStub = new mock.createSocket({});
@@ -495,42 +498,42 @@ describe('hdb', function () {
       });
 
       it('should set tcpKeepAliveIdle by default', function (done) {
-        var client = new lib.Client({});
+        const client = new lib.Client({});
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.true();
-          should(client._connection._socket.keepAliveIdle).be.equal(200000);
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.true();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAliveIdle).be.equal(200000);
           done();
         });
       });
 
       it('should set tcpKeepAliveIdle via numeric connect option', function (done) {
-        var client = new lib.Client({
+        const client = new lib.Client({
           tcpKeepAliveIdle: 300
         });
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.true();
-          should(client._connection._socket.keepAliveIdle).be.equal(300000);
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.true();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAliveIdle).be.equal(300000);
           done();
         });
       });
 
       it('should set tcpKeepAliveIdle via string connect option', function (done) {
-        var client = new lib.Client({
+        const client = new lib.Client({
           tcpKeepAliveIdle: '300'
         });
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.true();
-          should(client._connection._socket.keepAliveIdle).be.equal(300000);
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.true();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAliveIdle).be.equal(300000);
           done();
         });
       });
 
       it('should disable tcp keepalive', function (done) {
-        var client = new lib.Client({
+        const client = new lib.Client({
           tcpKeepAliveIdle: false
         });
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.false();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.false();
           done();
         });
       });
@@ -1193,14 +1196,22 @@ describe('hdb', function () {
       const createConnection_orig = client._createConnection;
       client._createConnection = function (settings) {
         const ret = createConnection_orig(settings);
-        ret.open = mock_open;
+        let pconn_redirect;
+        const mock_open_redirect = function (options, cb) {
+          mock_open(options, function(err) {
+            if (!err) {
+              addMockSocket(pconn_redirect, [
+                {authentication: "INITIAL"},
+                {authentication: "FINAL", connectOptions: []},
+              ]);
+            }
+            cb(err);
+          });
+        };
+        ret.open = mock_open_redirect;
         ret._createAuthenticationManager = mock_createAuthenticationManager;
         ret._closeSilently = mock_closeSilently;
-        const pconn = addMockPconnAsAnchorConn(ret);
-        addMockSocket(pconn, [
-          {authentication: "INITIAL"},
-          {authentication: "FINAL", connectOptions: []},
-        ]);
+        pconn_redirect = addMockPconnAsAnchorConn(ret);
         let sendCount = 0;
         const mock_psend = function (message, packetSizeLimit) {
           sendCount += 1;
@@ -1232,9 +1243,9 @@ describe('hdb', function () {
               } // initial host list
             });
           }
-          PhysicalConnection.prototype.send.call(pconn, message, packetSizeLimit);
+          PhysicalConnection.prototype.send.call(pconn_redirect, message, packetSizeLimit);
         };
-        pconn.send = mock_psend;
+        pconn_redirect.send = mock_psend;
         return ret;
       };
 
@@ -1264,13 +1275,26 @@ describe('hdb', function () {
       let connOpenCount = 0;
       let systemDbConnOpened = false;
 
-      // Mocks
+      // dbConnectInfo present but disableCloudRedirect=true — redirect must not happen
+      let pconn;
       const mock_open = function (options, cb) {
         ++connOpenCount;
         if (connOpenCount === 1) {
           options.host.should.equal("localhost");
           options.port.should.equal(30013);
           systemDbConnOpened = true;
+          addMockSocket(pconn, [
+            {
+              authentication: "INITIAL",
+              connectOptions: [],
+              dbConnectInfo: [
+                {name: 4, type: 28, value: false},
+                {name: 2, type: 29, value: "127.0.0.1"},
+                {name: 3, type: 3, value: 30041},
+              ], // should be ignored
+            },
+            {authentication: "FINAL", connectOptions: []},
+          ]);
           cb();
         } else {
           cb(
@@ -1280,25 +1304,11 @@ describe('hdb', function () {
           );
         }
       };
-
-      // dbConnectInfo present but disableCloudRedirect=true — redirect must not happen
       client._connection.open = mock_open;
       client._connection._createAuthenticationManager = function () {
         return mock.createManager({});
       };
-      const pconn = addMockPconnAsAnchorConn(client._connection);
-      addMockSocket(pconn, [
-        {
-          authentication: "INITIAL",
-          connectOptions: [],
-          dbConnectInfo: [
-            {name: 4, type: 28, value: false},
-            {name: 2, type: 29, value: "127.0.0.1"},
-            {name: 3, type: 3, value: 30041},
-          ], // should be ignored
-        },
-        {authentication: "FINAL", connectOptions: []},
-      ]);
+      pconn = addMockPconnAsAnchorConn(client._connection);
 
       let hasRedirectionType = false;
       let hasRedirectedHost = false;

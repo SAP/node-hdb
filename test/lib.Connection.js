@@ -32,7 +32,7 @@ const {PhysicalConnection, PhysicalConnectionSet} = require("../lib/protocol/Phy
 const {TopologyTestUtils} = require("./TestUtil");
 
 function connect(options, connectListener) {
-  var socket = mock.createSocket(options);
+  const socket = mock.createSocket(options);
   util.setImmediate(() => connectListener(null, socket));
   return socket;
 }
@@ -74,11 +74,11 @@ function registerMockPconn(connection) {
 }
 
 function createConnection(options) {
-  var settings = {};
-  var connection = new Connection(util.extend(settings, options));
+  const settings = {};
+  const connection = new Connection(util.extend(settings, options));
   connection._connectFn = connect;
   connection._settings.should.equal(settings);
-  (!!connection._socket).should.be.not.ok;
+  (!!connection._physicalConnections.getAnchorConnection()).should.be.not.ok();
   return connection;
 }
 
@@ -91,7 +91,7 @@ function getAuthenticationPart(req) {
 }
 
 function sendAuthenticationRequest(req, done) {
-  var reply = {
+  const reply = {
     authentication: getAuthenticationPart(req),
   };
   if (reply.authentication instanceof Error) {
@@ -128,16 +128,16 @@ describe('Lib', function () {
     });
 
     it('should create a connection with a custom clientId', function () {
-      var clientId = 'myClientId';
-      var connection = new Connection({
+      const clientId = 'myClientId';
+      const connection = new Connection({
         clientId: clientId,
       });
       connection.clientId.should.equal(clientId);
     });
 
     it('should create a connection', function () {
-      var connection = createConnection();
-      var state = connection._state;
+      const connection = createConnection();
+      const state = connection._state;
       connection.clientId.should.equal(util.cid);
       connection.setAutoCommit(true);
       connection.autoCommit = true;
@@ -147,9 +147,10 @@ describe('Lib', function () {
       connection.scrollableCursor = true;
       connection.scrollableCursor.should.be.true;
       connection.readyState.should.equal('new');
-      connection._socket = {
-        readyState: 'open',
-      };
+      const pconn = new PhysicalConnection(1, undefined);
+      const mockSocket = { readyState: 'open' };
+      pconn._socket = mockSocket;
+      connection._physicalConnections.addAnchorConnection(pconn);
       connection.readyState.should.equal('opening');
       connection.protocolVersion = {
         major: 4,
@@ -165,7 +166,7 @@ describe('Lib', function () {
       connection.readyState.should.equal('connected');
       state.messageType = MessageType.DISCONNECT;
       connection.readyState.should.equal('disconnecting');
-      connection._socket.readyState = 'readOnly';
+      mockSocket.readyState = 'readOnly';
       connection.readyState.should.equal('closed');
       connection._state = undefined;
       connection.readyState.should.equal('closed');
@@ -189,7 +190,8 @@ describe('Lib', function () {
       var connection = createConnection();
       var listenersRemoved = false;
       var socketDestroyed = false;
-      connection._socket = {
+      const pconn = new PhysicalConnection(1, undefined);
+      pconn._socket = {
         readyState: 'open',
         destroy: function () {
           socketDestroyed = true;
@@ -199,6 +201,7 @@ describe('Lib', function () {
           listenersRemoved = true;
         },
       };
+      connection._physicalConnections.addAnchorConnection(pconn);
 
       connection.on('close', function () {
         throw new Error('Close vent should not have been emitted');
@@ -214,7 +217,7 @@ describe('Lib', function () {
       var connection = createConnection();
       connection.open({}, function (err) {
         (!!err).should.be.not.ok;
-        connection._socket.readyState.should.equal('open');
+        connection._physicalConnections.getAnchorConnection()._socket.readyState.should.equal('open');
         connection.protocolVersion.major.should.equal(4);
         connection.protocolVersion.minor.should.equal(1);
         connection.readyState.should.equal('disconnected');
@@ -264,16 +267,23 @@ describe('Lib', function () {
     });
 
     it('should fail to open a Connection with an initialization timeout', function (done) {
-      var connection = createConnection({
+      const connection = createConnection({
         initializationTimeout: 20,
       });
+      let capturedSocket;
+      const originalConnectFn = connection._connectFn;
+      connection._connectFn = function (options, cb) {
+        const sock = originalConnectFn(options, cb);
+        capturedSocket = sock;
+        return sock;
+      };
       connection.open(
         {
           delay: 30,
         },
         function (err) {
           err.code.should.equal('EHDBTIMEOUT');
-          connection._socket.readable.should.be.false;
+          capturedSocket.readable.should.be.false;
           done();
         },
       );
@@ -293,7 +303,7 @@ describe('Lib', function () {
     });
 
     it('should destroy socket after disconnect', function (done) {
-      var connection = createConnection();
+      const connection = createConnection();
       connection.enqueue = function enqueue(msg, cb) {
         msg.type.should.equal(MessageType.DISCONNECT);
         setImmediate(function () {
@@ -302,7 +312,7 @@ describe('Lib', function () {
       };
       connection.open({}, function (err) {
         (!!err).should.be.not.ok;
-        connection._socket.readyState.should.equal('open');
+        connection._physicalConnections.getAnchorConnection()._socket.readyState.should.equal('open');
         connection.disconnect(function () {
           connection.readyState.should.equal('closed');
           done();
@@ -311,11 +321,11 @@ describe('Lib', function () {
     });
 
     it('should destroy itself on transaction error', function (done) {
-      var connection = createConnection();
+      const connection = createConnection();
       connection.open({}, function (err) {
         (!!err).should.be.not.ok;
         connection.readyState.should.equal('disconnected');
-        connection._socket.end();
+        connection._physicalConnections.getAnchorConnection()._socket.end();
         connection.readyState.should.equal('closed');
         connection.setTransactionFlags({
           sessionClosingTransactionErrror: true,
@@ -326,11 +336,11 @@ describe('Lib', function () {
     });
 
     it('should dispatch a socket error', function (done) {
-      var connection = createConnection();
-      var socketError = new Error('SOCKET_ERROR');
+      const connection = createConnection();
+      const socketError = new Error('SOCKET_ERROR');
       connection.open({}, function (err) {
         (!!err).should.be.not.ok;
-        connection._socket.emit('error', socketError);
+        connection._physicalConnections.getAnchorConnection()._socket.emit('error', socketError);
       });
       connection.once('error', function (err) {
         err.should.equal(socketError);
@@ -457,10 +467,11 @@ describe('Lib', function () {
     });
 
     it('should enqueue a mesage', function () {
-      var connection = createConnection();
-      connection._socket = {
-        readyState: 'open',
-      };
+      const connection = createConnection();
+      const pconn = new PhysicalConnection(1, undefined);
+      pconn._socket = { readyState: 'open' };
+      pconn.protocolVersion = { major: 4, minor: 1 };
+      connection._physicalConnections.addAnchorConnection(pconn);
       connection._queue.pause();
       connection.enqueue(function firstTask() {});
       connection.enqueue(new lib.request.Segment(MessageType.EXECUTE));
@@ -469,7 +480,7 @@ describe('Lib', function () {
         run: function () {},
       });
       connection.close();
-      var taskNames = connection._queue.queue.map(function taskName(task) {
+      const taskNames = connection._queue.queue.map(function taskName(task) {
         return task.name;
       });
       taskNames.should.eql(['firstTask', 'EXECUTE', 'thirdTask']);
@@ -530,9 +541,10 @@ describe('Lib', function () {
 
       function prepareConnection(segmentData) {
         var connection = createConnection();
-        connection._socket = {
-          readyState: 'open',
-        };
+        const pconn = new PhysicalConnection(1, undefined);
+        pconn._socket = { readyState: 'open' };
+        pconn.protocolVersion = { major: 4, minor: 1 };
+        connection._physicalConnections.addAnchorConnection(pconn);
         connection.send = function (msg, cb) {
           var segment = new lib.reply.Segment(segmentData.kind, segmentData.functionCode);
           var part = segmentData.parts[0];
@@ -556,9 +568,10 @@ describe('Lib', function () {
 
       it('fetch DB_CONNECT_INFO with an error (send error)', function (done) {
         var connection = createConnection();
-        connection._socket = {
-          readyState: 'open',
-        };
+        const pconn = new PhysicalConnection(1, undefined);
+        pconn._socket = { readyState: 'open' };
+        pconn.protocolVersion = { major: 4, minor: 1 };
+        connection._physicalConnections.addAnchorConnection(pconn);
         connection.send = function (msg, cb) {
           cb(new Error('Request was not successful'));
         };
