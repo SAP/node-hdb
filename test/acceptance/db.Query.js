@@ -55,7 +55,7 @@ describe('db', function () {
           rs.fetch(function onfetch(err, rows) {
             rows.should.have.length(db.numbers.length);
             rows.should.eql(db.numbers);
-            rs.closed.should.be.true;
+            rs.closed.should.be.true();
             done();
           });
         });

@@ -95,9 +95,9 @@ describe('hdb', function () {
       client.clientId.should.equal(connection.clientId);
       client.readyState.should.equal('new');
 
-      connection.autoCommit.should.be.true;
+      connection.autoCommit.should.be.true();
       client.setAutoCommit(false);
-      connection.autoCommit.should.be.false;
+      connection.autoCommit.should.be.false();
 
       function cleanup() {
         client.removeListener('error', onerror);
@@ -112,7 +112,7 @@ describe('hdb', function () {
 
       function onclose(hadError) {
         cleanup();
-        hadError.should.be.false;
+        hadError.should.be.false();
         done();
       }
       client.on('close', onclose);
@@ -122,7 +122,7 @@ describe('hdb', function () {
           cleanup();
           return done(err);
         }
-        client.connectOptions.fullVersionString.should.not.be.undefined;
+        client.connectOptions.fullVersionString.should.not.be.undefined();
         client.close();
       });
     });
@@ -610,11 +610,11 @@ describe('hdb', function () {
       function onclose(hadError) {
         closeCount += 1;
         if (closeCount === 1) {
-          hadError.should.be.true;
+          hadError.should.be.true();
           return this.connect();
         }
         cleanup();
-        hadError.should.be.false;
+        hadError.should.be.false();
         done();
       }
       client.on('close', onclose);
@@ -656,7 +656,7 @@ describe('hdb', function () {
       var client = new TestClient();
       client._addListeners(client._connection);
       client.once('close', function (hadError) {
-        hadError.should.be.false;
+        hadError.should.be.false();
         done();
       });
       client.destroy();
@@ -669,7 +669,7 @@ describe('hdb', function () {
         err.message.should.equal('destroy');
       });
       client.once('close', function (hadError) {
-        hadError.should.be.true;
+        hadError.should.be.true();
         done();
       });
       client.destroy(new Error('destroy'));
@@ -719,7 +719,7 @@ describe('hdb', function () {
         connection.options.should.eql({
           command: command
         });
-        client._result.options.autoFetch.should.be.true;
+        client._result.options.autoFetch.should.be.true();
         reply.should.equal(connection.replies.executeDirect);
         done();
       });

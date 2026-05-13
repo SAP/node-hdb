@@ -61,7 +61,7 @@ describe('Lib', function () {
 
     it('should create task having Writer configured with useCesu8', function () {
       var task = createExecuteTask({ parameters: { types: [], values: [] } });
-      task.writer._useCesu8.should.be.true;
+      task.writer._useCesu8.should.be.true();
     });
 
     it('should run a task with invalid functionCode', function (next) {

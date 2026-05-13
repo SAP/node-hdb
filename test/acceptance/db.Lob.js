@@ -104,7 +104,7 @@ describe('db', function () {
         transaction.once('new', onnew);
 
         function onend(success, kind) {
-          success.should.be.true;
+          success.should.be.true();
           kind.should.equal('write');
         }
         transaction.once('end', onend);
@@ -139,7 +139,7 @@ describe('db', function () {
         transaction.once('new', onnew);
 
         function onend(success, kind) {
-          success.should.be.true;
+          success.should.be.true();
           kind.should.equal('write');
         }
         transaction.once('end', onend);

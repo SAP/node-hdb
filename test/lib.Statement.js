@@ -260,7 +260,7 @@ describe('Lib', function () {
     });
 
     it('should return undefined for non-bound parameters', function () {
-      (Statement.prototype._normalizeInputParameters.bind(createStatement(), [])() === undefined).should.be.true;
+      (Statement.prototype._normalizeInputParameters.bind(createStatement(), [])() === undefined).should.be.true();
     });
 
   });

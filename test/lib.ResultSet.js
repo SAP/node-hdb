@@ -263,7 +263,7 @@ describe('Lib', function () {
         rowsAsArray: true
       });
       // columnNameProperty
-      rs.columnNameProperty.should.be.false;
+      rs.columnNameProperty.should.be.false();
       // fetchSize
       rs.setFetchSize(128);
       rs.fetchSize.should.equal(128);
@@ -289,7 +289,7 @@ describe('Lib', function () {
         rowsWithMetadata: true
       });
       // columnNameProperty
-      rs._settings.rowsWithMetadata.should.be.true;
+      rs._settings.rowsWithMetadata.should.be.true();
       rs.fetch(function (err, rows) {
         rows.should.eql([{
           SMALLINT: 1,
@@ -331,8 +331,8 @@ describe('Lib', function () {
             NVARCHAR: 'abc',
             NCLOB: new Buffer([123, 0, 0, 0, 0, 0, 0, 0])
           }]);
-          rs.finished.should.be.true;
-          rs.closed.should.be.true;
+          rs.finished.should.be.true();
+          rs.closed.should.be.true();
           done();
         });
       });
@@ -360,8 +360,8 @@ describe('Lib', function () {
             'abc',
             new Buffer([123, 0, 0, 0, 0, 0, 0, 0])
           ]]);
-          rs.finished.should.be.true;
-          rs.closed.should.be.true;
+          rs.finished.should.be.true();
+          rs.closed.should.be.true();
           done();
         });
       });
@@ -384,8 +384,8 @@ describe('Lib', function () {
             SMALLINT: 3,
             NVARCHAR: 'abc'
           }]);
-          rs.finished.should.be.true;
-          rs.closed.should.be.true;
+          rs.finished.should.be.true();
+          rs.closed.should.be.true();
           done();
         });
       });
@@ -394,7 +394,7 @@ describe('Lib', function () {
       function (done) {
         var rs = createSimpleResultSet();
         var stream = rs.createReadStream();
-        stream._readableState.objectMode.should.be.true;
+        stream._readableState.objectMode.should.be.true();
         var rows = [];
         stream.on('readable', function onreadable() {
           var row = stream.read();
@@ -419,11 +419,11 @@ describe('Lib', function () {
           }, {
             SMALLINT: 3,
           }]);
-          rs.finished.should.be.true;
-          rs.closed.should.be.false;
+          rs.finished.should.be.true();
+          rs.closed.should.be.false();
         });
         rs.once('close', function onend() {
-          rs.closed.should.be.true;
+          rs.closed.should.be.true();
           done();
         });
       });
@@ -435,7 +435,7 @@ describe('Lib', function () {
         var stream = rs.createReadStream({
           arrayMode: true
         });
-        stream._readableState.objectMode.should.be.true;
+        stream._readableState.objectMode.should.be.true();
         var rows = [];
         stream.once('readable', function onreadable() {
           rows = rows.concat(stream.read());
@@ -445,11 +445,11 @@ describe('Lib', function () {
           rows.should.eql([{
             SMALLINT: 1,
           }]);
-          rs.finished.should.be.true;
-          rs.closed.should.be.false;
+          rs.finished.should.be.true();
+          rs.closed.should.be.false();
         });
         rs.once('close', function onend() {
-          rs.closed.should.be.true;
+          rs.closed.should.be.true();
           done();
         });
       });
@@ -460,14 +460,14 @@ describe('Lib', function () {
       var stream = rs.createReadStream({
         objectMode: false
       });
-      stream._readableState.objectMode.should.be.false;
+      stream._readableState.objectMode.should.be.false();
       readSimpleStream(rs, stream, function (err, chunks) {
         (!err).should.be.ok();
         Buffer.concat(chunks).should.eql(new Buffer(
           [1, 1, 0, 1, 2, 0, 1, 3, 0, 1, 4, 0, 1, 5, 0]
         ));
-        rs.finished.should.be.true;
-        rs.closed.should.be.true;
+        rs.finished.should.be.true();
+        rs.closed.should.be.true();
         done();
       });
     });
@@ -496,8 +496,8 @@ describe('Lib', function () {
             SMALLINT: 4
           }]
         ]);
-        rs.finished.should.be.true;
-        rs.closed.should.be.true;
+        rs.finished.should.be.true();
+        rs.closed.should.be.true();
         done();
       });
     });
@@ -551,15 +551,15 @@ describe('Lib', function () {
 
     it('should not fail when closed multiple times', function (done) {
       let rs = createSimpleResultSet();
-      rs.closed.should.be.false;
+      rs.closed.should.be.false();
       let closeCount = 0;
       rs.close(function (err) {
         closeCount += 1;
-        rs.closed.should.be.true;
-        (err === undefined).should.be.true;
+        rs.closed.should.be.true();
+        (err === undefined).should.be.true();
         rs.close(function (err) {
           closeCount += 1;
-          (err === undefined).should.be.true;
+          (err === undefined).should.be.true();
           if (closeCount === 3) {
             done();
           }
@@ -567,7 +567,7 @@ describe('Lib', function () {
       });
       rs.close(function (err) {
         closeCount += 1;
-        (err === undefined).should.be.true;
+        (err === undefined).should.be.true();
         if (closeCount === 3) {
           done();
         }

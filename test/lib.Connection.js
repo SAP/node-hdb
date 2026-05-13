@@ -141,11 +141,11 @@ describe('Lib', function () {
       connection.clientId.should.equal(util.cid);
       connection.setAutoCommit(true);
       connection.autoCommit = true;
-      connection.autoCommit.should.be.true;
+      connection.autoCommit.should.be.true();
       connection.holdCursorsOverCommit = true;
-      connection.holdCursorsOverCommit.should.be.true;
+      connection.holdCursorsOverCommit.should.be.true();
       connection.scrollableCursor = true;
-      connection.scrollableCursor.should.be.true;
+      connection.scrollableCursor.should.be.true();
       connection.readyState.should.equal('new');
       const pconn = new PhysicalConnection(1, undefined);
       const mockSocket = { readyState: 'open' };
@@ -224,7 +224,7 @@ describe('Lib', function () {
         connection.close();
       });
       connection.on('close', function (hadError) {
-        hadError.should.be.false;
+        hadError.should.be.false();
         connection.readyState.should.equal('closed');
         done();
       });
@@ -283,7 +283,7 @@ describe('Lib', function () {
         },
         function (err) {
           err.code.should.equal('EHDBTIMEOUT');
-          capturedSocket.readable.should.be.false;
+          capturedSocket.readable.should.be.false();
           done();
         },
       );
@@ -987,12 +987,12 @@ describe('Lib', function () {
           testConn._systemInfo._locations[0]._port.should.equal(30015);
           testConn._systemInfo._locations[0]._volumeId.should.equal(2);
           testConn._systemInfo._locations[0]._serviceType.should.equal(3);
-          testConn._systemInfo._locations[0]._isCoordinator.should.be.true;
+          testConn._systemInfo._locations[0]._isCoordinator.should.be.true();
           testConn._systemInfo._locations[1]._host.should.equal("myhostname2");
           testConn._systemInfo._locations[1]._port.should.equal(30115);
           testConn._systemInfo._locations[1]._volumeId.should.equal(4);
           testConn._systemInfo._locations[1]._serviceType.should.equal(3);
-          testConn._systemInfo._locations[1]._isCoordinator.should.be.false;
+          testConn._systemInfo._locations[1]._isCoordinator.should.be.false();
           testConn._ignoreTopology.should.equal(IgnoreTopologyEnum.IgnoreTopology_NotIgnoring);
         });
 
@@ -1029,9 +1029,9 @@ describe('Lib', function () {
             const reply = {topologyUpdateRecords: []};
             return reply;
           };
-          testConn.is_updateTopologyCalled.should.be.true;
+          testConn.is_updateTopologyCalled.should.be.false();
           testConn.receive(Buffer.alloc(0), function () {
-            testConn.is_updateTopologyCalled.should.be.true;
+            testConn.is_updateTopologyCalled.should.be.true();
           });
         });
       });

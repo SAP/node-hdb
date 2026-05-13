@@ -71,9 +71,9 @@ describe('Data', function () {
         parameterMetadata);
       argumentCount.should.equal(paramsMetadata.length);
       parameterMetadata.forEach(function (param) {
-        param.isReadOnly().should.be.false;
-        param.isMandatory().should.be.false;
-        param.isAutoIncrement().should.be.false;
+        param.isReadOnly().should.be.false();
+        param.isMandatory().should.be.false();
+        param.isAutoIncrement().should.be.false();
       });
       normalize(parameterMetadata).should.eql(paramsMetadata);
     });

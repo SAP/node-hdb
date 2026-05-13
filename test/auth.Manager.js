@@ -119,15 +119,15 @@ zQIDAQAB
         clientChallenge: clientChallenge
       });
       var authMethod0 = manager.getMethod(method0);
-      Buffer.isBuffer(authMethod0.password).should.be.true;
+      Buffer.isBuffer(authMethod0.password).should.be.true();
       authMethod0.password.toString('utf8').should.equal(password);
 
       var authMethod1 = manager.getMethod(method1);
-      Buffer.isBuffer(authMethod1.password).should.be.true;
+      Buffer.isBuffer(authMethod1.password).should.be.true();
       authMethod1.password.toString('utf8').should.equal(password);
 
       var authMethod2 = manager.getMethod(method2);
-      Buffer.isBuffer(authMethod2.password).should.be.true;
+      Buffer.isBuffer(authMethod2.password).should.be.true();
       authMethod2.password.toString('utf8').should.equal(password);
     });
 
@@ -506,7 +506,7 @@ zQIDAQAB
       var authMethod = manager.getMethod(method);
       // Unlike the other authentication methods, X.509 certificate data is stored as strings
       // so that it can be parsed to extract the certificate chain
-      (typeof authMethod.authenticationX509 === 'string').should.be.true;
+      (typeof authMethod.authenticationX509 === 'string').should.be.true();
       authMethod.authenticationX509.should.equal(clientPem);
     });
 

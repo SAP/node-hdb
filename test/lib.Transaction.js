@@ -22,9 +22,9 @@ describe('Lib', function () {
 
     it('should create a transaction', function () {
       var transaction = new lib.Transaction();
-      transaction.autoCommit.should.be.true;
+      transaction.autoCommit.should.be.true();
       transaction.setAutoCommit(false);
-      transaction.autoCommit.should.be.false;
+      transaction.autoCommit.should.be.false();
     });
 
     it('should emit a transaction errror', function (done) {
