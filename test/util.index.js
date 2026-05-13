@@ -93,13 +93,13 @@ describe('Util', function () {
       util._debuglog = null;
       var debuglog = util.debuglog('test');
       util._debuglog = _debuglog;
-      (!debuglog()).should.be.ok;
+      (!debuglog()).should.be.ok();
       debuglog.name.should.equal('dummyDebuglog');
     });
 
     it('should return a dummy tracelog function', function () {
       var tracelog = util.tracelog();
-      (!tracelog()).should.be.ok;
+      (!tracelog()).should.be.ok();
       tracelog.name.should.equal('dummyTracelog');
     });
 

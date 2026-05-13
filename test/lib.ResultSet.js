@@ -462,7 +462,7 @@ describe('Lib', function () {
       });
       stream._readableState.objectMode.should.be.false;
       readSimpleStream(rs, stream, function (err, chunks) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         Buffer.concat(chunks).should.eql(new Buffer(
           [1, 1, 0, 1, 2, 0, 1, 3, 0, 1, 4, 0, 1, 5, 0]
         ));
@@ -476,14 +476,14 @@ describe('Lib', function () {
       var rs = createSimpleResultSet();
       rs._running = true;
       var stream = rs.createBinaryStream();
-      (stream === null).should.be.ok;
+      (stream === null).should.be.ok();
     });
 
     it('should create an array stream', function (done) {
       var rs = createSimpleResultSet();
       var stream = rs.createArrayStream(2);
       readSimpleStream(rs, stream, function (err, chunks) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         chunks.should.eql([
           [{
             SMALLINT: 1

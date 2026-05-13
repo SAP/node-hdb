@@ -444,7 +444,7 @@ describe('Lib', function () {
         writer.setValues([stream]);
         writer.getParameters(64, function (err) {
           /* jshint expr: true */
-          should(err).be.ok;
+          should(err).be.ok();
           done();
         });
       });
@@ -477,7 +477,7 @@ describe('Lib', function () {
         writer._lobs.push(stream);
         writer.getWriteLobRequest(64, function (err) {
           /* jshint expr: true */
-          should(err).be.ok;
+          should(err).be.ok();
           done();
         });
       });

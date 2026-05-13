@@ -51,7 +51,7 @@ describe('Part', function () {
     it('create an initial statement context', function (done) {
       var statementContext = createStatementContext();
       statementContext.setOptions(false);
-      (!statementContext.statementSequenceInfo).should.be.ok;
+      (!statementContext.statementSequenceInfo).should.be.ok();
       statementContext.serverExecutionTime.should.equal(0);
       statementContext.size.should.equal(32);
       done();

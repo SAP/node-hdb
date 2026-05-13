@@ -38,7 +38,7 @@ describe('Rep', function () {
       part.kind.should.equal(PartKind.NIL);
       part.attributes.should.equal(0);
       part.argumentCount.should.equal(0);
-      should(part.buffer).not.be.ok;
+      should(part.buffer).not.be.ok();
       part.byteLength.should.equal(PART_HEADER_LENGTH);
 
       part = new Part(PartKind.ROWS_AFFECTED, 1, 1, buffer);

@@ -120,7 +120,7 @@ describe('Lib', function () {
       var lob = createLob(null);
       lob.pause();
       var stream = lob.createReadStream();
-      (stream === null).should.be.ok;
+      (stream === null).should.be.ok();
     });
 
     it('should try to read a lob in invalid state', function (done) {

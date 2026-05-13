@@ -67,7 +67,7 @@ describe('db', function () {
         rows.should.have.length(db.images.length);
         for (var i = 0; i < rows.length; i++) {
           rows[i].NAME.should.equal(db.images[i].NAME);
-          rows[i].BDATA.equals(db.images[i].BDATA).should.be.ok;
+          rows[i].BDATA.equals(db.images[i].BDATA).should.be.ok();
         }
         done();
       });

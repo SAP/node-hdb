@@ -545,8 +545,8 @@ describe('hdb', function () {
         assertion: '<saml:Assertion></saml:Assertion>'
       });
       client.connect(function (err) {
-        should(err === null).be.ok;
-        should(client.get('assertion')).not.be.ok;
+        should(err === null).be.ok();
+        should(client.get('assertion')).not.be.ok();
         done();
       });
     });
@@ -556,8 +556,8 @@ describe('hdb', function () {
         token: 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.eu3buOdtT84lHs90LfmC3MJ_17Qg0FfgBke2qnW5yE-wDlEdKWWEURFoneCzMmdGtJcnVqINmZD1X8XbvoAWeWq_tH75fSKcg_1RaooYaARdtpQGF_BtjXJ9jMJHoJ9kgjO8cv06GobNaoydu2v6C8fsSIBDVw9zEApGZIwNCJztkgmEGmkQKXHHxKRISi55DgCowVYk1Obgp55KMjRqmMkAvw8qoMsAU109n26NGQNI19wOaGiPrSGKpENkgq6lWFY6visswoA8X3pYn6EXdAqEGjuFH0ADuvqUoRyrrIaaem30JgVny8LQ-t2ms7gck8jPdxS7TUjiB2hHKjRwBw'
       });
       client.connect(function (err) {
-        should(err === null).be.ok;
-        should(client.get('token')).not.be.ok;
+        should(err === null).be.ok();
+        should(client.get('token')).not.be.ok();
         done();
       });
     });
@@ -578,7 +578,7 @@ describe('hdb', function () {
       // open should not be called
       client._connection.errors.open = true;
       client.connect(function (err) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         done();
       });
     });
@@ -684,7 +684,7 @@ describe('hdb', function () {
         autoFetch: false
       };
       client.exec('sql', options, function (err, reply) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         client._connection.options.should.eql({
           command: 'sql'
         });
@@ -701,7 +701,7 @@ describe('hdb', function () {
       client.execute({
         sql: 'sql'
       }, function (err, reply) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         reply.should.equal(connection.replies.executeDirect);
         done();
       });
@@ -715,7 +715,7 @@ describe('hdb', function () {
       client.execute(command, {
         autoFetch: true
       }, function (err, reply) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         connection.options.should.eql({
           command: command
         });
@@ -743,7 +743,7 @@ describe('hdb', function () {
         command: 'sql'
       };
       client.prepare(options.command, function (err, statement) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         connection.options.should.eql(options);
         statement.parameterMetadata.should.equal('parameterMetadata');
         statement.resultSetMetadata.should.equal('metadata');
@@ -758,7 +758,7 @@ describe('hdb', function () {
         command: 'sql'
       };
       client.prepare(options, function (err, statement) {
-        (err === null).should.be.ok;
+        (err === null).should.be.ok();
         connection.options.should.eql(options);
         statement.parameterMetadata.should.equal('parameterMetadata');
         statement.resultSetMetadata.should.equal('metadata');

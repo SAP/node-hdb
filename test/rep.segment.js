@@ -74,7 +74,7 @@ describe('Rep', function () {
 
     it('should get a Part', function () {
       const segment = new Segment();
-      (!segment.getPart(1)).should.be.ok;
+      (!segment.getPart(1)).should.be.ok();
       const parts = [{
         kind: 1,
         buffer: new Buffer([1])

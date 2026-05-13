@@ -105,7 +105,7 @@ describe("Lib", function () {
     context("#open", function () {
       it("should open successfully and set protocolVersion", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn.protocolVersion.major.should.equal(4);
           pconn.protocolVersion.minor.should.equal(1);
           (!!pconn._socket).should.be.true();
@@ -154,7 +154,7 @@ describe("Lib", function () {
             util.setImmediate(() => cb(null, socket));
           },
           function (err) {
-            (!!err).should.be.not.ok;
+            (!!err).should.be.not.ok();
             socket.listeners("error").length.should.equal(0);
             socket.listeners("data").length.should.equal(0);
             done();
@@ -176,7 +176,7 @@ describe("Lib", function () {
     context("#_addListeners", function () {
       it("should call onError when socket emits error", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           const socketErr = new Error("test error");
           pconn._addListeners(
             function onData() {},
@@ -192,7 +192,7 @@ describe("Lib", function () {
 
       it("should call onClose when socket emits close", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._addListeners(
             function onData() {},
             function onError() {},
@@ -207,7 +207,7 @@ describe("Lib", function () {
 
       it("should call onEnd with err when socket emits end", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._addListeners(
             function onData() {},
             function onError() {},
@@ -223,7 +223,7 @@ describe("Lib", function () {
 
       it("should remove all listeners on close", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._addListeners(
             function onData() {},
             function onError() {},
@@ -292,7 +292,7 @@ describe("Lib", function () {
         };
 
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._compressionEnabled = true;
           pconn._addListeners(
             function onData(buffer) {
@@ -361,7 +361,7 @@ describe("Lib", function () {
         const packet = Buffer.concat([messageHeader, segmentHeader, body]);
 
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._addListeners(
             function onData() {
               try {
@@ -412,7 +412,7 @@ describe("Lib", function () {
         const authOptions = {authentication: manager.initialData(), useCesu8: false};
 
         pconn.authenticate(conn, manager, authOptions, function (err, reply) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           reply.authentication.should.equal("FINAL");
           // manager.userFromServer is undefined in the mock; settings key should exist
           conn._settings.hasOwnProperty("user").should.be.true();
@@ -429,7 +429,7 @@ describe("Lib", function () {
         manager.sessionCookie = "test-cookie";
 
         pconn.authenticate(conn, manager, {authentication: manager.initialData()}, function (err) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           conn._settings.sessionCookie.should.equal("test-cookie");
           done();
         });
@@ -503,7 +503,7 @@ describe("Lib", function () {
         pconn._socket = makeAuthSocket(pconn);
 
         pconn.authenticate(conn, mock.createManager({}), {}, function (err) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           conn._initialHost.should.equal("localhost");
           conn._initialPort.should.equal(30015);
           done();
@@ -519,7 +519,7 @@ describe("Lib", function () {
         pconn._socket = makeAuthSocket(pconn);
 
         pconn.authenticate(conn, mock.createManager({}), {}, function (err) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           conn._initialHost.should.equal("original-host");
           conn._initialPort.should.equal(12345);
           done();
@@ -550,7 +550,7 @@ describe("Lib", function () {
         pconn._socket = makeAuthSocket(pconn);
 
         pconn.authenticate(conn, mock.createManager({}), {}, function (err) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._compressionEnabled.should.be.true();
           done();
         });
@@ -573,7 +573,7 @@ describe("Lib", function () {
 
       it("should write packet to socket", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           let written = null;
           pconn._socket.write = function (buf) {
             written = buf;
@@ -591,7 +591,7 @@ describe("Lib", function () {
 
       it("should write correct packet header fields", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._sessionId = 42;
           pconn._packetCount = -1;
 
@@ -629,7 +629,7 @@ describe("Lib", function () {
 
       it("should increment _packetCount on each send", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._packetCount = -1;
           const msg = makeMessage(common.MessageType.EXECUTE);
           pconn._socket.write = function () {};
@@ -643,7 +643,7 @@ describe("Lib", function () {
 
       it("should return an error if packet body exceeds size limit", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           // toBuffer returns a body larger than size
           const oversizedMsg = {
             type: common.MessageType.EXECUTE,
@@ -733,7 +733,7 @@ describe("Lib", function () {
     context("#destroy", function () {
       it("should destroy the socket", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn._socket.readyState.should.equal("open");
           pconn.destroy();
           pconn._socket.readyState.should.equal("closed");
@@ -750,7 +750,7 @@ describe("Lib", function () {
     context("#close", function () {
       it("should destroy the socket", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn.close();
           pconn._socket.readyState.should.equal("closed");
           done();
@@ -766,7 +766,7 @@ describe("Lib", function () {
     context("#isConnected", function () {
       it("should return true after a successful open", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn.isConnected().should.be.true();
           done();
         });
@@ -779,7 +779,7 @@ describe("Lib", function () {
 
       it("should return false after socket is destroyed", function (done) {
         openPconn({}, function (err, pconn) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           pconn.destroy();
           pconn.isConnected().should.be.false();
           done();
@@ -931,7 +931,7 @@ describe("Lib", function () {
       const conn = makeConnection();
       conn._physicalConnections.size().should.equal(0);
       conn.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         conn._physicalConnections.size().should.equal(1);
         const anchor = conn._physicalConnections.getAnchorConnection();
         (anchor !== undefined).should.be.true();
@@ -945,9 +945,9 @@ describe("Lib", function () {
       const conn1 = makeConnection();
       const conn2 = makeConnection();
       conn1.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         conn2.open({}, function (err) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           const id1 = conn1._physicalConnections.getAnchorConnection()._clientConnectionId;
           const id2 = conn2._physicalConnections.getAnchorConnection()._clientConnectionId;
           id1.should.equal(1);
@@ -960,7 +960,7 @@ describe("Lib", function () {
     it("should dispatch through pconn._handshakeReceive when set, not conn._state.receive", function (done) {
       const conn = makeConnection();
       conn.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         const pconn = conn._physicalConnections.getAnchorConnection();
 
         let pendingCalled = false;
@@ -989,7 +989,7 @@ describe("Lib", function () {
     it("should sync pconn._sessionId when server assigns a new sessionId", function (done) {
       const conn = makeConnection();
       conn.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         const pconn = conn._physicalConnections.getAnchorConnection();
 
         // Simulate a reply arriving with a new sessionId
@@ -1018,7 +1018,7 @@ describe("Lib", function () {
     it("should support multiple pconns in _physicalConnections", function (done) {
       const conn = makeConnection();
       conn.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         conn._physicalConnections.size().should.equal(1);
 
         // Manually add a second pconn (as statement distribution will do)

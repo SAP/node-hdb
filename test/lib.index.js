@@ -34,7 +34,7 @@ describe('Lib', function () {
 
     it('should connect', function (done) {
       var client = lib.connect({}, function (err) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         done();
       });
       client.should.be.instanceof(TestClient);

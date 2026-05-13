@@ -216,7 +216,7 @@ describe('Lib', function () {
     it('should open and close a Connection', function (done) {
       var connection = createConnection();
       connection.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         connection._physicalConnections.getAnchorConnection()._socket.readyState.should.equal('open');
         connection.protocolVersion.major.should.equal(4);
         connection.protocolVersion.minor.should.equal(1);
@@ -240,7 +240,7 @@ describe('Lib', function () {
         return oldSocket;
       };
       connection.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         oldSocket.listeners('error').length.should.equal(0);
         oldSocket.listeners('data').length.should.equal(0);
         const errorListeners = newSocket.listeners('error');
@@ -311,7 +311,7 @@ describe('Lib', function () {
         });
       };
       connection.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         connection._physicalConnections.getAnchorConnection()._socket.readyState.should.equal('open');
         connection.disconnect(function () {
           connection.readyState.should.equal('closed');
@@ -323,7 +323,7 @@ describe('Lib', function () {
     it('should destroy itself on transaction error', function (done) {
       const connection = createConnection();
       connection.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         connection.readyState.should.equal('disconnected');
         connection._physicalConnections.getAnchorConnection()._socket.end();
         connection.readyState.should.equal('closed');
@@ -339,7 +339,7 @@ describe('Lib', function () {
       const connection = createConnection();
       const socketError = new Error('SOCKET_ERROR');
       connection.open({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         connection._physicalConnections.getAnchorConnection()._socket.emit('error', socketError);
       });
       connection.once('error', function (err) {
@@ -452,7 +452,7 @@ describe('Lib', function () {
         return reply;
       };
       connection.receive(new Buffer('noError'), function (err, reply) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         reply.should.equal(replies.noError);
       });
       connection.receive(new Buffer('errorSegment'), function (err) {
@@ -586,8 +586,8 @@ describe('Lib', function () {
         var connection = prepareConnection(DATA.CONNECTED);
         connection.fetchDbConnectInfo({}, function (err, info) {
           info.isConnected.should.equal(true);
-          (!!info.host).should.be.not.ok;
-          (!!info.port).should.be.not.ok;
+          (!!info.host).should.be.not.ok();
+          (!!info.port).should.be.not.ok();
           done();
         });
       });
@@ -605,7 +605,7 @@ describe('Lib', function () {
       };
       registerMockPconn(connection);
       connection.connect(credentials, function (err, reply) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         reply.authentication.should.equal('FINAL');
         settings.sessionCookie.should.equal('cookie');
         done();
@@ -624,7 +624,7 @@ describe('Lib', function () {
       }, function () {}));
       taskRan.should.be.false();
       connection.connect({}, function (err) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         // After connect the queue resumes and the pending task runs
         taskRan.should.be.true();
         done();
@@ -729,7 +729,7 @@ describe('Lib', function () {
         return replySegment;
       };
       connection.receive(new Buffer(0), function (err, reply) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         reply.should.equal(replySegment);
       });
       connection.once('warning', function onwarning(warning) {

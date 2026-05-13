@@ -26,7 +26,7 @@ describe('db', function () {
       it('should return a single row', function (done) {
         var sql = 'select * from DUMMY';
         db.client.exec(sql, function (err, rows) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           rows.should.eql([{
             DUMMY: 'X'
           }]);
@@ -40,7 +40,7 @@ describe('db', function () {
           sql: sql,
           rowsAsArray: true
         }, function (err, rows) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           rows.should.eql([
             ['X']
           ]);
@@ -53,7 +53,7 @@ describe('db', function () {
         db.client.exec(sql, {
           nestTables: true
         }, function (err, rows) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           rows.should.eql([{
             DUMMY: {
               DUMMY: 'X'
@@ -73,11 +73,11 @@ describe('db', function () {
           sql: sql,
           nestTables: true
         }, function (err, statement) {
-          (!!err).should.be.not.ok;
+          (!!err).should.be.not.ok();
           statement.exec({
             parameters: ['X']
           }, function (err, rows) {
-            (!!err).should.be.not.ok;
+            (!!err).should.be.not.ok();
             rows.should.eql([{
               DUMMY: {
                 DUMMY: 'X'
