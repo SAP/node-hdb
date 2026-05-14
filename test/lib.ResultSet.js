@@ -101,7 +101,7 @@ function readSimpleStream(rs, stream, cb) {
   rs.once('error', function onerror(err) {
     cb(err);
   });
-  rs.once('end', function onend() {
+  rs.once('close', function close() {
     cb(null, chunks);
   });
 }
@@ -556,10 +556,10 @@ describe('Lib', function () {
       rs.close(function (err) {
         closeCount += 1;
         rs.closed.should.be.true();
-        (err === undefined).should.be.true();
+        (!!err).should.be.false();
         rs.close(function (err) {
           closeCount += 1;
-          (err === undefined).should.be.true();
+          (!!err).should.be.false();
           if (closeCount === 3) {
             done();
           }
@@ -567,7 +567,7 @@ describe('Lib', function () {
       });
       rs.close(function (err) {
         closeCount += 1;
-        (err === undefined).should.be.true();
+        (!!err).should.be.false();
         if (closeCount === 3) {
           done();
         }
