@@ -40,12 +40,11 @@
   },
   "devDependencies": {
     "async": "2.6.4",
+    "c8": "11.0.0",
     "chrome-net": "3.3.4",
     "concat-stream": "1.6.2",
-    "coveralls": "2.13.3",
     "fstream": "1.0.12",
     "generic-pool": "2.5.4",
-    "istanbul": "0.4.5",
     "mocha": "3.5.3",
     "should": "10.0.0"
   },
