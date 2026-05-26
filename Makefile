@@ -31,19 +31,6 @@ test-acceptance-coverage:
 test-mock:
 	@HDB_MOCK=1 $(MAKE) -s test
 
-# test-coveralls is disabled pending a team discussion on coveralls.io integration.
-# To re-enable:
-#   1. Add 'coveralls' back to devDependencies in package.json and run npm install.
-#   2. Uncomment the target below.
-#   3. Update the CI environment variable handling in bin/coveralls.js
-#      (currently checks for TRAVIS_JOB_ID; replace with GitHub Actions equivalent).
-#
-# test-coveralls:
-# 	@NODE_ENV=test $(C8) $(C8_REPORTERS) $(MOCHA) \
-# 		-R $(MOCHA_REPORTER) -b --recursive \
-# 			&& cat ./coverage/lcov.info | node ./bin/coveralls.js \
-# 			&& rm -rf ./coverage
-
 clean:
 	@rm -rf ./coverage \
 	@rm -f hdb.js
