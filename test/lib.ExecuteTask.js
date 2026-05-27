@@ -685,7 +685,6 @@ function createExecuteTask(options, cb, checkReplies) {
     },
     autoCommit: true,
     holdCursorsOverCommit: true,
-    scrollableCursor: true,
     statementId: STATEMENT_ID,
     functionCode: FunctionCode.INSERT,
     availableSize: 64,

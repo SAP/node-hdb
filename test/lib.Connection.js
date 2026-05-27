@@ -144,8 +144,6 @@ describe('Lib', function () {
       connection.autoCommit.should.be.true();
       connection.holdCursorsOverCommit = true;
       connection.holdCursorsOverCommit.should.be.true();
-      connection.scrollableCursor = true;
-      connection.scrollableCursor.should.be.true();
       connection.readyState.should.equal('new');
       const pconn = new PhysicalConnection(1, undefined);
       const mockSocket = { readyState: 'open' };

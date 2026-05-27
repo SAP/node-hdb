@@ -31,19 +31,19 @@ describe('Part', function () {
       var statementSequenceInfo = new Buffer([0, 1, 2, 3, 4, 5, 6,
         7, , 8, 9
       ]);
-      var serverExecutionTime = 1234;
+      const serverProcessingTime = 1234;
       var options = [{
         name: StatementContext.STATEMENT_SEQUENCE_INFO,
         value: statementSequenceInfo
       }, {
-        name: StatementContext.SERVER_EXECUTION_TIME,
-        value: serverExecutionTime
+        name: StatementContext.SERVER_PROCESSING_TIME,
+        value: serverProcessingTime
       }];
       statementContext.setOptions(options);
       statementContext.statementSequenceInfo.should.equal(
         statementSequenceInfo);
-      statementContext.serverExecutionTime.should.equal(
-        serverExecutionTime);
+      statementContext.serverProcessingTime.should.equal(
+        serverProcessingTime);
       statementContext.size.should.equal(32);
       done();
     });
@@ -52,7 +52,7 @@ describe('Part', function () {
       var statementContext = createStatementContext();
       statementContext.setOptions(false);
       (!statementContext.statementSequenceInfo).should.be.ok();
-      statementContext.serverExecutionTime.should.equal(0);
+      statementContext.serverProcessingTime.should.equal(0);
       statementContext.size.should.equal(32);
       done();
     });
