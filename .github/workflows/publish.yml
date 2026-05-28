@@ -7,6 +7,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm
     permissions:
       id-token: write   # required for OIDC / Trusted Publisher
     steps:
