@@ -25,24 +25,29 @@ Generates a well-formatted git commit message for node-hdb following project con
 3. Run `git diff --staged` to analyze the staged changes
 4. Infer the commit type from the diff (see [Types](#types) below)
 5. Use no scope by default unless the user specifies one
-6. Draft the commit message (header + body)
-7. Show the full message, then ask:
+6. Ask: "Does this commit relate to a public issue? If so, what's the issue number?"
+7. Draft the commit message (header + body)
+8. Show the full message, then ask:
 
    **"Does this commit message look good?"**
    1. Yes, commit
    2. Suggest changes
 
-8. On option 1, commit using a heredoc to preserve formatting:
+9. On option 1, commit using a heredoc to preserve formatting:
 
    ```bash
    git commit -m "$(cat <<'EOF'
-   [TYPE](optional-scope) <summary description>
+   [TYPE](#issue)(scope) <summary description>
+
+   Relates to issue [#N](https://github.com/SAP/node-hdb/issues/N)
 
    - <change 1>
    - <change 2>
    EOF
    )"
    ```
+   (Omit `(#issue)` and the `Relate to` line together if no public issue; omit `(scope)` if no scope.)
+
    On option 2, apply the suggestion, revise, and re-ask
 
 ## Commit Message Guidelines
@@ -60,16 +65,19 @@ The header and body are separated by a blank line.
 #### Header Line
 
 ```
-[TYPE](optional-scope) <summary description> 
+[TYPE](#issue)(scope) <summary description> 
 ```
 
+- `(#issue)` and `(scope)` are both optional and independent
 - No period at end of header line
 - Brief and accurate; aim for under 72 characters but longer is fine if needed
 
-Scope is optional. Examples from this repo:
+Examples from this repo:
 - `[FEATURE](stmt distr) add topology update records in reply`
 - `[INTERNAL] refactor vars to const/let in Connection.js`
 - `[FIX] fix failing compression unit-test after removing packet size checking`
+- `[FIX](#42) correct type mapping for DECIMAL columns` — with public issue
+- `[FIX](#42)(datatype) correct type mapping for DECIMAL columns` — with both
 
 #### Body
 
@@ -109,5 +117,16 @@ Mutually exclusive — one per commit:
 ## Interactive Prompts
 
 - **Scope:** No scope by default; only include if the user specifies one
+- **Public issue reference:** Ask the user if the commit relates to a public issue before drafting. Only applicable for `[FIX]` (bug label) and `[FEATURE]` (enhancement label) commits. If yes, include `(#issue)` in the header and a `Relates to` line as the first line of the body:
+
+  ```
+  [FIX](#42)(stmt distr) correct type mapping for DECIMAL columns
+
+  Relates to issue [#42](https://github.com/SAP/node-hdb/issues/42)
+
+  - fix DECIMAL type mapping to return correct JS number
+  ```
+
+  `(#issue)` and `(scope)` are both optional and independent — include neither, either, or both as appropriate.
 - **Breaking changes:** If the diff suggests a breaking API/behavior change, ask the user to confirm, then include `(BREAKING CHANGE)` on its own line in the body
 - **Multi-area changes:** If changes span clearly unrelated areas, suggest splitting into multiple commits before proceeding
