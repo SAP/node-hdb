@@ -886,8 +886,8 @@ describe('hdb', function () {
 
     describe('#MultiDB support', function () {
       var DB_CONNECT_INFO = {
-        CONNECTED: { isConnected: true },
-        NOT_CONNECTED: { isConnected: false, host: '127.0.0.1', port: 30041 }
+        CONNECTED: { onCorrectDatabase: true },
+        NOT_CONNECTED: { onCorrectDatabase: false, host: '127.0.0.1', port: 30041 }
       };
 
       it('should accept an integer as instance number', function (done) {

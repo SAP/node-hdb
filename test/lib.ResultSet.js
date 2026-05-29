@@ -16,7 +16,7 @@
 
 var lib = require('../lib');
 var TypeCode = lib.common.TypeCode;
-var ResultSetAttributes = lib.common.ResultSetAttributes;
+var PartAttributes = lib.common.PartAttributes;
 var LobSourceType = lib.common.LobSourceType;
 var LobOptions = lib.common.LobOptions;
 var ResultSet = lib.ResultSet;
@@ -138,32 +138,32 @@ function createSimpleResultSet(options) {
   };
   var chunks = [{
     argumentCount: 1,
-    attributes: ResultSetAttributes.FIRST,
+    attributes: PartAttributes.FIRST_PACKET,
     buffer: Buffer.concat([
       writeInt(1),
     ])
   }, {
     argumentCount: 1,
-    attributes: ResultSetAttributes.NEXT,
+    attributes: PartAttributes.NEXT_PACKET,
     buffer: Buffer.concat([
       writeInt(2),
     ])
   }, {
     argumentCount: 1,
-    attributes: ResultSetAttributes.NEXT,
+    attributes: PartAttributes.NEXT_PACKET,
     buffer: Buffer.concat([
       writeInt(3),
     ])
   }, {
     argumentCount: 1,
-    attributes: ResultSetAttributes.NEXT,
+    attributes: PartAttributes.NEXT_PACKET,
     buffer: Buffer.concat([
       writeInt(4),
     ])
   }, {
     argumentCount: 1,
-    attributes: ResultSetAttributes.LAST |
-      ResultSetAttributes.CLOSED,
+    attributes: PartAttributes.LAST_PACKET |
+      PartAttributes.RESULT_SET_CLOSED,
     buffer: Buffer.concat([
       writeInt(5),
     ])
@@ -186,7 +186,7 @@ function createResultSetWithLob(options) {
     }],
     data: {
       argumentCount: 1,
-      attributes: ResultSetAttributes.FIRST,
+      attributes: PartAttributes.FIRST_PACKET,
       buffer: Buffer.concat([
         writeInt(1),
         writeString('foo'),
@@ -196,7 +196,7 @@ function createResultSetWithLob(options) {
   };
   var chunks = [{
     argumentCount: 1,
-    attributes: ResultSetAttributes.NEXT,
+    attributes: PartAttributes.NEXT_PACKET,
     buffer: Buffer.concat([
       writeInt(2),
       writeString('bar'),
@@ -204,7 +204,7 @@ function createResultSetWithLob(options) {
     ])
   }, {
     argumentCount: 1,
-    attributes: ResultSetAttributes.LAST,
+    attributes: PartAttributes.LAST_PACKET,
     buffer: Buffer.concat([
       writeInt(3),
       writeString('abc'),
@@ -228,7 +228,7 @@ function createResultSetWithoutLob(options) {
     }],
     data: {
       argumentCount: 1,
-      attributes: ResultSetAttributes.FIRST,
+      attributes: PartAttributes.FIRST_PACKET,
       buffer: Buffer.concat([
         writeInt(1),
         writeString('foo')
@@ -237,15 +237,15 @@ function createResultSetWithoutLob(options) {
   };
   var chunks = [{
     argumentCount: 1,
-    attributes: ResultSetAttributes.NEXT,
+    attributes: PartAttributes.NEXT_PACKET,
     buffer: Buffer.concat([
       writeInt(2),
       writeString('bar')
     ])
   }, {
     argumentCount: 1,
-    attributes: ResultSetAttributes.LAST |
-      ResultSetAttributes.CLOSED,
+    attributes: PartAttributes.LAST_PACKET |
+      PartAttributes.RESULT_SET_CLOSED,
     buffer: Buffer.concat([
       writeInt(3),
       writeString('abc')

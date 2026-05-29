@@ -31,7 +31,7 @@ describe('Lib', function () {
       var transaction = new lib.Transaction();
       transaction.on('error', function (err) {
         err.should.be.an.Error;
-        err.level.should.equal(lib.common.ErrorLevel.FATAL);
+        err.level.should.equal(lib.common.ErrorLevel.FATAL_ERROR);
         done();
       });
       transaction.setFlags({

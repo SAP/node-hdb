@@ -21,7 +21,7 @@ var SegmentKind = lib.common.SegmentKind;
 var FunctionCode = lib.common.FunctionCode;
 var PartKind = lib.common.PartKind;
 var MessageType = lib.common.MessageType;
-var ResultSetAttributes = lib.common.ResultSetAttributes;
+var PartAttributes = lib.common.PartAttributes;
 var Segment = lib.reply.Segment;
 
 var Part = lib.reply.Part;
@@ -204,7 +204,7 @@ function handleExecuteDirect(msg, context) {
       resultSetId = p.buffer.toString('hex');
     }
     if (p.kind === PartKind.RESULT_SET) {
-      isLast = p.attributes & ResultSetAttributes.LAST;
+      isLast = p.attributes & PartAttributes.LAST_PACKET;
     }
     segment.push(new Part(p.kind, p.attributes, p.argumentCount, p.buffer));
   });
@@ -223,7 +223,7 @@ function handleFetchNext(msg, context) {
   var segment = new Segment(sd.kind, sd.functionCode);
   sd.parts.forEach(function addPart(p) {
     if (p.kind === PartKind.RESULT_SET) {
-      isLast = p.attributes & ResultSetAttributes.LAST;
+      isLast = p.attributes & PartAttributes.LAST_PACKET;
     }
     segment.push(new Part(p.kind, p.attributes, p.argumentCount, p.buffer));
   });

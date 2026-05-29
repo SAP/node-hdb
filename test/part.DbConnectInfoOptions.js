@@ -31,13 +31,13 @@ describe('Part', function () {
       var databaseName = 'DB0';
       var host = '127.0.0.1';
       var port = 30041;
-      var isConnected = false;
+      var onCorrectDatabase = false;
 
       var options = [
         { name: DbConnectInfoOption.DATABASE_NAME, value: databaseName },
         { name: DbConnectInfoOption.HOST, value: host },
         { name: DbConnectInfoOption.PORT, value: port },
-        { name: DbConnectInfoOption.IS_CONNECTED, value: isConnected }
+        { name: DbConnectInfoOption.ON_CORRECT_DATABASE, value: onCorrectDatabase }
       ];
 
       dbConnectInfo.setOptions(options);
@@ -45,7 +45,7 @@ describe('Part', function () {
       dbConnectInfo.databaseName.should.equal(databaseName);
       dbConnectInfo.host.should.equal(host);
       dbConnectInfo.port.should.equal(port);
-      dbConnectInfo.isConnected.should.equal(isConnected);
+      dbConnectInfo.onCorrectDatabase.should.equal(onCorrectDatabase);
     });
 
   });

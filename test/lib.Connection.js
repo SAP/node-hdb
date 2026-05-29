@@ -583,7 +583,7 @@ describe('Lib', function () {
       it('should fetch DB_CONNECT_INFO (connected)', function (done) {
         var connection = prepareConnection(DATA.CONNECTED);
         connection.fetchDbConnectInfo({}, function (err, info) {
-          info.isConnected.should.equal(true);
+          info.onCorrectDatabase.should.equal(true);
           (!!info.host).should.be.not.ok();
           (!!info.port).should.be.not.ok();
           done();
