@@ -8,7 +8,6 @@ examples/test*.js
 npm-debug.log
 tmp
 /test/db/config.json*
-package-lock.json
 
 # claude
 CLAUDE.local.md
