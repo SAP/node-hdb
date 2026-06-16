@@ -13,7 +13,7 @@
   ],
   "name": "hdb",
   "description": "SAP HANA Database Client for Node",
-  "version": "2.27.1",
+  "version": "2.29.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/SAP/node-hdb.git"
@@ -27,7 +27,7 @@
   ],
   "main": "./index.js",
   "scripts": {
-    "test": "make test-coveralls"
+    "test": "make test-unit"
   },
   "browser": {
     "./lib/protocol/tcp.js": "./chrome/sockets/tcp.js"
@@ -40,12 +40,11 @@
   },
   "devDependencies": {
     "async": "2.6.4",
+    "c8": "11.0.0",
     "chrome-net": "3.3.4",
     "concat-stream": "1.6.2",
-    "coveralls": "2.13.3",
     "fstream": "1.0.12",
     "generic-pool": "2.5.4",
-    "istanbul": "0.4.5",
     "mocha": "3.5.3",
     "should": "10.0.0"
   },

@@ -72,9 +72,9 @@ describe('Data', function () {
     it('should read a ReadLob reply', function () {
       /* jshint expr: true */
       var readLobReply = ReadLobReply.read(replyPart);
-      readLobReply.isNull.should.be.false;
-      readLobReply.isDataIncluded.should.be.true;
-      readLobReply.isLast.should.be.true;
+      readLobReply.isNull.should.be.false();
+      readLobReply.isDataIncluded.should.be.true();
+      readLobReply.isLast.should.be.true();
       var options = normalize(readLobReply);
       options.should.eql(replyOptions);
       ReadLobReply.getArgumentCount(options.chunk).should.equal(1);

@@ -78,7 +78,7 @@ describe('Lib', function () {
       buffer.writeUInt8(255, offset);
       offset += len;
       var reader = new lib.Reader(buffer);
-      should(reader.readTinyInt() === null).ok;
+      should(reader.readTinyInt() === null).ok();
       reader.hasMore().should.equal(true);
       reader.readTinyInt().should.equal(1);
       reader.hasMore().should.equal(true);
@@ -102,7 +102,7 @@ describe('Lib', function () {
       buffer.writeInt16LE(256, offset);
       offset += len;
       var reader = new lib.Reader(buffer);
-      should(reader.readSmallInt() === null).ok;
+      should(reader.readSmallInt() === null).ok();
       reader.readSmallInt().should.equal(-1);
       reader.readSmallInt().should.equal(256);
       reader.hasMore().should.equal(false);
@@ -123,7 +123,7 @@ describe('Lib', function () {
       buffer.writeInt32LE(32754, offset);
       offset += len;
       var reader = new lib.Reader(buffer);
-      should(reader.readInt() === null).ok;
+      should(reader.readInt() === null).ok();
       reader.readInt().should.equal(-1);
       reader.readInt().should.equal(32754);
       reader.hasMore().should.equal(false);
@@ -144,7 +144,7 @@ describe('Lib', function () {
       bignum.writeInt64LE(buffer, 9007199254740992, offset);
       offset += len;
       var reader = new lib.Reader(buffer);
-      should(reader.readBigInt() === null).ok;
+      should(reader.readBigInt() === null).ok();
       reader.readBigInt().should.equal(-1);
       reader.readBigInt().should.equal(9007199254740992);
       reader.hasMore().should.equal(false);
@@ -159,10 +159,10 @@ describe('Lib', function () {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readDouble() === null).ok;
+      should(reader.readDouble() === null).ok();
       reader.readDouble().should.equal(Number.POSITIVE_INFINITY);
       reader.readDouble().should.equal(Number.NEGATIVE_INFINITY);
-      isNaN(reader.readDouble()).should.be.ok;
+      isNaN(reader.readDouble()).should.be.ok();
       reader.readDouble().should.equal(1);
       reader.hasMore().should.equal(false);
     });
@@ -176,10 +176,10 @@ describe('Lib', function () {
         0x00, 0x00, 0x80, 0x3f
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readFloat() === null).ok;
+      should(reader.readFloat() === null).ok();
       reader.readFloat().should.equal(Number.POSITIVE_INFINITY);
       reader.readFloat().should.equal(Number.NEGATIVE_INFINITY);
-      isNaN(reader.readFloat()).should.be.ok;
+      isNaN(reader.readFloat()).should.be.ok();
       reader.readFloat().should.equal(1);
       reader.hasMore().should.equal(false);
     });
@@ -192,7 +192,7 @@ describe('Lib', function () {
       buffer[30] = 0x40;
       buffer[31] = 0x30;
       var reader = new lib.Reader(buffer);
-      should(reader.readDecimal(0) === null).ok;
+      should(reader.readDecimal(0) === null).ok();
       reader.readDecimal(35).should.equal('1e+0');
       reader.hasMore().should.equal(false);
     });
@@ -206,7 +206,7 @@ describe('Lib', function () {
         0x01, 0x5a, 0xfd, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readFixed8(0) === null).ok;
+      should(reader.readFixed8(0) === null).ok();
       reader.readFixed8(6).should.equal('0.000000');
       reader.readFixed8(3).should.equal('-3000.123');
       reader.readFixed8(4).should.equal('20873895546820.6461');
@@ -223,7 +223,7 @@ describe('Lib', function () {
         0x01, 0xeb, 0x32, 0xa4, 0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readFixed12(0) === null).ok;
+      should(reader.readFixed12(0) === null).ok();
       reader.readFixed12(6).should.equal('0.000000');
       reader.readFixed12(15).should.equal('3263793639537.366352265265703');
       reader.readFixed12(25).should.equal('233.3418573610039254524490240');
@@ -240,7 +240,7 @@ describe('Lib', function () {
         0x01, 0xa0, 0x53, 0x78, 0xdb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readFixed16(0) === null).ok;
+      should(reader.readFixed16(0) === null).ok();
       reader.readFixed16(6).should.equal('0.000000');
       reader.readFixed16(11).should.equal('103466096859323850690600125.78438143902');
       reader.readFixed16(31).should.equal('-134592.0821303502632246421882052799543');
@@ -251,7 +251,7 @@ describe('Lib', function () {
     it('should read a String in utf-8 encoding', function () {
       var buffer = new Buffer([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
       var reader = new lib.Reader(buffer);
-      should(reader.readString() === null).ok;
+      should(reader.readString() === null).ok();
       reader.readString().should.equal('𤭢');
       reader.hasMore().should.equal(false);
     });
@@ -259,7 +259,7 @@ describe('Lib', function () {
     it('should read a String in cesu-8 encoding', function () {
       var buffer = new Buffer([0xff, 6, 0xed, 0xa0, 0xbc, 0xed, 0xbd, 0xa8]);
       var reader = new lib.Reader(buffer, null, { useCesu8: true });
-      should(reader.readString() === null).ok;
+      should(reader.readString() === null).ok();
       reader.readString().should.equal('🍨');
       reader.hasMore().should.equal(false);
     });
@@ -267,7 +267,7 @@ describe('Lib', function () {
     it('should read a Binary', function () {
       var buffer = new Buffer([0xff, 4, 0xF0, 0xA4, 0xAD, 0xA2]);
       var reader = new lib.Reader(buffer);
-      should(reader.readBinary() === null).ok;
+      should(reader.readBinary() === null).ok();
       reader.readBinary().should.eql(buffer.slice(2));
       reader.hasMore().should.equal(false);
     });
@@ -299,7 +299,7 @@ describe('Lib', function () {
         0x0f, 0xa7, 0x0b, 0x1f
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readDate() === null).ok;
+      should(reader.readDate() === null).ok();
       reader.readDate().should.equal('0001-01-01');
       reader.readDate().should.equal('9999-12-31');
       reader.hasMore().should.equal(false);
@@ -311,7 +311,7 @@ describe('Lib', function () {
         0x81, 0x01, 0xe8, 0x03
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readTime() === null).ok;
+      should(reader.readTime() === null).ok();
       reader.readTime().should.equal('01:01:01');
       reader.hasMore().should.equal(false);
     });
@@ -324,7 +324,7 @@ describe('Lib', function () {
         0xde, 0x87, 0x00, 0x01, 0x81, 0x01, 0xe8, 0x03
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readTimestamp() === null).ok;
+      should(reader.readTimestamp() === null).ok();
       reader.readTimestamp().should.equal('0001-01-01T01:01:01');
       reader.readTimestamp().should.equal('2014-01-01T00:00:00');
       reader.readTimestamp().should.equal('2014-01-01T01:01:01');
@@ -342,8 +342,8 @@ describe('Lib', function () {
 
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readDayDate() === null).ok;
-      should(reader.readDayDate() === null).ok;
+      should(reader.readDayDate() === null).ok();
+      should(reader.readDayDate() === null).ok();
       reader.readDayDate().should.equal('0001-01-01');
       reader.readDayDate().should.equal('0001-01-02');
       reader.readDayDate().should.equal('2023-03-28');
@@ -361,8 +361,8 @@ describe('Lib', function () {
         0x80, 0x51, 0x01, 0x00,
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readSecondTime() === null).ok;
-      should(reader.readSecondTime() === null).ok;
+      should(reader.readSecondTime() === null).ok();
+      should(reader.readSecondTime() === null).ok();
       reader.readSecondTime().should.equal('00:00:00');
       reader.readSecondTime().should.equal('00:00:01');
       reader.readSecondTime().should.equal('11:29:13');
@@ -373,7 +373,7 @@ describe('Lib', function () {
     it('should read a SecondDate', function () {
       var buffer = new Buffer([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x81, 0xD8, 0x88, 0x77, 0x49, 0x00, 0x00, 0x00,
+        0x81, 0xDB, 0x88, 0x77, 0x49, 0x00, 0x00, 0x00,
         0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x81, 0x51, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -381,8 +381,8 @@ describe('Lib', function () {
         0x80, 0xDB, 0x88, 0x77, 0x49, 0x00, 0x00, 0x00,
       ]);
       var reader = new lib.Reader(buffer);
-      should(reader.readSecondDate() === null).ok;
-      should(reader.readSecondDate() === null).ok;
+      should(reader.readSecondDate() === null).ok();
+      should(reader.readSecondDate() === null).ok();
       reader.readSecondDate().should.equal('0001-01-01 00:00:00');
       reader.readSecondDate().should.equal('0001-01-01 00:00:01');
       reader.readSecondDate().should.equal('0001-01-02 00:00:00');
@@ -402,8 +402,8 @@ describe('Lib', function () {
         0x00, 0xC0, 0x0A, 0x49, 0x08, 0x2A, 0xCA, 0x2B,
       ]);
       var reader = new lib.Reader(buffer);
-      (reader.readLongDate() === null).should.be.ok;
-      (reader.readLongDate() === null).should.be.ok;
+      (reader.readLongDate() === null).should.be.ok();
+      (reader.readLongDate() === null).should.be.ok();
       reader.readLongDate().should.equal('0001-01-01 00:00:00.000000000');
       reader.readLongDate().should.equal('0001-01-01 00:00:00.000000100');
       reader.readLongDate().should.equal('0001-01-01 00:00:01.000000000');
@@ -420,7 +420,7 @@ describe('Lib', function () {
         0x07, 0x86, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36
       ]);
       var reader = new lib.Reader(buffer);
-      (reader.readAlphanum() === null).should.be.ok;
+      (reader.readAlphanum() === null).should.be.ok();
       reader.readAlphanum().should.equal('abc123');
       reader.readAlphanum().should.equal('000123');
       reader.readAlphanum().should.equal('123456');
@@ -434,7 +434,7 @@ describe('Lib', function () {
         0x02,
       ]);
       var reader = new lib.Reader(buffer);
-      (reader.readBoolean() === null).should.be.ok;
+      (reader.readBoolean() === null).should.be.ok();
       reader.readBoolean().should.equal(false);
       reader.readBoolean().should.equal(true);
       reader.hasMore().should.equal(false);
@@ -449,7 +449,7 @@ describe('Lib', function () {
         0x14, 0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x7F, 0xFF, 0x00, 0x00, 0x80, 0x00, 0xFF, 0xFF, 0x7F, 0x7F, 0x00, 0x00, 0x80, 0x80
       ]);
       var reader = new lib.Reader(buffer, null, { vectorOutputType: 'Array' });
-      (reader.readRealVector() === null).should.be.ok;
+      (reader.readRealVector() === null).should.be.ok();
       var expected = [[0], [1000, -2000, 3000], [-57.73411178588867, -574309.625, 0.0016627350123599172],
       [-3.4028234663852886e+38, 1.1754943508222875e-38, 3.4028234663852886e+38, -1.1754943508222875e-38]];
       for (var i = 0; i < expected.length; i++) {

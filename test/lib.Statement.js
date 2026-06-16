@@ -143,7 +143,7 @@ describe('Lib', function () {
       statement.execute(values, {
         autoFetch: true
       }, function (err, reply) {
-        (!!err).should.be.not.ok;
+        (!!err).should.be.not.ok();
         reply.should.equal(replies.execute);
         done();
       });
@@ -164,7 +164,7 @@ describe('Lib', function () {
         values: values,
         autoFetch: true
       }, function (err, rowsAffected) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         rowsAffected.should.equal(replies.execute);
         done();
       });
@@ -185,7 +185,7 @@ describe('Lib', function () {
         parameters: values,
         autoFetch: true
       }, function (err, rowsAffected) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         rowsAffected.should.equal(replies.execute);
         done();
       });
@@ -260,7 +260,7 @@ describe('Lib', function () {
     });
 
     it('should return undefined for non-bound parameters', function () {
-      (Statement.prototype._normalizeInputParameters.bind(createStatement(), [])() === undefined).should.be.true;
+      (Statement.prototype._normalizeInputParameters.bind(createStatement(), [])() === undefined).should.be.true();
     });
 
   });

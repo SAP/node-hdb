@@ -141,7 +141,7 @@ describe('db', function () {
               if (err) {
                 return callback(err);
               }
-              rows.should.be.empty;
+              rows.should.be.empty();
               callback();
             });
           },

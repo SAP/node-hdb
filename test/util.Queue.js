@@ -49,9 +49,9 @@ describe('Util', function () {
     it('should create a standard queue', function (done) {
       var replies = [];
       var q = new Queue();
-      q.empty.should.be.true;
-      q.busy.should.be.false;
-      q.running.should.be.false;
+      q.empty.should.be.true();
+      q.busy.should.be.false();
+      q.running.should.be.false();
       q.push(createTask('foo', function (err, reply) {
         replies.push(reply);
       }));
@@ -74,9 +74,9 @@ describe('Util', function () {
     it('should create a running queue', function (done) {
       var replies = [];
       var q = new Queue(true);
-      q.empty.should.be.true;
-      q.busy.should.be.false;
-      q.running.should.be.true;
+      q.empty.should.be.true();
+      q.busy.should.be.false();
+      q.running.should.be.true();
       q.push(createTask('foo', function (err, reply) {
         replies.push(reply);
       }));

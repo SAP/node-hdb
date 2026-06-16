@@ -47,16 +47,18 @@ describe('Lib', function () {
 
     it('should create a parser via constructor', function () {
       var parser = new lib.Parser(metadata, null, { useCesu8: true });
-      parser.honest.should.be.false;
+      parser.honest.should.be.false();
       parser.metadata.should.have.length(3);
-      parser.useCesu8.should.be.true;
+      parser.useCesu8.should.be.true();
     });
 
     it('should create an evil parse function', function () {
       var parser = lib.Parser.create(metadata);
       parser.honest = false;
       var parseRow = parser.createParseRowFunction();
-      parseRow.name.should.not.be.ok;
+      // Don't use .ok() or .equal('') here: Node <22 (V8) gives anonymous functions name='',
+      // but Node >=22 gives them name='anonymous'. Check it's not the honest 'parse' function instead.
+      parseRow.name.should.not.equal('parse');
       var row = parseRow.call(reader);
       row.should.eql({
         foo: 2,
@@ -75,7 +77,9 @@ describe('Lib', function () {
       var parseRow = parser.createParseRowFunction({
         nestTables: true
       });
-      parseRow.name.should.not.be.ok;
+      // Don't use .ok() or .equal('') here: Node <22 (V8) gives anonymous functions name='',
+      // but Node >=22 gives them name='anonymous'. Check it's not the honest 'parse' function instead.
+      parseRow.name.should.not.equal('parse');
       var row = parseRow.call(reader);
       row.should.eql({
         '[{,}]': {

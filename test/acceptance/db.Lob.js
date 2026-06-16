@@ -67,7 +67,7 @@ describe('db', function () {
         rows.should.have.length(db.images.length);
         for (var i = 0; i < rows.length; i++) {
           rows[i].NAME.should.equal(db.images[i].NAME);
-          rows[i].BDATA.equals(db.images[i].BDATA).should.be.ok;
+          rows[i].BDATA.equals(db.images[i].BDATA).should.be.ok();
         }
         done();
       });
@@ -104,7 +104,7 @@ describe('db', function () {
         transaction.once('new', onnew);
 
         function onend(success, kind) {
-          success.should.be.true;
+          success.should.be.true();
           kind.should.equal('write');
         }
         transaction.once('end', onend);
@@ -139,7 +139,7 @@ describe('db', function () {
         transaction.once('new', onnew);
 
         function onend(success, kind) {
-          success.should.be.true;
+          success.should.be.true();
           kind.should.equal('write');
         }
         transaction.once('end', onend);

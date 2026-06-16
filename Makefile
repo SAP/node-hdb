@@ -1,33 +1,35 @@
-REPORTER = spec
+MOCHA          = ./node_modules/.bin/mocha
+MOCHA_REPORTER = spec
+
+C8             = ./node_modules/.bin/c8
+C8_REPORTERS   = --reporter=text --reporter=html --reporter=lcov
 
 test:
-	@NODE_ENV=test ./node_modules/.bin/mocha \
-		-R $(REPORTER) -b	--recursive
+	@NODE_ENV=test $(MOCHA) \
+		-R $(MOCHA_REPORTER) -b	--recursive
 
 test-unit:
-	@NODE_ENV=test ./node_modules/.bin/mocha \
-		-R $(REPORTER) -b
+	@NODE_ENV=test $(MOCHA) \
+		-R $(MOCHA_REPORTER) -b
 
 test-acceptance:
-	@NODE_ENV=test ./node_modules/.bin/mocha \
-		-R $(REPORTER) -b	test/acceptance/*.js
+	@NODE_ENV=test $(MOCHA) \
+		-R $(MOCHA_REPORTER) -b	test/acceptance/*.js
+
+test-coverage:
+	@NODE_ENV=test $(C8) $(C8_REPORTERS) $(MOCHA) \
+		-R $(MOCHA_REPORTER) -b	--recursive
+
+test-unit-coverage:
+	@NODE_ENV=test $(C8) $(C8_REPORTERS) $(MOCHA) \
+		-R $(MOCHA_REPORTER) -b
+
+test-acceptance-coverage:
+	@NODE_ENV=test $(C8) $(C8_REPORTERS) $(MOCHA) \
+		-R $(MOCHA_REPORTER) -b	test/acceptance/*.js
 
 test-mock:
 	@HDB_MOCK=1 $(MAKE) -s test
-
-test-lcov:
-	@NODE_ENV=test ./node_modules/.bin/istanbul cover \
-		--report lcov \
-			./node_modules/mocha/bin/_mocha -- \
-			-R spec -b --recursive
-
-test-coveralls:
-	@NODE_ENV=test ./node_modules/.bin/istanbul cover \
-	  --report lcovonly \
-		./node_modules/mocha/bin/_mocha -- \
-			-R spec -b --recursive \
-			&& cat ./coverage/lcov.info | node ./bin/coveralls.js \
-			&& rm -rf ./coverage
 
 clean:
 	@rm -rf ./coverage \
@@ -36,4 +38,4 @@ clean:
 chromify:
 	@browserify -r buffer -r ./lib:hdb -o ./hdb.js
 
-.PHONY: test clean
+.PHONY: test test-unit test-acceptance test-coverage test-unit-coverage test-acceptance-coverage clean

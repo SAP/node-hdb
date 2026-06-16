@@ -55,7 +55,7 @@ describe('db', function () {
           rs.fetch(function onfetch(err, rows) {
             rows.should.have.length(db.numbers.length);
             rows.should.eql(db.numbers);
-            rs.closed.should.be.true;
+            rs.closed.should.be.true();
             done();
           });
         });
@@ -158,4 +158,60 @@ describe('db', function () {
       });
 
   });
+
+  describe('result set format', function () {
+    // SQL joins NUMBERS (A=1, B='one') with NUMBER_SECOND_TABLE (A=2, DATA='SECOND').
+    // Both tables have a column named A, so duplicate-column behavior is observable.
+    const joinSql = 'SELECT * FROM NUMBERS, NUMBER_SECOND_TABLE WHERE NUMBERS.A = 1';
+
+    before(db.createNumbers.bind(db));
+    before(function (done) {
+      client.exec('DROP TABLE NUMBER_SECOND_TABLE CASCADE', function () {
+        // ignore error — table may not exist yet
+        client.exec('CREATE COLUMN TABLE NUMBER_SECOND_TABLE (A INT, DATA NVARCHAR(100))', function (err) {
+          if (err) return done(err);
+          client.exec("INSERT INTO NUMBER_SECOND_TABLE VALUES(2, 'SECOND')", done);
+        });
+      });
+    });
+
+    after(db.dropNumbers.bind(db));
+    after(function (done) {
+      client.exec('DROP TABLE NUMBER_SECOND_TABLE CASCADE', done);
+    });
+
+    it('default format: duplicate column name retains only the last value', function (done) {
+      client.exec(joinSql, function (err, rows) {
+        if (err) return done(err);
+        rows.should.have.length(1);
+        // NUMBERS.A=1 is overwritten by NUMBER_SECOND_TABLE.A=2 (last column wins)
+        rows[0].should.eql({ A: 2, B: 'one', DATA: 'SECOND' });
+        done();
+      });
+    });
+
+    it('rowsAsArray:true returns column values as an array in column order', function (done) {
+      client.exec({ sql: joinSql, rowsAsArray: true }, function (err, rows) {
+        if (err) return done(err);
+        rows.should.have.length(1);
+        // All four column values: NUMBERS.A, NUMBERS.B, NUMBER_SECOND_TABLE.A, NUMBER_SECOND_TABLE.DATA
+        rows[0].should.eql([1, 'one', 2, 'SECOND']);
+        done();
+      });
+    });
+
+    it('nestTables:true nests each column under its source table name', function (done) {
+      client.exec(joinSql, { nestTables: true }, function (err, rows) {
+        if (err) return done(err);
+        rows.should.have.length(1);
+        rows[0].should.eql({
+          NUMBERS: { A: 1, B: 'one' },
+          NUMBER_SECOND_TABLE: { A: 2, DATA: 'SECOND' }
+        });
+        done();
+      });
+    });
+
+  });
+
 });

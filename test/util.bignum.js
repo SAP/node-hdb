@@ -158,10 +158,10 @@ describe('Util', function () {
 
     it('read null', function () {
       /* jshint expr: true */
-      should(null === readDec128('ffffffffffffffffffffffffffffffff')).ok;
-      should(null === readDec128('00000000000000000000000000000077')).ok;
-      should(null === readDecFloat('00000000000000000000000000000077')).ok;
-      should(null === readDecFixed('00000000000000000000000000000077')).ok;
+      should(null === readDec128('ffffffffffffffffffffffffffffffff')).ok();
+      should(null === readDec128('00000000000000000000000000000077')).ok();
+      should(null === readDecFloat('00000000000000000000000000000077')).ok();
+      should(null === readDecFixed('00000000000000000000000000000077')).ok();
     });
 
     it('read zero', function () {

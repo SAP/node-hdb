@@ -149,7 +149,7 @@ describe('Lib', function () {
         }
       });
       rst.on('end', function () {
-        rst._objectBuffer.empty.should.be.true;
+        rst._objectBuffer.empty.should.be.true();
         Buffer.concat(chunks).toString('ascii').should.equal('foobar');
         done();
       });
@@ -173,7 +173,7 @@ describe('Lib', function () {
         }
       });
       rst.on('end', function () {
-        rst._objectBuffer.empty.should.be.true;
+        rst._objectBuffer.empty.should.be.true();
         Buffer.concat(chunks).toString('ascii').should.equal('foobar');
         done();
       });

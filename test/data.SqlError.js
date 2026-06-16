@@ -56,7 +56,7 @@ describe('Data', function () {
         message: 'bar',
         code: 1,
         position: 2,
-        level: ErrorLevel.FATAL,
+        level: ErrorLevel.FATAL_ERROR,
         fatal: true,
         sqlState: 'HY001'
       };

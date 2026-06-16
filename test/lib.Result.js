@@ -116,7 +116,7 @@ describe('Lib', function () {
         functionCode: FunctionCode.NIL
       };
       result.handle(null, reply, function (err) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         done();
       });
     });
@@ -127,7 +127,7 @@ describe('Lib', function () {
         functionCode: FunctionCode.DDL
       };
       result.handle(null, reply, function (err) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         done();
       });
     });
@@ -153,7 +153,7 @@ describe('Lib', function () {
         resultSets: []
       };
       result.handle(null, reply, function (err) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         done();
       });
     });
@@ -198,7 +198,7 @@ describe('Lib', function () {
         }];
         var resultSet = createResultSet(null, _rows);
         result.handleDBCall(function (err, params, rs) {
-          (!err).should.be.ok;
+          (!err).should.be.ok();
           params.should.equal(_params);
           rs.should.equal(resultSet);
           done();
@@ -225,7 +225,7 @@ describe('Lib', function () {
         var resultSet = createResultSet(null, _rows);
         result.handleDBCall(
           function (err, params, rows) {
-            (!err).should.be.ok;
+            (!err).should.be.ok();
             params.Z.should.equal(_buffer);
             rows.should.eql(_rows);
             done();
@@ -252,7 +252,7 @@ describe('Lib', function () {
         var resultSet = createResultSet(null, _rows);
         result.handleDBCall(
           function (err, params, rows) {
-            (!err).should.be.ok;
+            (!err).should.be.ok();
             params.Z.should.equal(_buffer);
             rows.should.eql(_rows);
             done();

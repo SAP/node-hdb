@@ -61,7 +61,7 @@ describe('Lib', function () {
 
     it('should create task having Writer configured with useCesu8', function () {
       var task = createExecuteTask({ parameters: { types: [], values: [] } });
-      task.writer._useCesu8.should.be.true;
+      task.writer._useCesu8.should.be.true();
     });
 
     it('should run a task with invalid functionCode', function (next) {
@@ -120,7 +120,7 @@ describe('Lib', function () {
           }]
         }]
       }, function done(err, reply) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         reply.rowsAffected.should.eql([1, 1, 1]);
       }).run(next);
     });
@@ -145,7 +145,7 @@ describe('Lib', function () {
           }]
         }]
       }, function done(err, reply) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         reply.rowsAffected.should.eql(rowsAffected);
       }).run(next);
     });
@@ -231,7 +231,7 @@ describe('Lib', function () {
             args: [null]
           }]
         }, function done(err, reply) {
-          (!err).should.be.ok;
+          (!err).should.be.ok();
           reply.rowsAffected.should.eql([1, 1, 1, 1]);
         }).run(next);
       });
@@ -277,7 +277,7 @@ describe('Lib', function () {
           args: [null, {}]
         }]
       }, function done(err, reply) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
         reply.rowsAffected.should.eql([1]);
         reply.writeLobReply[0].should.eql(locatorId);
       }).run(next);
@@ -336,7 +336,7 @@ describe('Lib', function () {
             args: [null],
           }]
         }, function done(err) {
-          (!err).should.be.ok;
+          (!err).should.be.ok();
         }).run(cb);
       }
 
@@ -398,7 +398,7 @@ describe('Lib', function () {
           args: [null, {}],
         }]
       }, function done(err) {
-        (!err).should.be.ok;
+        (!err).should.be.ok();
       }).run(next);
     });
 
@@ -685,7 +685,6 @@ function createExecuteTask(options, cb, checkReplies) {
     },
     autoCommit: true,
     holdCursorsOverCommit: true,
-    scrollableCursor: true,
     statementId: STATEMENT_ID,
     functionCode: FunctionCode.INSERT,
     availableSize: 64,

@@ -45,7 +45,7 @@ describe('Req', function () {
 
     it('should create a new Segment with set useCesu8', function () {
       var segment = new Segment(MessageType.NIL, 0, 0, true);
-      segment.useCesu8.should.be.true;
+      segment.useCesu8.should.be.true();
     });
 
   });

@@ -65,7 +65,7 @@ exports['0100000000000000'] = {
 exports['0200000000000000'] = {
   '03030000000305000000': {
     kind: SegmentKind.REPLY,
-    functionCode: FunctionCode.DB_PROCEDURE_CALL_WITH_RESULT,
+    functionCode: FunctionCode.DB_PROCEDURE_CALL_WITH_RESULT_SET,
     parts: [{
       kind: PartKind.RESULT_SET_METADATA,
       argumentCount: 2,
@@ -93,7 +93,7 @@ exports['0200000000000000'] = {
   },
   '03080000000307000000': {
     kind: SegmentKind.REPLY,
-    functionCode: FunctionCode.DB_PROCEDURE_CALL_WITH_RESULT,
+    functionCode: FunctionCode.DB_PROCEDURE_CALL_WITH_RESULT_SET,
     parts: [{
       kind: PartKind.RESULT_SET_METADATA,
       argumentCount: 2,
@@ -225,7 +225,7 @@ exports['0700000000000000'] = {
 exports['e5b25188195d0500'] = {
   '1e06eda0bcedbda81e06eda0bcedbda9': {
     kind: SegmentKind.REPLY,
-    functionCode: FunctionCode.DB_PROCEDURE_CALL_WITH_RESULT,
+    functionCode: FunctionCode.DB_PROCEDURE_CALL_WITH_RESULT_SET,
     parts: [
       {
         kind: PartKind.ROWS_AFFECTED,

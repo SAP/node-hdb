@@ -14,11 +14,11 @@
 'use strict';
 /* jshint expr:true */
 
-var should = require('should');
-var lib = require('../lib');
-var util = lib.util;
-var mock = require('./mock');
-var pjson = require('../package.json');
+const should = require('should');
+const lib = require('../lib');
+const util = lib.util;
+const mock = require('./mock');
+const pjson = require('../package.json');
 
 util.inherits(TestClient, lib.Client);
 
@@ -40,6 +40,37 @@ TestClient.prototype._createResult = function _createResult() {
 };
 
 const { mock_auth_reply, mock_conn_reply } = require('./mock/data/replies.js');
+const { IgnoreTopologyEnum } = require('../lib/protocol/ConnectionTopology.js');
+const { PhysicalConnection } = require('../lib/protocol/PhysicalConnection');
+
+// Create a mock pconn without a socket and add it as the anchor physical connection
+// of the given logical connection.
+// Call addMockSocket() on the returned pconn if the test needs to drive the
+// AUTHENTICATE→CONNECT exchange.
+function addMockPconnAsAnchorConn(connection) {
+  const pconn = new PhysicalConnection(1, undefined);
+  connection._physicalConnections.addAnchorConnection(pconn);
+  return pconn;
+}
+
+// Attach a fake socket to pconn that delivers mockWriteReplies in order on each
+// socket write. Each write triggers the pending _handshakeReceive callback with the
+// next reply, simulating the server's response without a real TCP connection.
+// mockWriteReplies is an array of two reply objects:
+//   [0] AUTHENTICATE reply — must contain { authentication } (server's challenge data)
+//   [1] CONNECT reply     — must contain { authentication } and optionally { connectOptions }
+function addMockSocket(pconn, mockWriteReplies) {
+  let writeCount = 0;
+  pconn._socket = {
+    readyState: 'open',
+    write: function() {
+      const receive = pconn._handshakeReceive;
+      pconn._handshakeReceive = undefined;
+      const reply = mockWriteReplies[writeCount++];
+      util.setImmediate(() => receive(null, reply));
+    },
+  };
+}
 
 describe('hdb', function () {
 
@@ -64,9 +95,9 @@ describe('hdb', function () {
       client.clientId.should.equal(connection.clientId);
       client.readyState.should.equal('new');
 
-      connection.autoCommit.should.be.true;
+      connection.autoCommit.should.be.true();
       client.setAutoCommit(false);
-      connection.autoCommit.should.be.false;
+      connection.autoCommit.should.be.false();
 
       function cleanup() {
         client.removeListener('error', onerror);
@@ -81,7 +112,7 @@ describe('hdb', function () {
 
       function onclose(hadError) {
         cleanup();
-        hadError.should.be.false;
+        hadError.should.be.false();
         done();
       }
       client.on('close', onclose);
@@ -91,7 +122,7 @@ describe('hdb', function () {
           cleanup();
           return done(err);
         }
-        client.connectOptions.fullVersionString.should.not.be.undefined;
+        client.connectOptions.fullVersionString.should.not.be.undefined();
         client.close();
       });
     });
@@ -108,21 +139,21 @@ describe('hdb', function () {
     });
 
     it('should emit an error if there is an error listener attached', function (done) {
-      var client = new TestClient();
+      const client = new TestClient();
       client._connection = createConn();
       function createConn() {
-        var connection = new lib.Connection();
-        connection._connect = function (options, connectListener) {
-          var socket = mock.createSocket(options);
+        const connection = new lib.Connection();
+        connection._connectFn = function (options, connectListener) {
+          const socket = mock.createSocket(options);
           util.setImmediate(() => connectListener(null, socket));
         };
         return connection;
       }
 
       client.connect(function (err) {
-        client._connection._socket.emit('error');
+        client._connection._physicalConnections.getAnchorConnection()._socket.emit('error');
         client.on('error', done.bind());
-        client._connection._socket.emit('error');
+        client._connection._physicalConnections.getAnchorConnection()._socket.emit('error');
       });
     });
 
@@ -135,7 +166,7 @@ describe('hdb', function () {
 
       function createConn() {
         var connection = new lib.Connection();
-        connection._connect = function (options, connectListener) {
+        connection._connectFn = function (options, connectListener) {
           var socket = mock.createSocket(options);
           util.setImmediate(() => connectListener(null, socket));
         };
@@ -158,7 +189,7 @@ describe('hdb', function () {
       client._connection = createConn();
       function createConn() {
         var connection = new lib.Connection();
-        connection._connect = function (options, connectListener) {
+        connection._connectFn = function (options, connectListener) {
           var socket = mock.createSocket(options);
           util.setImmediate(() => connectListener(null, socket));
           return socket;
@@ -198,51 +229,55 @@ describe('hdb', function () {
       done();
     });
 
-    it('should send default client context during authentication', function(done) {
-      var client = new lib.Client({ host: 'localhost', port: 30015, user: 'testuser', password: 'secret'});
-      var sentClientVersion = false;
-      var sentClientType = false;
-      var sentClientAppProgram = false;
+    it("should send default client context during authentication", function (done) {
+      const client = new lib.Client({
+        host: "localhost",
+        port: 30015,
+        user: "testuser",
+        password: "secret",
+      });
+      let sentClientVersion = false;
+      let sentClientType = false;
+      let sentClientAppProgram = false;
 
-      var mock_open = function(options, cb) {
+      // Mocks
+      let pconn;
+      const mock_open = function (options, cb) {
+        addMockSocket(pconn, [
+          {authentication: "INITIAL"},
+          {authentication: "FINAL", connectOptions: []},
+        ]);
         cb();
-      }
-
-      var sendCount = 0;
-      var mock_send = function(data, cb) {
-        sendCount += 1;
-        if (sendCount === 1) {
-          data.parts.forEach(function(part) {
-            if (part.kind == 29) { // CLIENT_CONTEXT
-              part.args.forEach(function(option) {
-                if (option.name == 1) { // CLIENT_VERSION
-                  sentClientVersion = true;
-                  option.value.should.equal(pjson.version);
-                } else if (option.name == 2) { // CLIENT_TYPE
-                  sentClientType = true;
-                  option.value.should.equal('node-hdb');
-                } else if (option.name == 3) { // CLIENT_APPLICATION_PROGRAM
-                  sentClientAppProgram = true;
-                  option.value.should.equal('node');
-                }
-              });
-            }
-          });
-          cb(undefined, mock_auth_reply);
-        } else if (sendCount === 2) {
-          cb(undefined, mock_conn_reply);
-        }
-      }
-
-      var mock_createAuthenticationManager = function(options) {
+      };
+      const mock_createAuthenticationManager = function () {
         return mock.createManager({});
+      };
+      const mock_psend = function (message, packetSizeLimit) {
+        message.parts.forEach(function (part) {
+          if (part.kind == 29) { // CLIENT_CONTEXT
+            part.args.forEach(function (option) {
+              if (option.name == 1) { // CLIENT_VERSION
+                sentClientVersion = true;
+                option.value.should.equal(pjson.version);
+              } else if (option.name == 2) { // CLIENT_TYPE
+                sentClientType = true;
+                option.value.should.equal("node-hdb");
+              } else if (option.name == 3) { // CLIENT_APPLICATION_PROGRAM
+                sentClientAppProgram = true;
+                option.value.should.equal("node");
+              }
+            });
+          }
+        });
+        PhysicalConnection.prototype.send.call(pconn, message, packetSizeLimit);
       };
 
       client._connection.open = mock_open;
-      client._connection.send = mock_send;
       client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+      pconn = addMockPconnAsAnchorConn(client._connection);
+      pconn.send = mock_psend;
 
-      client.connect(function(err) {
+      client.connect(function (err) {
         sentClientVersion.should.equal(true);
         sentClientType.should.equal(true);
         sentClientAppProgram.should.equal(true);
@@ -250,51 +285,60 @@ describe('hdb', function () {
       });
     });
 
-    it('should set application session variable in client context', function(done) {
-      var client = new lib.Client({ host: 'localhost', port: 30015, user: 'testuser', password: 'secret', 'SESSIONVARIABLE:APPLICATION' : 'TestApp'});
-      var sentClientVersion = false;
-      var sentClientType = false;
-      var sentClientAppProgram = false;
+    it("should set application session variable in client context", function (done) {
+      const client = new lib.Client({
+        host: "localhost",
+        port: 30015,
+        user: "testuser",
+        password: "secret",
+        "SESSIONVARIABLE:APPLICATION": "TestApp",
+      });
+      let sentClientVersion = false;
+      let sentClientType = false;
+      let sentClientAppProgram = false;
 
-      var mock_open = function(options, cb) {
+      // Mocks
+      let pconn;
+      const mock_open = function (options, cb) {
+        addMockSocket(pconn, [
+          {authentication: "INITIAL"},
+          {authentication: "FINAL", connectOptions: []},
+        ]);
         cb();
-      }
-
-      var sendCount = 0;
-      var mock_send = function(data, cb) {
+      };
+      const mock_createAuthenticationManager = function () {
+        return mock.createManager({});
+      };
+      let sendCount = 0;
+      const mock_psend = function (message, packetSizeLimit) {
         sendCount += 1;
         if (sendCount === 1) {
-          data.parts.forEach(function(part) {
+          message.parts.forEach(function (part) {
             if (part.kind == 29) { // CLIENT_CONTEXT
-              part.args.forEach(function(option) {
+              part.args.forEach(function (option) {
                 if (option.name == 1) { // CLIENT_VERSION
                   sentClientVersion = true;
                   option.value.should.equal(pjson.version);
                 } else if (option.name == 2) { // CLIENT_TYPE
                   sentClientType = true;
-                  option.value.should.equal('node-hdb');
+                  option.value.should.equal("node-hdb");
                 } else if (option.name == 3) { // CLIENT_APPLICATION_PROGRAM
                   sentClientAppProgram = true;
-                  option.value.should.equal('TestApp');
+                  option.value.should.equal("TestApp");
                 }
               });
             }
           });
-          cb(undefined, mock_auth_reply);
-        } else if (sendCount === 2) {
-          cb(undefined, mock_conn_reply);
         }
-      }
-
-      var mock_createAuthenticationManager = function(options) {
-        return mock.createManager({});
+        PhysicalConnection.prototype.send.call(pconn, message, packetSizeLimit);
       };
 
       client._connection.open = mock_open;
-      client._connection.send = mock_send;
       client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+      pconn = addMockPconnAsAnchorConn(client._connection);
+      pconn.send = mock_psend;
 
-      client.connect(function(err) {
+      client.connect(function (err) {
         sentClientVersion.should.equal(true);
         sentClientType.should.equal(true);
         sentClientAppProgram.should.equal(true);
@@ -302,40 +346,49 @@ describe('hdb', function () {
       });
     });
 
-    it('should set applicationuser session variable as OS_USER connect option', function(done) {
-      var client = new lib.Client({ host: 'localhost', port: 30015, user: 'testuser', password: 'secret', 'SESSIONVARIABLE:APPLICATIONUSER' : 'TestUser'});
-      var sentOS_User = false;
+    it("should set applicationuser session variable as OS_USER connect option", function (done) {
+      const client = new lib.Client({
+        host: "localhost",
+        port: 30015,
+        user: "testuser",
+        password: "secret",
+        "SESSIONVARIABLE:APPLICATIONUSER": "TestUser",
+      });
+      let sentOS_User = false;
 
-      var mock_open = function(options, cb) {
+      // Mocks
+      let pconn;
+      const mock_open = function (options, cb) {
+        addMockSocket(pconn, [
+          {authentication: "INITIAL"},
+          {authentication: "FINAL", connectOptions: []},
+        ]);
         cb();
-      }
-
-      var sendCount = 0;
-      var mock_send = function(data, cb) {
+      };
+      const mock_createAuthenticationManager = function () {
+        return mock.createManager({});
+      };
+      let sendCount = 0;
+      const mock_psend = function (message, packetSizeLimit) {
         sendCount += 1;
-        if (sendCount === 1) {
-          cb(undefined, mock_auth_reply);
-        } else if (sendCount === 2) {
-          data.parts[2].args.forEach(function(option) {
-            // check connect options
-            if(option.name == 32) { // OS_USER
+        if (sendCount === 2) {
+          message.parts[2].args.forEach(function (option) {
+            if (option.name == 32) { // OS_USER
               sentOS_User = true;
-              option.value.should.equal('TestUser');
+              option.value.should.equal("TestUser");
             }
           });
-          cb(undefined, mock_conn_reply);
         }
-      }
-
-      var mock_createAuthenticationManager = function(options) {
-        return mock.createManager({});
+        PhysicalConnection.prototype.send.call(pconn, message, packetSizeLimit);
       };
 
+      // Replace original fn by mocks for testing
       client._connection.open = mock_open;
-      client._connection.send = mock_send;
       client._connection._createAuthenticationManager = mock_createAuthenticationManager;
+      pconn = addMockPconnAsAnchorConn(client._connection);
+      pconn.send = mock_psend;
 
-      client.connect(function(err) {
+      client.connect(function (err) {
         sentOS_User.should.equal(true);
         done(err);
       });
@@ -424,9 +477,9 @@ describe('hdb', function () {
     });
 
     describe('#TCP keepalive', function () {
-      var tcp = require('../lib/protocol/tcp');
-      var originalCreateSocket = tcp.createSocket;
-      var socketStub;
+      const tcp = require('../lib/protocol/tcp');
+      const originalCreateSocket = tcp.createSocket;
+      let socketStub;
 
       beforeEach(function () {
         socketStub = new mock.createSocket({});
@@ -445,42 +498,42 @@ describe('hdb', function () {
       });
 
       it('should set tcpKeepAliveIdle by default', function (done) {
-        var client = new lib.Client({});
+        const client = new lib.Client({});
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.true();
-          should(client._connection._socket.keepAliveIdle).be.equal(200000);
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.true();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAliveIdle).be.equal(200000);
           done();
         });
       });
 
       it('should set tcpKeepAliveIdle via numeric connect option', function (done) {
-        var client = new lib.Client({
+        const client = new lib.Client({
           tcpKeepAliveIdle: 300
         });
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.true();
-          should(client._connection._socket.keepAliveIdle).be.equal(300000);
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.true();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAliveIdle).be.equal(300000);
           done();
         });
       });
 
       it('should set tcpKeepAliveIdle via string connect option', function (done) {
-        var client = new lib.Client({
+        const client = new lib.Client({
           tcpKeepAliveIdle: '300'
         });
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.true();
-          should(client._connection._socket.keepAliveIdle).be.equal(300000);
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.true();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAliveIdle).be.equal(300000);
           done();
         });
       });
 
       it('should disable tcp keepalive', function (done) {
-        var client = new lib.Client({
+        const client = new lib.Client({
           tcpKeepAliveIdle: false
         });
         client.connect(function (err) {
-          should(client._connection._socket.keepAlive).be.false();
+          should(client._connection._physicalConnections.getAnchorConnection()._socket.keepAlive).be.false();
           done();
         });
       });
@@ -492,8 +545,8 @@ describe('hdb', function () {
         assertion: '<saml:Assertion></saml:Assertion>'
       });
       client.connect(function (err) {
-        should(err === null).be.ok;
-        should(client.get('assertion')).not.be.ok;
+        should(err === null).be.ok();
+        should(client.get('assertion')).not.be.ok();
         done();
       });
     });
@@ -503,8 +556,8 @@ describe('hdb', function () {
         token: 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.eu3buOdtT84lHs90LfmC3MJ_17Qg0FfgBke2qnW5yE-wDlEdKWWEURFoneCzMmdGtJcnVqINmZD1X8XbvoAWeWq_tH75fSKcg_1RaooYaARdtpQGF_BtjXJ9jMJHoJ9kgjO8cv06GobNaoydu2v6C8fsSIBDVw9zEApGZIwNCJztkgmEGmkQKXHHxKRISi55DgCowVYk1Obgp55KMjRqmMkAvw8qoMsAU109n26NGQNI19wOaGiPrSGKpENkgq6lWFY6visswoA8X3pYn6EXdAqEGjuFH0ADuvqUoRyrrIaaem30JgVny8LQ-t2ms7gck8jPdxS7TUjiB2hHKjRwBw'
       });
       client.connect(function (err) {
-        should(err === null).be.ok;
-        should(client.get('token')).not.be.ok;
+        should(err === null).be.ok();
+        should(client.get('token')).not.be.ok();
         done();
       });
     });
@@ -525,7 +578,7 @@ describe('hdb', function () {
       // open should not be called
       client._connection.errors.open = true;
       client.connect(function (err) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         done();
       });
     });
@@ -557,11 +610,11 @@ describe('hdb', function () {
       function onclose(hadError) {
         closeCount += 1;
         if (closeCount === 1) {
-          hadError.should.be.true;
+          hadError.should.be.true();
           return this.connect();
         }
         cleanup();
-        hadError.should.be.false;
+        hadError.should.be.false();
         done();
       }
       client.on('close', onclose);
@@ -603,7 +656,7 @@ describe('hdb', function () {
       var client = new TestClient();
       client._addListeners(client._connection);
       client.once('close', function (hadError) {
-        hadError.should.be.false;
+        hadError.should.be.false();
         done();
       });
       client.destroy();
@@ -616,7 +669,7 @@ describe('hdb', function () {
         err.message.should.equal('destroy');
       });
       client.once('close', function (hadError) {
-        hadError.should.be.true;
+        hadError.should.be.true();
         done();
       });
       client.destroy(new Error('destroy'));
@@ -631,7 +684,7 @@ describe('hdb', function () {
         autoFetch: false
       };
       client.exec('sql', options, function (err, reply) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         client._connection.options.should.eql({
           command: 'sql'
         });
@@ -648,7 +701,7 @@ describe('hdb', function () {
       client.execute({
         sql: 'sql'
       }, function (err, reply) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         reply.should.equal(connection.replies.executeDirect);
         done();
       });
@@ -662,11 +715,11 @@ describe('hdb', function () {
       client.execute(command, {
         autoFetch: true
       }, function (err, reply) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         connection.options.should.eql({
           command: command
         });
-        client._result.options.autoFetch.should.be.true;
+        client._result.options.autoFetch.should.be.true();
         reply.should.equal(connection.replies.executeDirect);
         done();
       });
@@ -690,7 +743,7 @@ describe('hdb', function () {
         command: 'sql'
       };
       client.prepare(options.command, function (err, statement) {
-        should(err === null).be.ok;
+        should(err === null).be.ok();
         connection.options.should.eql(options);
         statement.parameterMetadata.should.equal('parameterMetadata');
         statement.resultSetMetadata.should.equal('metadata');
@@ -705,7 +758,7 @@ describe('hdb', function () {
         command: 'sql'
       };
       client.prepare(options, function (err, statement) {
-        (err === null).should.be.ok;
+        (err === null).should.be.ok();
         connection.options.should.eql(options);
         statement.parameterMetadata.should.equal('parameterMetadata');
         statement.resultSetMetadata.should.equal('metadata');
@@ -833,8 +886,8 @@ describe('hdb', function () {
 
     describe('#MultiDB support', function () {
       var DB_CONNECT_INFO = {
-        CONNECTED: { isConnected: true },
-        NOT_CONNECTED: { isConnected: false, host: '127.0.0.1', port: 30041 }
+        CONNECTED: { onCorrectDatabase: true },
+        NOT_CONNECTED: { onCorrectDatabase: false, host: '127.0.0.1', port: 30041 }
       };
 
       it('should accept an integer as instance number', function (done) {
@@ -1074,236 +1127,288 @@ describe('hdb', function () {
 
     });
 
-    it('should connect to specified host upon nameserver redirect', function (done) {
-      var client = new lib.Client({ host: 'localhost', port: 30013, user: 'testuser', password: 'secret'});
+    it("should connect to specified host upon nameserver redirect", function (done) {
+      const client = new lib.Client({
+        host: "localhost",
+        port: 30013,
+        user: "testuser",
+        password: "secret",
+      });
 
-      var connOpenCount = 0;
+      let connOpenCount = 0;
+      let systemDbConnOpened = false;
+      let systemDbConnClosed = false;
+      let tenantDbConnOpened = false;
 
-      var systemDbConnOpened = false;
-      var systemDbConnClosed = false;
-      var tenantDbConnOpened = false;
-
-      var mock_open = function (options, cb) {
+      // Mocks for first connection
+      const mock_open = function (options, cb) {
         ++connOpenCount;
         if (connOpenCount === 1) {
-          options.host.should.equal('localhost');
+          options.host.should.equal("localhost");
           options.port.should.equal(30013);
           systemDbConnOpened = true;
           cb();
         } else if (connOpenCount === 2) {
-          options.host.should.equal('127.0.0.1');
+          options.host.should.equal("127.0.0.1");
           options.port.should.equal(30041);
           tenantDbConnOpened = true;
           cb();
         } else {
-          cb(new Error('Test error. Open method called on the connection ' + connOpenCount + ' times.'));
+          cb(
+            new Error(
+              "Test error. Open method called on the connection " + connOpenCount + " times.",
+            ),
+          );
         }
       };
-
-      var sendCount = 0;
-      var reply1 = {
-        dbConnectInfo: [ { name: 4, type: 28, value: false },
-                         { name: 2, type: 29, value: '127.0.0.1' },
-                         { name: 3, type: 3, value: 30041 } ]
-      };
-
-      var mock_send = function (data, cb) {
-        ++sendCount;
-        if (sendCount == 1) {
-          cb(new Error(), reply1);
-        } else if (sendCount == 2) {
-          cb(undefined, mock_auth_reply);
-        } else if (sendCount == 3) {
-          var hasRedirectionType = false;
-          var hasRedirectedHost = false;
-          var hasRedirectedPort = false;
-          var hasEndpointHost = false;
-          var hasEndpointPort = false;
-          var hasEndpointList = false;
-          data.parts[2].args.forEach(function(option) {
-            // check connect options
-            if(option.name === 57) {
-              hasRedirectionType = true;
-              option.value.should.equal(3); // AZAWARE
-            }
-            if(option.name === 58) {
-              hasRedirectedHost = true;
-              option.value.should.equal('127.0.0.1') // redirect host
-            }
-            if(option.name === 59) {
-              hasRedirectedPort = true;
-              option.value.should.equal(30041) // redirect port
-            }
-            if(option.name === 60) {
-              hasEndpointHost = true;
-              option.value.should.equal('localhost') // original host
-            }
-            if(option.name === 61) {
-              hasEndpointPort = true;
-              option.value.should.equal(30013) // original port
-            }
-            if(option.name === 62) {
-              hasEndpointList = true;
-              option.value.should.equal('localhost:30013') // initial host list
-            }
-          });
-          hasRedirectionType.should.equal(true);
-          hasRedirectedHost.should.equal(true);
-          hasRedirectedPort.should.equal(true);
-          hasEndpointHost.should.equal(true);
-          hasEndpointPort.should.equal(true);
-          hasEndpointList.should.equal(true);
-          cb(undefined, mock_conn_reply);
-        }
-      };
-
-      var mock_createAuthenticationManager = function(options) {
+      const mock_createAuthenticationManager = function () {
         return mock.createManager({});
       };
-
-      var mock_closeSilently = function() {
+      const mock_closeSilently = function () {
         connOpenCount.should.equal(1);
         systemDbConnClosed = true;
       };
+      const redirectReply = {
+        dbConnectInfo: [
+          {name: 4, type: 28, value: false},
+          {name: 2, type: 29, value: "127.0.0.1"},
+          {name: 3, type: 3, value: 30041},
+        ],
+      };
+      const mock_authenticate = function (conn, manager, authOptions, cb) {
+        // authenticate fails with dbConnectInfo to trigger redirect for first conn
+        cb(new Error("redirect"), redirectReply);
+      };
 
       client._connection.open = mock_open;
-      client._connection.send = mock_send;
       client._connection._createAuthenticationManager = mock_createAuthenticationManager;
       client._connection._closeSilently = mock_closeSilently;
+      const pconn = addMockPconnAsAnchorConn(client._connection);
+      pconn.authenticate = mock_authenticate;
 
-      var createConnection_orig = client._createConnection;
-      client._createConnection = function(settings) {
-          var ret = createConnection_orig(settings);
-          ret.open = mock_open;
-          ret.send = mock_send;
-          ret._createAuthenticationManager = mock_createAuthenticationManager;
-          ret._closeSilently = mock_closeSilently;
-          return ret;
-      }
+      let hasRedirectionType = false;
+      let hasRedirectedHost = false;
+      let hasRedirectedPort = false;
+      let hasEndpointHost = false;
+      let hasEndpointPort = false;
+      let hasEndpointList = false;
 
-      client.connect(function(err) {
+      const createConnection_orig = client._createConnection;
+      client._createConnection = function (settings) {
+        const ret = createConnection_orig(settings);
+        let pconn_redirect;
+        const mock_open_redirect = function (options, cb) {
+          mock_open(options, function(err) {
+            if (!err) {
+              addMockSocket(pconn_redirect, [
+                {authentication: "INITIAL"},
+                {authentication: "FINAL", connectOptions: []},
+              ]);
+            }
+            cb(err);
+          });
+        };
+        ret.open = mock_open_redirect;
+        ret._createAuthenticationManager = mock_createAuthenticationManager;
+        ret._closeSilently = mock_closeSilently;
+        pconn_redirect = addMockPconnAsAnchorConn(ret);
+        let sendCount = 0;
+        const mock_psend = function (message, packetSizeLimit) {
+          sendCount += 1;
+          if (sendCount === 2) {
+            message.parts[2].args.forEach(function (option) {
+              if (option.name === 57) {
+                hasRedirectionType = true;
+                option.value.should.equal(3);
+              } // AZAWARE
+              if (option.name === 58) {
+                hasRedirectedHost = true;
+                option.value.should.equal("127.0.0.1");
+              } // redirect host
+              if (option.name === 59) {
+                hasRedirectedPort = true;
+                option.value.should.equal(30041);
+              } // redirect port
+              if (option.name === 60) {
+                hasEndpointHost = true;
+                option.value.should.equal("localhost");
+              } // original host
+              if (option.name === 61) {
+                hasEndpointPort = true;
+                option.value.should.equal(30013);
+              } // original port
+              if (option.name === 62) {
+                hasEndpointList = true;
+                option.value.should.equal("localhost:30013");
+              } // initial host list
+            });
+          }
+          PhysicalConnection.prototype.send.call(pconn_redirect, message, packetSizeLimit);
+        };
+        pconn_redirect.send = mock_psend;
+        return ret;
+      };
+
+      client.connect(function (err) {
         systemDbConnOpened.should.equal(true);
         systemDbConnClosed.should.equal(true);
         tenantDbConnOpened.should.equal(true);
+        hasRedirectionType.should.equal(true);
+        hasRedirectedHost.should.equal(true);
+        hasRedirectedPort.should.equal(true);
+        hasEndpointHost.should.equal(true);
+        hasEndpointPort.should.equal(true);
+        hasEndpointList.should.equal(true);
         done(err);
       });
-
     });
 
-    it('should disable cloud tenant redirection', function (done) {
-      var client = new lib.Client({ host: 'localhost', port: 30013, user: 'testuser', password: 'secret', disableCloudRedirect: true});
-
-      var connOpenCount = 0;
-
-      var systemDbConnOpened = false;
-
-      var mock_open = function (options, cb) {
-        ++connOpenCount;
-        if (connOpenCount === 1) {
-          options.host.should.equal('localhost');
-          options.port.should.equal(30013);
-          systemDbConnOpened = true;
-          cb();
-        } else {
-          cb(new Error('Test error. Open method called on the connection ' + connOpenCount + ' times.'));
-        }
-      };
-
-      var sendCount = 0;
-      var reply1 = {
-        kind: 2,
-        functionCode: 0,
-        resultSets: [],
-        authentication: 'INITIAL',
-        dbConnectInfo: [ { name: 4, type: 28, value: false },
-                         { name: 2, type: 29, value: '127.0.0.1' },
-                         { name: 3, type: 3, value: 30041 } ] // should be ignored
-      };
-      var reply2 = {
-        kind: 2,
-        functionCode: 0,
-        resultSets: [],
-        authentication: 'FINAL',
-        connectOptions: []
-      };
-
-      var mock_send = function (data, cb) {
-        ++sendCount;
-        if (sendCount == 1) {
-          cb(undefined, reply1);
-        } else if (sendCount == 2) {
-          var hasRedirectionType = false;
-          var hasRedirectedHost = false;
-          var hasRedirectedPort = false;
-          var hasEndpointHost = false;
-          var hasEndpointPort = false;
-          var hasEndpointList = false;
-          data.parts[2].args.forEach(function(option) {
-            // check connect options
-            if(option.name === 57) {
-              hasRedirectionType = true;
-              option.value.should.equal(1); // disabled
-            }
-            if(option.name === 58) {
-              hasRedirectedHost = true;
-              option.value.should.equal('localhost') // redirect host
-            }
-            if(option.name === 59) {
-              hasRedirectedPort = true;
-              option.value.should.equal(30013) // redirect port
-            }
-            if(option.name === 60) {
-              hasEndpointHost = true;
-              option.value.should.equal('localhost') // original host
-            }
-            if(option.name === 61) {
-              hasEndpointPort = true;
-              option.value.should.equal(30013) // original port
-            }
-            if(option.name === 62) {
-              hasEndpointList = true;
-              option.value.should.equal('localhost:30013') // initial host list
-            }
-          });
-          hasRedirectionType.should.equal(true);
-          hasRedirectedHost.should.equal(true);
-          hasRedirectedPort.should.equal(true);
-          hasEndpointHost.should.equal(true);
-          hasEndpointPort.should.equal(true);
-          hasEndpointList.should.equal(true);
-          cb(undefined, reply2);
-        }
-      };
-
-      var mock_createAuthenticationManager = function(options) {
-        return mock.createManager({});
-      };
-
-      var mock_closeSilently = function() {
-        connOpenCount.should.equal(1);
-        systemDbConnClosed = true;
-      };
-
-      client._connection.open = mock_open;
-      client._connection.send = mock_send;
-      client._connection._createAuthenticationManager = mock_createAuthenticationManager;
-      client._connection._closeSilently = mock_closeSilently;
-
-      var createConnection_orig = client._createConnection;
-      client._createConnection = function(settings) {
-          var ret = createConnection_orig(settings);
-          ret.open = mock_open;
-          ret.send = mock_send;
-          ret._createAuthenticationManager = mock_createAuthenticationManager;
-          ret._closeSilently = mock_closeSilently;
-          return ret;
-      }
-
-      client.connect(function(err) {
-        systemDbConnOpened.should.equal(true);
-        done(err);
+    it("should disable cloud tenant redirection", function (done) {
+      const client = new lib.Client({
+        host: "localhost",
+        port: 30013,
+        user: "testuser",
+        password: "secret",
+        disableCloudRedirect: true,
       });
 
+      let connOpenCount = 0;
+      let systemDbConnOpened = false;
+
+      // dbConnectInfo present but disableCloudRedirect=true — redirect must not happen
+      let pconn;
+      const mock_open = function (options, cb) {
+        ++connOpenCount;
+        if (connOpenCount === 1) {
+          options.host.should.equal("localhost");
+          options.port.should.equal(30013);
+          systemDbConnOpened = true;
+          addMockSocket(pconn, [
+            {
+              authentication: "INITIAL",
+              connectOptions: [],
+              dbConnectInfo: [
+                {name: 4, type: 28, value: false},
+                {name: 2, type: 29, value: "127.0.0.1"},
+                {name: 3, type: 3, value: 30041},
+              ], // should be ignored
+            },
+            {authentication: "FINAL", connectOptions: []},
+          ]);
+          cb();
+        } else {
+          cb(
+            new Error(
+              "Test error. Open method called on the connection " + connOpenCount + " times.",
+            ),
+          );
+        }
+      };
+      client._connection.open = mock_open;
+      client._connection._createAuthenticationManager = function () {
+        return mock.createManager({});
+      };
+      pconn = addMockPconnAsAnchorConn(client._connection);
+
+      let hasRedirectionType = false;
+      let hasRedirectedHost = false;
+      let hasRedirectedPort = false;
+      let hasEndpointHost = false;
+      let hasEndpointPort = false;
+      let hasEndpointList = false;
+      let sendCount = 0;
+      const mock_psend = function (message, packetSizeLimit) {
+        sendCount += 1;
+        if (sendCount === 2) {
+          message.parts[2].args.forEach(function (option) {
+            if (option.name === 57) {
+              hasRedirectionType = true;
+              option.value.should.equal(1);
+            } // disabled
+            if (option.name === 58) {
+              hasRedirectedHost = true;
+              option.value.should.equal("localhost");
+            } // redirect host
+            if (option.name === 59) {
+              hasRedirectedPort = true;
+              option.value.should.equal(30013);
+            } // redirect port
+            if (option.name === 60) {
+              hasEndpointHost = true;
+              option.value.should.equal("localhost");
+            } // original host
+            if (option.name === 61) {
+              hasEndpointPort = true;
+              option.value.should.equal(30013);
+            } // original port
+            if (option.name === 62) {
+              hasEndpointList = true;
+              option.value.should.equal("localhost:30013");
+            } // initial host list
+          });
+        }
+        PhysicalConnection.prototype.send.call(pconn, message, packetSizeLimit);
+      };
+      pconn.send = mock_psend;
+
+      client.connect(function (err) {
+        systemDbConnOpened.should.equal(true);
+        connOpenCount.should.equal(1); // no second open
+        hasRedirectionType.should.equal(true);
+        hasRedirectedHost.should.equal(true);
+        hasRedirectedPort.should.equal(true);
+        hasEndpointHost.should.equal(true);
+        hasEndpointPort.should.equal(true);
+        hasEndpointList.should.equal(true);
+        done(err);
+      });
+    });
+
+    describe('#ignoreTopology connect property', function () {
+      function createConn() {
+        const connection = new lib.Connection();
+        connection._connectFn = function (options, connectListener) {
+          const socket = mock.createSocket(options);
+          util.setImmediate(() => connectListener(null, socket));
+          return socket;
+        };
+        return connection;
+      }
+
+      it('should set ignoreTopology to Requested from connect properties specify true', function (done) {
+        const client = new lib.Client();
+        client._connection = createConn();
+        const connectProp = {ignoreTopology: true};
+        client.connect(connectProp, function (err) {
+          client._connection._ignoreTopology.should.eql(
+            IgnoreTopologyEnum.IgnoreTopology_Requested,
+          );
+          done();
+        });
+      });
+
+      it('should set ignoreTopology to NotIgnore if not provided', function (done) {
+        const client = new lib.Client();
+        client._connection = createConn();
+        client.connect({}, function (err) {
+          client._connection._ignoreTopology.should.eql(
+            IgnoreTopologyEnum.IgnoreTopology_NotIgnoring,
+          );
+          done();
+        });
+      });
+
+      it('should set ignoreTopology to NotIgnore if connect properties specify false', function (done) {
+        const client = new lib.Client();
+        client._connection = createConn();
+        const connectProp = {ignoreTopology: false};
+        client.connect(connectProp, function (err) {
+          client._connection._ignoreTopology.should.eql(
+            IgnoreTopologyEnum.IgnoreTopology_NotIgnoring,
+          );
+          done();
+        });
+      });
     });
 
   });
