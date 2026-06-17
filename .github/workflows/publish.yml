@@ -17,8 +17,7 @@ jobs:
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           package-manager-cache: false
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: '22'
       - run: npm ci
       - run: npm publish --provenance --access public
 
