@@ -20,5 +20,5 @@ jobs:
           node-version: '22'
       - run: echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
       - run: npm ci
-      - run: npm publish --provenance --access public --dry-run
+      - run: npm publish --provenance --access public
 
