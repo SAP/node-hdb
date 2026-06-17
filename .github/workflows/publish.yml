@@ -3,7 +3,6 @@ name: Publish to npm
 on:
   release:
     types: [published]
-  workflow_dispatch:
 
 jobs:
   publish:
@@ -20,7 +19,7 @@ jobs:
           package-manager-cache: false
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm install -g npm@latest
+      - run: npm install -g npm@11.17.0
       - run: npm ci
       - run: npm publish --provenance --access public
 
