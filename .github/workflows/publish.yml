@@ -18,6 +18,7 @@ jobs:
         with:
           package-manager-cache: false
           node-version: '22'
+      - run: echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
       - run: npm ci
-      - run: npm publish --provenance --access public
+      - run: npm publish --provenance --access public --dry-run
 
