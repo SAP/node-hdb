@@ -53,6 +53,7 @@
   },
   "overrides": {
     "safer-buffer": "2.1.2",
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.0.5",
+    "diff": "8.0.4"
   }
 }
