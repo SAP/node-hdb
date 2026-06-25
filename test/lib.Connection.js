@@ -716,6 +716,12 @@ describe('Lib', function () {
       queue.resume();
     });
 
+    it('isIdle should return true when the queue has been cleared', function () {
+      const connection = createConnection();
+      connection._queue = undefined;
+      connection.isIdle().should.be.true();
+    });
+
     it('should receive a warning', function () {
       var connection = createConnection();
       var replySegment = {
