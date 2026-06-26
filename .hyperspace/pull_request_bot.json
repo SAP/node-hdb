@@ -1,0 +1,26 @@
+{
+  "$schema": "https://devops-insights-pr-bot.cfapps.eu10-004.hana.ondemand.com/schema/pull_request_bot.json",
+  "features": {
+    "control_panel": true,
+    "summarize": {
+      "auto_generate_summary": false,
+      "auto_insert_summary": false,
+      "auto_run_on_draft_pr": false,
+      "use_custom_summarize_prompt": false,
+      "use_custom_summarize_output_template": false,
+      "excluded_paths": [],
+      "auto_exclude_authors": []
+    },
+    "review": {
+      "auto_generate_review": false,
+      "auto_run_on_draft_pr": false,
+      "use_custom_review_focus": false,
+      "excluded_paths": [],
+      "auto_exclude_authors": []
+    },
+    "pipeline_fix": {
+      "enable": true
+    }
+  },
+  "excluded_paths": ["package-lock.json"]
+}

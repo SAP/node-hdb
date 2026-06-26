@@ -1,0 +1,21 @@
+general:
+  buildTool: 'npm'
+  productiveBranch: 'main'
+  vaultPath: 'piper/sap-project-hana-clients'
+  vaultBasePath: 'piper/sap-project-hana-clients'
+  vaultPipelineName: 'node-hdb'
+  vaultServerUrl: 'https://vault.tools.sap'
+  vaultNamespace: 'ies/hyperspace/pipelines'
+  nativeBuild: true
+stages:
+  Release:
+    sapDownloadArtifact: false
+  Post:
+    # Secret rotation handled by Hyperspace Portal, enabling it back might cause unintended behavior
+    vaultRotateSecretId: false
+steps:
+  sapCallStagingService:
+    url: 'https://staging.repositories.cloud.sap/stage/api'
+    profile: 'group-sap-hana-clients-project-default'
+  sapCumulusUpload:
+    pipelineId: '363d2eca-f232-4d6e-8e16-1ca82a395d87'
