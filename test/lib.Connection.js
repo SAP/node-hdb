@@ -413,6 +413,16 @@ describe('Lib', function () {
       var c8 = createConnection({ packetSize: ps, packetSizeLimit: psl });
       c8.getAvailableSize(false).should.equal(packetSizeMax - totalHeaderLength);
       c8.getAvailableSize(true).should.equal(packetSizeMax - totalHeaderLength);
+
+      // client info property set
+      var c9 = createConnection();
+      c9._statementContext = {
+        size: 32,
+      };
+      c9.getClientInfo().setProperty('LOCALE', 'en_US');
+      var clientInfoSize = 11
+      c9.getAvailableSize().should.equal(packetSizeDefault - totalHeaderLength - 32 - clientInfoSize - 24);
+      c9.getAvailableSize(true).should.equal(packetSizeDefault - totalHeaderLength - 32 - clientInfoSize - 24);
     });
 
     it('should parse a reply', function () {
