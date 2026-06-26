@@ -65,13 +65,53 @@ describe('db', function () {
       client.connect(function (err) {
         if (err) return done(err);
         client.disconnect(function () {
-          // Second disconnect on a closed client must not crash.
-          // It may deliver a Connection-closed error; that is acceptable.
+          // Second disconnect on a closed client is a no-op success: the
+          // connection is already gone, so there is nothing to report.
           client.disconnect(function (err) {
-            err.should.be.instanceof(Error);
-            err.code.should.equal('EHDBCLOSE');
+            (err === null || err === undefined).should.be.true();
             client.end();
             done();
+          });
+        });
+      });
+    });
+
+    it("disconnect after server force-closes the session is safe", function (done) {
+      this.timeout(6000);
+      const client = hdb.createClient(getOptions());
+      client.connect(function (err) {
+        if (err) {
+          return done(err);
+        }
+        client.exec("SELECT CURRENT_CONNECTION FROM DUMMY", function (err, rows) {
+          if (err) {
+            return done(err);
+          }
+          const connId = rows[0].CURRENT_CONNECTION;
+          const admin = hdb.createClient(getOptions());
+          admin.connect(function (err) {
+            if (err) {
+              return done(err);
+            }
+            admin.exec(`ALTER SYSTEM DISCONNECT SESSION '${connId}'`, function (err) {
+              if (err) {
+                admin.end();
+                return done(err);
+              }
+              // Wait briefly so the kill propagates and our socket sees the drop
+              // before we call disconnect.
+              admin.exec("DO BEGIN CALL SQLSCRIPT_SYNC:SLEEP_SECONDS(1); END", function () {
+                client.readyState.should.equal('closed');
+                admin.disconnect(function () {
+                  admin.end();
+                  client.disconnect(function (err) {
+                    (err === null || err === undefined).should.be.true();
+                    client.end();
+                    done();
+                  });
+                });
+              });
+            });
           });
         });
       });
