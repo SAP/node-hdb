@@ -68,16 +68,16 @@ describe('Lib', function () {
 
 function testStringifier(chunks, rows, done) {
   /* jshint validthis:true */
-  var data = '';
-  var stringifier = this || lib.createJSONStringifier();
+  let data = '';
+  const stringifier = this || lib.createJSONStringifier();
   stringifier.on('error', function (err) {
     done(err);
   }).on('readable', function () {
-    var chunk = this.read();
-    if (chunk) {
+    let chunk;
+    while ((chunk = this.read()) !== null) {
       data += chunk;
     }
-  }).on('finish', function () {
+  }).on('end', function () {
     JSON.parse(data).should.eql(rows);
     done();
   });
