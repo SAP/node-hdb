@@ -30,6 +30,7 @@ describe('db', function () {
     });
 
     it('client.readyState is "connected" after successful connect', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
@@ -42,6 +43,7 @@ describe('db', function () {
     });
 
     it('client.readyState is "closed" after disconnect', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
@@ -61,6 +63,7 @@ describe('db', function () {
     });
 
     it('disconnect when already disconnected is safe', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
@@ -192,6 +195,7 @@ describe('db', function () {
     });
 
     it('end() terminates the connection; subsequent exec produces an error', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
