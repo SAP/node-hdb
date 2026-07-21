@@ -1,0 +1,60 @@
+name: Node-hdb Integration Test
+run-name: "Integration Test — ${{ github.event.pull_request.title || github.ref_name }}"
+on:
+  push:
+    branches: [main, 'rel/*']
+  pull_request:
+    branches: [main, 'rel/*']
+  workflow_dispatch:
+concurrency:
+  group: integration-test
+  cancel-in-progress: false
+jobs:
+  Node-hdb-Integration-Test:
+    runs-on: [self-hosted, solinas]
+    strategy:
+      matrix:
+        node-version: ['20', '22', '24', '26']
+      fail-fast: false
+      max-parallel: 1
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} SUGAR runner!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository code
+        uses: actions/checkout@v6
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - name: Create test/db/config.json
+        run: |
+          cat > ${{ github.workspace }}/test/db/config.json << EOF
+          {
+            "host": "${{ secrets.HDB_HOST }}",
+            "port": ${{ secrets.HDB_PORT }},
+            "user": "${{ secrets.HDB_USER }}",
+            "password": "${{ secrets.HDB_PASSWORD }}",
+            "proxyHostname": null,
+            "proxyPassword": null,
+            "proxyUserName": null
+          }
+          EOF
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+      - name: List files in the repository
+        run: |
+          echo "Workspace is ${{ github.workspace }}"
+          echo "Listing files in the repository:"
+          ls -l ${{ github.workspace }}
+          echo "Showing the contents of test/db/config.json:"
+          cat ${{ github.workspace }}/test/db/config.json
+      - run: npm install
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+          make test
+      - run: echo "🍏 This job's status is ${{ job.status }}."
