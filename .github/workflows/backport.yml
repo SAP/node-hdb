@@ -1,0 +1,40 @@
+name: Backport labeled PRs
+
+# When a PR is merged with a label of the form `backport rel/<branch>`,
+# cherry-pick the merged commit onto the target release branch and open
+# a backport PR.
+#
+# Example: label `backport rel/2.29` on a PR against `main` will open a
+# PR containing the cherry-picked commit against `rel/2.29`.
+
+on:
+  pull_request_target:
+    types: [closed, labeled]
+
+jobs:
+  backport:
+    # Skip early when this event can't produce a backport: the PR isn't
+    # merged, or none of its labels look like a backport label. The
+    # backport-action itself would filter these out later, but this
+    # avoids spinning up a runner in the first place.
+    if: >
+      github.event.pull_request.merged &&
+      contains(toJSON(github.event.pull_request.labels.*.name), '"backport rel/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # WARNING: this workflow runs on `pull_request_target` with write
+      # permissions. Do NOT check out the PR's head ref here — only the
+      # base repo. All PR-controlled inputs (title, body) are passed as
+      # action inputs, never as shell arguments.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Create backport PRs
+        uses: korthout/backport-action@2e830a1d0b8269505846ddd407a70876913ad1f8 # v4.6.0
+        with:
+          label_pattern: '^backport (rel/[^ ]+)$'
+          pull_title: '${pull_title} [backport ${target_branch}]'
+          pull_description: |
+            Backport of #${pull_number} to `${target_branch}`.
