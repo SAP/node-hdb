@@ -20,7 +20,7 @@ jobs:
     if: >
       github.event.pull_request.merged &&
       contains(toJSON(github.event.pull_request.labels.*.name), '"backport rel/')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, solinas]
     permissions:
       contents: write
       pull-requests: write
