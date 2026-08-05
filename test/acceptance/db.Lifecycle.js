@@ -207,6 +207,35 @@ describe('db', function () {
       });
     });
 
+    it('isValid() returns true when the session is connected, false when the session is disconnected', function (done) {
+      this.timeout(5000);
+      const client = hdb.createClient(getOptions());
+      client.connect(function (err) {
+        if (err) return done(err);
+        client.isValid({}, function (valid) {
+          valid.should.equal(true);
+          client.exec("SELECT CURRENT_CONNECTION FROM SYS.DUMMY", function (err, results) {
+            if (err) return done(err);
+            const adminClient = hdb.createClient(getOptions());
+            adminClient.connect(function (err) {
+              if (err) return done(err);
+              adminClient.exec("ALTER SYSTEM DISCONNECT SESSION '" + results[0].CURRENT_CONNECTION + "'", function (err) {
+                if (err) return done(err);
+                client.isValid({}, function (valid) {
+                  valid.should.equal(false);
+                  adminClient.disconnect(function (err) {
+                    adminClient.end();
+                    client.end();
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
   });
 
 });
