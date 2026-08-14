@@ -413,6 +413,17 @@ describe('Lib', function () {
       var c8 = createConnection({ packetSize: ps, packetSizeLimit: psl });
       c8.getAvailableSize(false).should.equal(packetSizeMax - totalHeaderLength);
       c8.getAvailableSize(true).should.equal(packetSizeMax - totalHeaderLength);
+
+      // client info property set: LOCALE(6 bytes) + en_US(5 bytes), each +1 indicator = 13 data bytes,
+      // aligned to 8 = 16, plus PART_HEADER_LENGTH(16) = 32 total
+      var c9 = createConnection();
+      c9._statementContext = {
+        size: 32,
+      };
+      c9.getClientInfo().setProperty('LOCALE', 'en_US');
+      var clientInfoPartSize = 32;
+      c9.getAvailableSize().should.equal(packetSizeDefault - totalHeaderLength - 32 - clientInfoPartSize);
+      c9.getAvailableSize(true).should.equal(packetSizeDefault - totalHeaderLength - 32 - clientInfoPartSize);
     });
 
     it('should parse a reply', function () {
