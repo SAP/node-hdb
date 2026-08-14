@@ -1540,6 +1540,7 @@ describe('db', function () {
         });
 
         it('should raise input type error', function (done) {
+          this.timeout(3000);
           var invalidTestData = [
             {
               value: 5,

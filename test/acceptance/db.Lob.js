@@ -309,6 +309,34 @@ describe('db', function () {
       testInsertReadableStream(transformStream, expected, done);
     });
 
+    it('should insert from a stream when client info is set after prepare', function (done) {
+      // Regression test for https://github.com/SAP/node-hdb/pull/293
+      // Setting client info between prepare and exec caused getAvailableSize to
+      // over-report available space, leading to Packet size limit exceeded.
+      const hdb = require('../../');
+      const options = require('../db').getOptions({ packetSize: 65536 });
+      const smallClient = hdb.createClient(options);
+      smallClient.connect(function (err) {
+        if (err) { return done(err); }
+        smallClient.exec('CREATE LOCAL TEMPORARY TABLE #lob_test (data BLOB)', function (err) {
+          if (err) { return done(err); }
+          smallClient.prepare('INSERT INTO #lob_test VALUES (?)', function (err, stmt) {
+            if (err) { return done(err); }
+            smallClient.setClientInfo('size', '64');
+            const gen = async function* () {
+              for (let i = 0; i < 64; i++) yield Buffer.alloc(1024);
+            };
+            stmt.exec([stream.Readable.from(gen(), { objectMode: false })], function (err) {
+              smallClient.exec('DROP TABLE #lob_test', function () {
+                smallClient.end();
+                done(err);
+              });
+            });
+          });
+        });
+      });
+    });
+
   });
 });
 

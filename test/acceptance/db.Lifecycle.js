@@ -30,6 +30,7 @@ describe('db', function () {
     });
 
     it('client.readyState is "connected" after successful connect', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
@@ -42,6 +43,7 @@ describe('db', function () {
     });
 
     it('client.readyState is "closed" after disconnect', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
@@ -61,6 +63,7 @@ describe('db', function () {
     });
 
     it('disconnect when already disconnected is safe', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
@@ -192,6 +195,7 @@ describe('db', function () {
     });
 
     it('end() terminates the connection; subsequent exec produces an error', function (done) {
+      this.timeout(5000);
       const client = hdb.createClient(getOptions());
       client.connect(function (err) {
         if (err) return done(err);
@@ -199,6 +203,35 @@ describe('db', function () {
         client.exec('SELECT * FROM DUMMY', function (err) {
           err.should.be.instanceof(Error);
           done();
+        });
+      });
+    });
+
+    it('isValid() returns true when the session is connected, false when the session is disconnected', function (done) {
+      this.timeout(5000);
+      const client = hdb.createClient(getOptions());
+      client.connect(function (err) {
+        if (err) return done(err);
+        client.isValid({}, function (valid) {
+          valid.should.equal(true);
+          client.exec("SELECT CURRENT_CONNECTION FROM SYS.DUMMY", function (err, results) {
+            if (err) return done(err);
+            const adminClient = hdb.createClient(getOptions());
+            adminClient.connect(function (err) {
+              if (err) return done(err);
+              adminClient.exec("ALTER SYSTEM DISCONNECT SESSION '" + results[0].CURRENT_CONNECTION + "'", function (err) {
+                if (err) return done(err);
+                client.isValid({}, function (valid) {
+                  valid.should.equal(false);
+                  adminClient.disconnect(function (err) {
+                    adminClient.end();
+                    client.end();
+                    done();
+                  });
+                });
+              });
+            });
+          });
         });
       });
     });

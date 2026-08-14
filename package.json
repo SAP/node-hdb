@@ -13,7 +13,7 @@
   ],
   "name": "hdb",
   "description": "SAP HANA Database Client for Node",
-  "version": "2.29.5",
+  "version": "2.29.6",
   "repository": {
     "type": "git",
     "url": "git://github.com/SAP/node-hdb.git"
@@ -53,6 +53,7 @@
   },
   "overrides": {
     "safer-buffer": "2.1.2",
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.0.5",
+    "diff": "8.0.4"
   }
 }
