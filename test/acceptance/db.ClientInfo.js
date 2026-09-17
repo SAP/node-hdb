@@ -35,11 +35,39 @@ describe('db', function () {
       done();
     });
 
-    it('setClientInfo rejects an empty string value', function () {
+    it('setClientInfo with empty string value sets the client info to empty string', function () {
+      client.setClientInfo('MYKEY', '');
+      client._connection.getClientInfo().getProperty('MYKEY').should.equal('');
+    });
+
+    it('setClientInfo with null value removes the property', function () {
+      client.setClientInfo('MYKEY', 'somevalue');
+      client.setClientInfo('MYKEY', null);
+      (client._connection.getClientInfo().getProperty('MYKEY') === undefined).should.be.true();
+    });
+
+    it('setClientInfo with undefined value removes the property', function () {
+      client.setClientInfo('MYKEY', 'somevalue');
+      client.setClientInfo('MYKEY', undefined);
+      (client._connection.getClientInfo().getProperty('MYKEY') === undefined).should.be.true();
+    });
+
+    it('setClientInfo rejects a null key', function () {
       let threw = false;
       try {
-        // note that SQLDBC and other drivers allow setting empty client info values
-        client.setClientInfo('MYKEY', '');
+        client.setClientInfo(null, 'val');
+      } catch (e) {
+        threw = true;
+        e.should.be.instanceof(Error);
+        e.message.should.equal('Invalid arguments for Client.setClientInfo()');
+      }
+      threw.should.be.true();
+    });
+
+    it('setClientInfo rejects an empty string key', function () {
+      let threw = false;
+      try {
+        client.setClientInfo('', 'val');
       } catch (e) {
         threw = true;
         e.should.be.instanceof(Error);

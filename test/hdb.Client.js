@@ -229,6 +229,48 @@ describe('hdb', function () {
       done();
     });
 
+    it('should allow setting client info to an empty string', function (done) {
+      var client = new lib.Client();
+      client.setClientInfo("EMPTYKEY", "");
+      client._connection.getClientInfo().getProperty("EMPTYKEY").should.equal("");
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
+      done();
+    });
+
+    it('should remove the property when setClientInfo is called with null', function (done) {
+      var client = new lib.Client();
+      client.setClientInfo("NULLKEY", "somevalue");
+      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
+      client.setClientInfo("NULLKEY", null);
+      (client._connection.getClientInfo().getProperty("NULLKEY") === undefined).should.be.true();
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
+      client._connection.getClientInfo().getUpdatedProperties(false).should.eql(["NULLKEY", ""]);
+      done();
+    });
+
+    it('should remove the property when setClientInfo is called with undefined', function (done) {
+      var client = new lib.Client();
+      client.setClientInfo("UNDEFKEY", "somevalue");
+      client._connection.send(new lib.request.Segment(lib.common.MessageType.EXECUTE), null);
+      client.setClientInfo("UNDEFKEY", undefined);
+      (client._connection.getClientInfo().getProperty("UNDEFKEY") === undefined).should.be.true();
+      client._connection.getClientInfo().shouldSend(lib.common.MessageType.EXECUTE).should.eql(true);
+      client._connection.getClientInfo().getUpdatedProperties(false).should.eql(["UNDEFKEY", ""]);
+      done();
+    });
+
+    it('should throw when setClientInfo is called with a null key', function (done) {
+      var client = new lib.Client();
+      (function () { client.setClientInfo(null, "val"); }).should.throw('Invalid arguments for Client.setClientInfo()');
+      done();
+    });
+
+    it('should throw when setClientInfo is called with an empty string key', function (done) {
+      var client = new lib.Client();
+      (function () { client.setClientInfo("", "val"); }).should.throw('Invalid arguments for Client.setClientInfo()');
+      done();
+    });
+
     it("should send default client context during authentication", function (done) {
       const client = new lib.Client({
         host: "localhost",
