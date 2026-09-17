@@ -15,9 +15,9 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('../lib/util');
-var async = require('async');
-var client = require('./client');
+const util = require('../lib/util');
+const async = require('async');
+const client = require('./client');
 
 async.series([connect, init, insert, select], done);
 
@@ -46,7 +46,7 @@ function init(cb) {
 }
 
 function insert(cb) {
-  var statement;
+  let statement;
   async.series([
     function (done) {
       client.prepare('insert into #x values (?,?)', function (err, stmnt) {
@@ -90,7 +90,7 @@ function insert(cb) {
 }
 
 function select(cb) {
-  var sql = 'select * from #x join #y on #x.id = #y.id';
+  const sql = 'select * from #x join #y on #x.id = #y.id';
   client.exec(sql, {
     rowsAsArray: true
   }, function (err, rows) {

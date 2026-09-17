@@ -13,13 +13,13 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var hdb = require('../index');
-var filename = path.join(__dirname, '..', 'test', 'db', 'config.json');
-var options = JSON.parse(fs.readFileSync(filename));
+const fs = require('fs');
+const path = require('path');
+const hdb = require('../index');
+const filename = path.join(__dirname, '..', 'test', 'db', 'config.json');
+const options = JSON.parse(fs.readFileSync(filename));
 
-var client = hdb.createClient({
+const client = hdb.createClient({
   host: options.host,
   port: options.port,
   user: options.user,

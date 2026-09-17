@@ -13,8 +13,8 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var async = require('async');
-var client = require('./client');
+const async = require('async');
+const client = require('./client');
 
 async.waterfall([connect, init, prepare, callProc], done);
 
@@ -23,10 +23,9 @@ function connect(cb) {
 }
 
 function init(cb) {
-  var sql = 'drop procedure PROC_READ_OBJECT';
-  client.exec(sql, function onexec() {
-    // ignore error
-    var sql = [
+  const dropSql = 'drop procedure PROC_READ_OBJECT';
+  client.exec(dropSql, function onexec() {
+    const createSql = [
       'CREATE PROCEDURE PROC_READ_OBJECT (',
       '  in name nvarchar(255),',
       '  out data blob)',
@@ -39,17 +38,17 @@ function init(cb) {
       '  CLOSE c_cursor;',
       'END;'
     ].join('\n');
-    client.exec(sql, cb);
+    client.exec(createSql, cb);
   });
 }
 
 function prepare(cb) {
-  var sql = 'call PROC_READ_OBJECT(?, ?)';
+  const sql = 'call PROC_READ_OBJECT(?, ?)';
   client.prepare(sql, cb);
 }
 
 function callProc(statement, cb) {
-  var values = {
+  const values = {
     NAME: 'hello.txt'
   };
   statement.exec(values, function onexec(err, parameters) {

@@ -13,13 +13,13 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('util');
-var async = require('async');
-var client = require('./client');
-var hdb = require('../index');
+const util = require('util');
+const async = require('async');
+const client = require('./client');
+const hdb = require('../index');
 
-var fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE'];
-var sql = util.format('select top 50 %s from TABLES', fields.join(','));
+const fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as "TABLE"'];
+const sql = util.format('select top 50 %s from SYS.TABLES', fields.join(','));
 
 async.waterfall([connect, execute, pipeRows], done);
 
@@ -32,8 +32,8 @@ function execute(cb) {
 }
 
 function pipeRows(rs, cb) {
-  var stream = rs.createArrayStream();
-  var stringifier = hdb.createJSONStringifier();
+  const stream = rs.createArrayStream();
+  const stringifier = hdb.createJSONStringifier();
 
   function finish(err) {
     stream.removeListener('error', finish);

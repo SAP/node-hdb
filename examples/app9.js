@@ -15,9 +15,9 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('../lib/util');
-var async = require('async');
-var client = require('./client');
+const util = require('../lib/util');
+const async = require('async');
+const client = require('./client');
 
 async.waterfall([connect, init, prepare, insert, select], done);
 
@@ -26,36 +26,36 @@ function connect(cb) {
 }
 
 function dropTable(cb) {
-  var sql = 'drop table TEST_BATCH';
+  const sql = 'drop table TEST_BATCH';
   client.exec(sql, cb);
 }
 
 function init(cb) {
-  dropTable(function droped(err) {
-    /* jshint unused:false */
-    // ignore error
+  dropTable(function droped(_err) {
     createTable(cb);
   });
 }
 
 function createTable(cb) {
-  var sql = [
+  const sql = [
     'create column table TEST_BATCH (',
-    '"ID"     INT NOT NULL,',
-    '"NAME"   NVARCHAR(256) NOT NULL,',
-    '"CONTENT"  NCLOB ST_MEMORY_LOB,',
+    '"ID"      INT NOT NULL,',
+    '"NAME"    NVARCHAR(256) NOT NULL,',
+    // ST_MEMORY_LOB is not supported in SAP HANA Cloud; use MEMORY THRESHOLD NULL instead.
+    // See: https://help.sap.com/docs/hana-cloud/sap-hana-cloud-migration-guide/memory-and-disk-lob-type
+    '"CONTENT" NCLOB MEMORY THRESHOLD NULL,',
     'PRIMARY KEY ("ID"))'
   ].join('\n');
   client.exec(sql, cb);
 }
 
 function prepare(cb) {
-  var sql = 'insert into TEST_BATCH values (?, ?, ?)';
+  const sql = 'insert into TEST_BATCH values (?, ?, ?)';
   client.prepare(sql, cb);
 }
 
 function insert(statement, cb) {
-  var values = [
+  const values = [
     [1, 'lorem', 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit.'],
     [2, 'aliquam', 'Aliquam tincidunt mauris eu risus.'],
     [3, 'vestibulum', 'Vestibulum auctor dapibus neque.'],
@@ -89,15 +89,14 @@ function insert(statement, cb) {
     ]
   ];
   console.time('time');
-  statement.exec(values, function statementExecuted(err, rowsAffected) {
-    /* jshint unused:false */
+  statement.exec(values, function statementExecuted(err, _rowsAffected) {
     console.timeEnd('time');
     cb(err);
   });
 }
 
 function select(cb) {
-  var sql = 'select * from TEST_BATCH';
+  const sql = 'select * from TEST_BATCH';
   client.exec(sql, cb);
 }
 
