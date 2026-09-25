@@ -15,37 +15,40 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var fs = require('fs');
-var os = require('os');
-var util = require('util');
-var path = require('path');
-var url = require('url');
-var async = require('async');
-var hdb = require('../index');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const url = require('url');
+const async = require('async');
+const hdb = require('../index');
 
-var defaults = getDefaultParams();
-var params;
+const defaults = getDefaultParams();
+let params;
 if (process.argv.length < 3) {
   params = defaults;
 } else {
   params = url.parse(process.argv[2], true, true);
 }
-var hostname = params.hostname || defaults.hostname;
-var port = params.port || defaults.port;
-var auth = (params.auth || defaults.auth).split(':');
-var user = auth[0];
-var password = auth[1];
-var query = util._extend({
+const hostname = params.hostname || defaults.hostname;
+const port = params.port || defaults.port;
+const auth = (params.auth || defaults.auth).split(':');
+const user = auth[0];
+const password = auth[1];
+const query = Object.assign({
   top: Math.pow(10, 6)
 }, params.query);
-var segments = params.pathname.match(/^\/?(?:([^.]+)\.)?(.*)/).slice(1);
-var schema = segments[0].toUpperCase();
-var tablename = segments[1].toUpperCase();
+const segments = params.pathname.match(/^\/?(?:([^.]+)\.)?(.*)/).slice(1);
+if (!segments[0]) {
+  console.error('Usage: csv.js [user:password@host:port/]SCHEMA.TABLE[?top=N]');
+  process.exit(1);
+}
+const schema = segments[0].toUpperCase();
+const tablename = segments[1].toUpperCase();
 // eslint-disable-next-line no-useless-escape
-var filename = tablename.replace(/^\/[^\/]+\//, '').toLowerCase() + '.csv';
+let filename = `${tablename.replace(/^\/[^\/]+\//, '').toLowerCase()}.csv`;
 filename = path.join(os.tmpdir(), filename);
 
-var client = hdb.createClient({
+const client = hdb.createClient({
   host: hostname,
   port: port,
   user: user,
@@ -65,15 +68,14 @@ function connect(cb) {
 
 function execute(cb) {
   console.time('time');
-  var sql = util.format('select top %d * from "%s"."%s"',
-    query.top, schema, tablename);
+  const sql = `select top ${query.top} * from "${schema}"."${tablename}"`;
   client.execute(sql, cb);
 }
 
 function pipeRows(rs, cb) {
   rs.setFetchSize(2048);
-  var readStream = rs.createArrayStream();
-  var writeStream = fs.createWriteStream(filename);
+  const readStream = rs.createArrayStream();
+  const writeStream = fs.createWriteStream(filename);
 
   function finish(err) {
     readStream.removeListener('error', finish);
@@ -98,17 +100,17 @@ function done(err) {
 
 function createCsvStringifier(metadata) {
   /* jshint evil:true */
-  var header = metadata.map(function getName(column) {
+  const header = `${metadata.map(function getName(column) {
     return column.columnDisplayName;
-  }).join(';') + '\n';
-  var functionBody = metadata.reduce(function addLine(body, column) {
-    body += 'line += row.' + column.columnDisplayName;
+  }).join(';')}\n`;
+  const functionBody = metadata.reduce(function addLine(body, column) {
+    body += `line += row.${column.columnDisplayName}`;
     if (column.dataType === 13) {
-      body += '.toString(\'hex\')';
+      body += `.toString('hex')`;
     }
-    body += ';\nline += \';\'\n';
+    body += `;\nline += ';'\n`;
     return body;
-  }, 'var line = \'\';\n') + 'return line;';
+  }, `var line = '';\n`) + `return line;`;
   return new hdb.Stringifier({
     header: header,
     footer: '',
@@ -118,12 +120,12 @@ function createCsvStringifier(metadata) {
 }
 
 function getDefaultParams() {
-  var filename = path.join(__dirname, '..', 'test', 'db', 'config.json');
-  var config = JSON.parse(fs.readFileSync(filename));
+  const cfgPath = path.join(__dirname, '..', 'test', 'db', 'config.json');
+  const config = JSON.parse(fs.readFileSync(cfgPath));
   return {
     hostname: config.host,
     port: config.port,
-    auth: [config.user, config.password].join(':'),
+    auth: `${config.user}:${config.password}`,
     pathname: 'SYS.TABLES',
     query: {
       top: 1000

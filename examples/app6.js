@@ -15,17 +15,14 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('../lib/util');
-var os = require('os');
-var path = require('path');
-var async = require('async');
-var Stream = require('stream').Stream;
-var Writable = util.stream.Writable;
-var fstream = require('fstream');
-var client = require('./client');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const async = require('async');
+const client = require('./client');
 
-var sql = 'select NAME, DATA from TEST_LOBS';
-var dirname = path.join(os.tmpdir(), process.argv[2] || '.');
+const sql = 'select NAME, DATA from TEST_LOBS';
+const dirname = path.join(os.tmpdir(), process.argv[2] || 'lobs-out');
 
 async.waterfall([connect, prepare, execute, copyRepo], done);
 
@@ -43,34 +40,64 @@ function execute(statement, cb) {
 }
 
 function copyRepo(rs, cb) {
+  fs.mkdirSync(dirname, { recursive: true });
 
-  function createEntry(row) {
-    var entry = row.DATA.createReadStream();
-    var props = entry.props = {
-      type: 'File',
-      path: row.NAME
-    };
-    entry.path = props.path;
-    entry.type = props.type;
-    return entry;
+  const stream = rs.createObjectStream();
+  const pending = [];
+  let streamDone = false;
+  let cbCalled = false;
+
+  function tryFinish(err) {
+    if (cbCalled) {
+      return;
+    }
+    if (err) {
+      cbCalled = true;
+      stream.destroy();
+      return cb(err);
+    }
+    if (streamDone && pending.length === 0) {
+      cbCalled = true;
+      cb(null);
+    }
   }
-  var adapter = new FstreamAdapter(createEntry);
 
-  var w = new fstream.Writer({
-    path: dirname,
-    type: 'Directory'
+  stream.on('error', tryFinish);
+
+  stream.on('data', function(row) {
+    stream.pause();
+    const destPath = path.join(dirname, row.NAME);
+    const readStream = row.DATA.createReadStream();
+    const writeStream = fs.createWriteStream(destPath);
+
+    pending.push(1);
+
+    function finish(err) {
+      readStream.removeListener('error', finish);
+      writeStream.removeListener('error', finish);
+      writeStream.removeListener('finish', onfinish);
+      pending.pop();
+      stream.resume();
+      if (err) {
+        return tryFinish(err);
+      }
+      tryFinish(null);
+    }
+
+    function onfinish() {
+      finish(null);
+    }
+
+    readStream.once('error', finish);
+    writeStream.once('error', finish);
+    writeStream.once('finish', onfinish);
+    readStream.pipe(writeStream);
   });
 
-  function finish(err) {
-    /* jshint validthis:true */
-    w.removeListener('error', finish);
-    w.removeListener('end', finish);
-    cb(err);
-  }
-  w.once('error', finish);
-  w.once('end', finish);
-
-  rs.createObjectStream().pipe(adapter).pipe(w);
+  stream.on('end', function() {
+    streamDone = true;
+    tryFinish(null);
+  });
 }
 
 function done(err) {
@@ -78,55 +105,7 @@ function done(err) {
   if (err) {
     console.error('Error', err);
   } else {
-    console.log('Copied lobs to dir %s"', dirname);
+    console.log('Copied lobs to dir "%s"', dirname);
   }
   client.end();
 }
-
-util.inherits(FstreamAdapter, Writable);
-
-function FstreamAdapter(createEntry) {
-  Writable.call(this, {
-    objectMode: true,
-    highWaterMark: 128
-  });
-  this._done = undefined;
-  this._destination = undefined;
-  this._createEntry = createEntry;
-}
-
-Object.defineProperty(FstreamAdapter.prototype, 'readable', {
-  get: function getReadable() {
-    return !!this._done;
-  }
-});
-
-FstreamAdapter.prototype._write = function _write(row, encoding, done) {
-  var entry = this._createEntry(row);
-  var notBusy = this._destination.add(entry);
-  if (notBusy !== false) {
-    return done();
-  }
-  if (this._done) {
-    throw new Error('Do not call _write before previous _write has been done');
-  }
-  this._done = done;
-};
-
-FstreamAdapter.prototype.pause = function pause() {};
-
-FstreamAdapter.prototype.resume = function resume() {
-  if (this._done) {
-    var done = this._done;
-    this._done = undefined;
-    done();
-  }
-};
-
-FstreamAdapter.prototype.pipe = function pipe(dest) {
-  this._destination = dest;
-  this.once('finish', function onfinish() {
-    dest.end();
-  });
-  return Stream.prototype.pipe.call(this, dest);
-};

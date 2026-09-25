@@ -15,17 +15,14 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('util');
-var path = require('path');
-var async = require('async');
-var EventEmitter = require('events').EventEmitter;
-var client = require('./client');
-var fstream = require('fstream');
-var concatStream = require('concat-stream');
+const fs = require('fs');
+const path = require('path');
+const async = require('async');
+const client = require('./client');
 
-var home = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'];
-var dirname = process.argv[2] || path.join(home, 'tmp', 'lobs');
-var schema = client.get('user');
+const home = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'];
+const dirname = process.argv[2] || path.join(home, 'tmp', 'lobs');
+const schema = client.get('user');
 
 async.waterfall([connect, init, prepare, copyDir], done);
 
@@ -34,59 +31,52 @@ function connect(cb) {
 }
 
 function dropTable(cb) {
-  var sql = 'drop table TEST_LOBS';
+  const sql = 'drop table TEST_LOBS';
   client.exec(sql, cb);
 }
 
 function init(cb) {
-  dropTable(function droped(err) {
-    /* jshint unused:false */
-    // ignore error
+  dropTable(function droped(_err) {
     createTable(cb);
   });
 }
 
 function createTable(cb) {
-  var sql = [
+  const sql = [
     'create column table TEST_LOBS (',
     '"NAME"    NVARCHAR(256) NOT NULL,',
-    '"DATA"    BLOB ST_MEMORY_LOB,',
+    // ST_MEMORY_LOB is not supported in SAP HANA Cloud; use MEMORY THRESHOLD NULL instead.
+    // See: https://help.sap.com/docs/HANA_CLOUD/3c53bc7b58934a9795b6dd8c7e28cf05/60849217c54d4e87918caef4a29cae4d.html
+    '"DATA"    BLOB MEMORY THRESHOLD NULL,',
     'PRIMARY KEY ("NAME"))'
   ].join('\n');
   client.exec(sql, cb);
 }
 
 function prepare(cb) {
-  var sql = 'insert into TEST_LOBS values (?, ?)';
+  const sql = 'insert into TEST_LOBS values (?, ?)';
   client.prepare(sql, cb);
 }
 
 function copyDir(statement, cb) {
   console.time('time');
 
-  function isChildFile() {
-    /* jshint validthis:true */
-    return this.parent === r && this.type === 'File' || this === r;
+  let entries;
+  try {
+    entries = fs.readdirSync(dirname, { withFileTypes: true })
+      .filter(d => d.isFile())
+      .map(d => d.name);
+  } catch (err) {
+    return cb(err);
   }
-  var r = fstream.Reader({
-    path: dirname,
-    filter: isChildFile
-  });
 
-  function getParams(props, data) {
-    return [props.basename, data];
+  function insertFile(name, next) {
+    const filePath = path.join(dirname, name);
+    const readStream = fs.createReadStream(filePath);
+    statement.exec([name, readStream], next);
   }
-  var adapter = new FstreamAdapter(statement, getParams);
 
-  function finish(err) {
-    adapter.removeListener('error', finish);
-    adapter.removeListener('close', finish);
-    cb(err);
-  }
-  adapter.once('error', finish);
-  adapter.once('close', finish);
-
-  r.pipe(adapter);
+  async.eachSeries(entries, insertFile, cb);
 }
 
 function done(err) {
@@ -98,53 +88,3 @@ function done(err) {
   }
   client.end();
 }
-
-util.inherits(FstreamAdapter, EventEmitter);
-
-function FstreamAdapter(statement, createParams) {
-  EventEmitter.call(this);
-  this._end = false;
-  this._busy = false;
-  this._statement = statement;
-  this._createParams = createParams;
-}
-
-FstreamAdapter.prototype.execStatement = function execStatement(entry, data) {
-  var self = this;
-  var params = this._createParams(entry.props, data);
-
-  function handleResult(err) {
-    self._busy = false;
-    if (err) {
-      return self.emit('error', err);
-    }
-    if (self._end) {
-      return self.emit('close');
-    }
-    entry.resume();
-  }
-  this._statement.exec(params, handleResult);
-};
-
-FstreamAdapter.prototype.add = function add(entry) {
-  var self = this;
-  if (this._end) {
-    return;
-  }
-
-  function handleData(data) {
-    entry.pause();
-    self._busy = true;
-    self.execStatement(entry, data);
-  }
-  entry.pipe(concatStream(handleData));
-  return true;
-};
-
-FstreamAdapter.prototype.end = function end() {
-  this._end = true;
-  this.emit('end');
-  if (!this._busy) {
-    this.emit('close');
-  }
-};

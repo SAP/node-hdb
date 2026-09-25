@@ -13,8 +13,8 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var async = require('async');
-var client = require('./client');
+const async = require('async');
+const client = require('./client');
 
 async.waterfall([
   connect,
@@ -58,20 +58,20 @@ function createProcedure(cb) {
 }
 
 function prepare(cb) {
-  var sql = 'call PROC_TEST(#local_test_table_1, ?)';
+  const sql = 'call PROC_TEST(#local_test_table_1, ?)';
   client.prepare(sql, cb);
 }
 
 function updateLocalTemporaryTable(values, cb) {
   function truncate(cb) {
-    var sql = 'truncate table #local_test_table_1';
+    const sql = 'truncate table #local_test_table_1';
     client.exec(sql, function (err) {
       cb(err);
     });
   }
 
   function prepare(cb) {
-    var sql = 'insert into #local_test_table_1 values(?)';
+    const sql = 'insert into #local_test_table_1 values(?)';
     client.prepare(sql, cb);
   }
 
@@ -80,8 +80,7 @@ function updateLocalTemporaryTable(values, cb) {
       return statement.exec.bind(statement, [value]);
     }
 
-    async.series(values.map(createTasks), function () {
-      // ignore error
+    async.series(values.map(createTasks), function (_err) {
       statement.drop(cb);
     });
   }
@@ -89,7 +88,7 @@ function updateLocalTemporaryTable(values, cb) {
 }
 
 function callProcedure(statement, cb) {
-  var values = [1, 2, 3, 4, 5];
+  const values = [1, 2, 3, 4, 5];
   updateLocalTemporaryTable(values, function (err) {
     if (err) {
       return cb(err);
@@ -110,7 +109,6 @@ function done(err, parameters, rows) {
 
 function dropAndCreate(options, cb) {
   client.exec(options.drop, function onexec() {
-    // ignore error
     client.exec(options.create, cb);
   });
 }

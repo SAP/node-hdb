@@ -13,12 +13,12 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('util');
-var async = require('async');
-var client = require('./client');
+const util = require('util');
+const async = require('async');
+const client = require('./client');
 
-var fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as TABLE'];
-var sql = util.format('select top 50 %s from TABLES', fields.join(','));
+const fields = ['SCHEMA_NAME || \'.\' || TABLE_NAME as "TABLE"'];
+const sql = util.format('select top 50 %s from SYS.TABLES', fields.join(','));
 
 async.waterfall([connect, execute, fetchRows], done);
 
@@ -31,8 +31,8 @@ function execute(cb) {
 }
 
 function fetchRows(rs, cb) {
-  var stream = rs.createObjectStream();
-  var rows = [];
+  const stream = rs.createObjectStream();
+  const rows = [];
 
   function finish(err) {
     stream.removeListener('error', finish);
@@ -52,8 +52,8 @@ function fetchRows(rs, cb) {
 
   function onreadable() {
     /* jshint validthis:true */
-    var chunk = this.read();
-    if (chunk) {
+    let chunk;
+    while ((chunk = this.read()) !== null) {
       rows.push(chunk);
     }
   }

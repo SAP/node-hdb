@@ -13,9 +13,9 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var util = require('util');
-var async = require('async');
-var client = require('./client');
+const util = require('util');
+const async = require('async');
+const client = require('./client');
 
 async.waterfall([connect, init, prepare, insert, update, select], done);
 
@@ -25,20 +25,18 @@ function connect(cb) {
 }
 
 function dropTable(cb) {
-  var sql = 'drop table PERSONS cascade';
+  const sql = 'drop table PERSONS cascade';
   client.exec(sql, cb);
 }
 
 function init(cb) {
-  dropTable(function droped(err) {
-    /* jshint unused:false */
-    // ignore error
+  dropTable(function droped(_err) {
     createTable(cb);
   });
 }
 
 function createTable(cb) {
-  var sql = [
+  const sql = [
     'create column table PERSONS (',
     '"ID" INTEGER NOT NULL,',
     '"LAST_NAME" NVARCHAR(256),',
@@ -49,12 +47,12 @@ function createTable(cb) {
 }
 
 function prepare(cb) {
-  var sql = 'insert into PERSONS values(?, ?, ?)';
+  const sql = 'insert into PERSONS values(?, ?, ?)';
   client.prepare(sql, cb);
 }
 
 function insert(statement, cb) {
-  var rows = [
+  const rows = [
     [1, 'Ferdinand', 'Fuchs'],
     [2, 'Waldemar', 'Wild'],
     [3, 'Maximilian', 'Maier']
@@ -63,7 +61,7 @@ function insert(statement, cb) {
   function createTask(params) {
     return statement.exec.bind(statement, params);
   }
-  var tasks = rows.map(createTask);
+  const tasks = rows.map(createTask);
 
   function done(err) {
     if (err) {
@@ -76,17 +74,15 @@ function insert(statement, cb) {
 }
 
 function select(cb) {
-  var sql = 'select * from PERSONS';
+  const sql = 'select * from PERSONS';
   client.exec(sql, cb);
 }
 
 function update(cb) {
-  function done(err) {
-    /* jshint unused:false */
-    // force rollback
+  function done(_err) {
     client.rollback(cb);
   }
-  var sql = 'update PERSONS set first_name = "Max" where id = 3';
+  const sql = 'update PERSONS set first_name = \'Max\' where id = 3';
   client.exec(sql, done);
 }
 

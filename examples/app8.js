@@ -13,8 +13,8 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var async = require('async');
-var client = require('./client');
+const async = require('async');
+const client = require('./client');
 
 async.series([connect, execute, reconnect, execute, disconnect], done);
 
@@ -37,8 +37,9 @@ function reconnect(cb) {
       this.connect();
     }
   });
-  // simulate a network error
-  client._connection._socket.end();
+  // simulate a network error by ending the underlying socket
+  const socket = client._connection._physicalConnections.getAnchorConnection()._socket;
+  socket.end();
   client.once('connect', function reconnected() {
     cb();
   });

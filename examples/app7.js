@@ -15,14 +15,14 @@
 // language governing permissions and limitations under the License.
 'use strict';
 
-var fs = require('fs');
-var os = require('os');
-var path = require('path');
-var async = require('async');
-var client = require('./client');
-var schema = client.get('user');
-var tmpdir = os.tmpdir();
-var dirname = path.join(__dirname, '..', 'test', 'fixtures', 'img');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const async = require('async');
+const client = require('./client');
+const schema = client.get('user');
+const tmpdir = os.tmpdir();
+const dirname = path.join(__dirname, '..', 'test', 'fixtures', 'img');
 
 async.waterfall([connect, init, prepare, insert, select, fetch, write], done);
 
@@ -31,55 +31,54 @@ function connect(cb) {
 }
 
 function dropTable(cb) {
-  var sql = 'drop table TEST_BLOBS';
+  const sql = 'drop table TEST_BLOBS';
   client.exec(sql, cb);
 }
 
 function init(cb) {
-  dropTable(function droped(err) {
-    /* jshint unused:false */
-    // ignore error
+  dropTable(function droped(_err) {
     createTable(cb);
   });
 }
 
 function createTable(cb) {
-  var sql = [
+  const sql = [
     'create column table TEST_BLOBS (',
     '"ID"     INT NOT NULL,',
     '"NAME"   NVARCHAR(256) NOT NULL,',
-    '"IMG"  BLOB ST_MEMORY_LOB,',
-    '"LOGO"  BLOB ST_MEMORY_LOB,',
-    '"DESCR"  NCLOB ST_MEMORY_LOB,',
+    // ST_MEMORY_LOB is not supported in SAP HANA Cloud; use MEMORY THRESHOLD NULL instead.
+    // See: https://help.sap.com/docs/hana-cloud/sap-hana-cloud-migration-guide/memory-and-disk-lob-type
+    '"IMG"    BLOB MEMORY THRESHOLD NULL,',
+    '"LOGO"   BLOB MEMORY THRESHOLD NULL,',
+    '"DESCR"  NCLOB MEMORY THRESHOLD NULL,',
     'PRIMARY KEY ("ID"))'
   ].join('\n');
   client.exec(sql, cb);
 }
 
 function prepare(cb) {
-  var sql = 'insert into TEST_BLOBS values (?, ?, ?, ?, ?)';
+  const sql = 'insert into TEST_BLOBS values (?, ?, ?, ?, ?)';
   client.prepare(sql, cb);
 }
 
 function insert(statement, cb) {
   console.time('time');
-  var params = [
+  const params = [
     [
       1, 'SAP AG',
       fs.createReadStream(path.join(dirname, 'sap.jpg')),
       fs.createReadStream(path.join(dirname, 'logo.png')),
-      new Buffer('SAP headquarters located in Walldorf, Germany', 'ascii')
+      Buffer.from('SAP headquarters located in Walldorf, Germany', 'ascii')
     ],
     [
       2, 'SAP lobby',
       fs.createReadStream(path.join(dirname, 'lobby.jpg')),
       fs.createReadStream(path.join(dirname, 'locked.png')),
-      new Buffer('SAP lobby in Walldorf, Germany', 'ascii')
+      Buffer.from('SAP lobby in Walldorf, Germany', 'ascii')
     ]
   ];
 
-  statement.exec(params, function statementExecuted(err, rowsAffected) {
-    /* jshint unused:false */
+  statement.exec(params, function statementExecuted(err, _rowsAffected) {
     console.timeEnd('time');
     if (err) {
       return cb(err);
@@ -92,12 +91,12 @@ function insert(statement, cb) {
 }
 
 function select(cb) {
-  var sql = 'select * from TEST_BLOBS where ID = 1';
+  const sql = 'select * from TEST_BLOBS where ID = 1';
   client.execute(sql, cb);
 }
 
 function fetch(rs, cb) {
-  var rows = [];
+  const rows = [];
 
   function done(err) {
     /* jshint validthis:true */
@@ -107,7 +106,7 @@ function fetch(rs, cb) {
 
   function read() {
     /* jshint validthis:true */
-    var row = this.read();
+    const row = this.read();
     if (row) {
       rows.push(row);
     }
@@ -128,8 +127,8 @@ function write(row, cb) {
 
 function writeFile(filename, cb) {
   /* jshint validthis:true */
-  var readStream = this.createReadStream();
-  var writeStream = fs.createWriteStream(path.join(tmpdir, filename));
+  const readStream = this.createReadStream();
+  const writeStream = fs.createWriteStream(path.join(tmpdir, filename));
 
   function done(err) {
     readStream.removeListener('error', done);
@@ -154,7 +153,7 @@ function done(err) {
     console.error('Error', err);
   } else {
     console.log(
-      'Copied SAP images from table "%s"."TEST_BLOBS to "',
+      'Copied SAP images from table "%s"."TEST_BLOBS" to "%s"',
       schema, tmpdir);
   }
   client.end();
