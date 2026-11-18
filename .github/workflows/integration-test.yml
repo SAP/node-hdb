@@ -50,8 +50,6 @@ jobs:
           echo "Workspace is ${{ github.workspace }}"
           echo "Listing files in the repository:"
           ls -l ${{ github.workspace }}
-          echo "Showing the contents of test/db/config.json:"
-          cat ${{ github.workspace }}/test/db/config.json
       - run: npm install
       - name: Run tests
         run: |
