@@ -327,6 +327,19 @@ When compression is enabled, packets larger than 10240 bytes (10 KB) are compres
 Network compression may improve performance by reducing the size of data sent over the network. This is especially helpful on slow connections or when sending large or highly compressible data. However, it can also introduce CPU overhead for compression and decompression.  
 **We recommend benchmarking compression with your own workloads and deployment environment to determine its effectiveness.**
 
+### Data Format Version
+By default, the node-hdb driver uses version 1 of the SAP HANA data format. Attempting to use a higher version than the server supports will result in an error. See the [documentation](tbd: add link) for more information on which data types are supported in which version.
+
+For example, the following configuration will set the version to 7:
+```js
+var client = hdb.createClient({
+  host : 'hostname',
+  port : 30015,
+  dataFormatSupport : 7,
+  ...
+});
+```
+
 Direct Statement Execution
 --------------------------
 
